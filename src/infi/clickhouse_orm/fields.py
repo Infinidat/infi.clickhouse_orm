@@ -21,6 +21,13 @@ class Field(object):
         """
         return value
 
+    def validate(self, value):
+        pass
+
+    def _range_check(self, value, min_value, max_value):
+        if value < min_value or value > max_value:
+            raise ValueError('%s out of range - %s is not between %s and %s' % (self.__class__.__name__, value, min_value, max_value))
+
     def get_db_prep_value(self, value):
         """
         Returns the field's value prepared for interacting with the database.
@@ -48,7 +55,9 @@ class StringField(Field):
 
 class DateField(Field):
 
-    class_default = datetime.date(1970, 1, 1)
+    min_value = datetime.date(1970, 1, 1)
+    max_value = datetime.date(2038, 1, 19)
+    class_default = min_value
     db_type = 'Date'
 
     def to_python(self, value):
@@ -57,8 +66,12 @@ class DateField(Field):
         if isinstance(value, int):
             return DateField.class_default + datetime.timedelta(days=value)
         if isinstance(value, basestring):
+            # TODO parse '0000-00-00'
             return datetime.datetime.strptime(value, '%Y-%m-%d').date()
-        raise ValueError('Invalid value for %s: %r' % (self.__class__.__name__, value))
+        raise ValueError('Invalid value for %s - %r' % (self.__class__.__name__, value))
+
+    def validate(self, value):
+        self._range_check(value, DateField.min_value, DateField.max_value)
 
     def get_db_prep_value(self, value):
         return value.isoformat()
@@ -78,7 +91,7 @@ class DateTimeField(Field):
             return datetime.datetime.fromtimestamp(value, pytz.utc)
         if isinstance(value, basestring):
             return datetime.datetime.strptime(value, '%Y-%m-%d %H-%M-%S')
-        raise ValueError('Invalid value for %s: %r' % (self.__class__.__name__, value))
+        raise ValueError('Invalid value for %s - %r' % (self.__class__.__name__, value))
 
     def get_db_prep_value(self, value):
         return int(time.mktime(value.timetuple()))
@@ -91,46 +104,65 @@ class BaseIntField(Field):
             return value
         if isinstance(value, basestring):
             return int(value)
-        raise ValueError('Invalid value for %s: %r' % (self.__class__.__name__, value))
+        raise ValueError('Invalid value for %s - %r' % (self.__class__.__name__, value))
+
+    def validate(self, value):
+        self._range_check(value, self.min_value, self.max_value)
 
 
 class UInt8Field(BaseIntField):
 
+    min_value = 0
+    max_value = 2**8 - 1
     db_type = 'UInt8'
 
 
 class UInt16Field(BaseIntField):
 
+    min_value = 0
+    max_value = 2**16 - 1
     db_type = 'UInt16'
 
 
 class UInt32Field(BaseIntField):
 
+    min_value = 0
+    max_value = 2**32 - 1
     db_type = 'UInt32'
 
 
 class UInt64Field(BaseIntField):
 
+    min_value = 0
+    max_value = 2**64 - 1
     db_type = 'UInt64'
 
 
 class Int8Field(BaseIntField):
 
+    min_value = -2**7
+    max_value = 2**7 - 1
     db_type = 'Int8'
 
 
 class Int16Field(BaseIntField):
 
+    min_value = -2**16
+    max_value = 2**16 - 1
     db_type = 'Int16'
 
 
 class Int32Field(BaseIntField):
 
+    min_value = -2**32
+    max_value = 2**32 - 1
     db_type = 'Int32'
 
 
 class Int64Field(BaseIntField):
 
+    min_value = -2**64
+    max_value = 2**64 - 1
     db_type = 'Int64'
 
 
@@ -141,7 +173,7 @@ class BaseFloatField(Field):
             return value
         if isinstance(value, basestring) or isinstance(value, int):
             return float(value)
-        raise ValueError('Invalid value for %s: %r' % (self.__class__.__name__, value))
+        raise ValueError('Invalid value for %s - %r' % (self.__class__.__name__, value))
 
 
 class Float32Field(BaseFloatField):

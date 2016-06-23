@@ -46,9 +46,15 @@ class Database(object):
         r = self._send(query)
         return int(r.text) if r.text else 0
 
+    def select(self, query, model_class=None, settings=None):
+        query += ' FORMAT TabSeparated'
+        r = self._send(query, settings)
+        for line in r.iter_lines():
+            yield model_class.from_tsv(line)
+
     def _send(self, data, settings=None):
         params = self._build_params(settings)
-        r = requests.post(self.db_url, params=params, data=data)
+        r = requests.post(self.db_url, params=params, data=data, stream=True)
         if r.status_code != 200:
             raise DatabaseException(r.text)
         return r

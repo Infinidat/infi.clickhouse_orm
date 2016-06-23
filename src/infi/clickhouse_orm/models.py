@@ -49,6 +49,7 @@ class Model(object):
         field = self.get_field(name)
         if field:
             value = field.to_python(value)
+            field.validate(value)
         super(Model, self).__setattr__(name, value)
 
     def get_field(self, name):
