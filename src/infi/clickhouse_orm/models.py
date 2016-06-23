@@ -30,11 +30,20 @@ class Model(object):
         Creates a model instance, using keyword arguments as field values.
         Since values are immediately converted to their Pythonic type,
         invalid values will cause a ValueError to be raised.
+        Unrecognized field names will cause an AttributeError.
         '''
         super(Model, self).__init__()
+        # Assign field values from keyword arguments
+        for name, value in kwargs.iteritems():
+            field = self.get_field(name)
+            if field:
+                setattr(self, name, value)
+            else:
+                raise AttributeError('%s does not have a field called %s' % (self.__class__.__name__, name))
+        # Assign default values for fields not included in the keyword arguments
         for name, field in self._fields:
-            val = kwargs.get(name, field.default)
-            setattr(self, name, val)
+            if name not in kwargs:
+                setattr(self, name, field.default)
 
     def __setattr__(self, name, value):
         field = self.get_field(name)

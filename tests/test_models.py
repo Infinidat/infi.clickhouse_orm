@@ -10,7 +10,7 @@ from infi.clickhouse_orm.engines import *
 class ModelTestCase(unittest.TestCase):
 
     def test_defaults(self):
-        # Check that all fields have their defaults
+        # Check that all fields have their explicit or implicit defaults
         instance = SimpleModel()
         self.assertEquals(instance.date_field, datetime.date(1970, 1, 1))
         self.assertEquals(instance.datetime_field, datetime.datetime(1970, 1, 1, tzinfo=pytz.utc))
@@ -30,6 +30,20 @@ class ModelTestCase(unittest.TestCase):
         instance = SimpleModel(**kwargs)
         for name, value in kwargs.items():
             self.assertEquals(kwargs[name], getattr(instance, name))
+
+    def test_assignment_error(self):
+        # Check non-existing field during construction
+        with self.assertRaises(AttributeError):
+            instance = SimpleModel(int_field=7450, pineapple='tasty')
+        # Check invalid field values during construction
+        with self.assertRaises(ValueError):
+            instance = SimpleModel(int_field='nope')
+        with self.assertRaises(ValueError):
+            instance = SimpleModel(date_field='nope')
+        # Check invalid field values during assignment
+        instance = SimpleModel()
+        with self.assertRaises(ValueError):
+            instance.datetime_field = datetime.timedelta(days=1)
 
     def test_string_conversion(self):
         # Check field conversion from string during construction
