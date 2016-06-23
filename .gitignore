@@ -1,0 +1,59 @@
+
+# generic
+*.tmp
+*.swp
+*.pyc
+*.pyo
+*.bak
+*.egg-info
+*.EGG-INFO
+.coverage
+.settings
+
+# eclipse
+.project
+.pydevproject
+
+# setuptools
+bin/
+build/
+dist/
+setup.py
+
+# buildout
+buildout.in.cfg
+.installed*.cfg
+.cache
+.cache/
+eggs
+eggs/
+develop-eggs/
+parts
+parts/
+build/
+dist/
+src/infi/hello/__version__.py
+.achievements
+
+# scm
+.bzr/
+.svn/
+.hg/
+
+# msi-related
+parts/wix
+parts/product*
+parts/*.wixpdb
+parts/*.msi
+
+
+src/infi/projector/__version__.py
+.codeintel
+*sublime*
+
+tmp*
+!tmp*py
+buildout.in
+
+src/infi/clickhouse_utils/__version__.py
+bootstrap.py
