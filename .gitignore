@@ -55,5 +55,5 @@ tmp*
 !tmp*py
 buildout.in
 
-src/infi/clickhouse_utils/__version__.py
+src/infi/clickhouse_orm/__version__.py
 bootstrap.py
