@@ -31,14 +31,20 @@ class Model(object):
         return cls.__name__.lower()
 
     @classmethod
-    def create_table_sql(cls, db):
-        parts = ['CREATE TABLE IF NOT EXISTS %s.%s (' % (db, cls.table_name())]
+    def create_table_sql(cls, db_name):
+        parts = ['CREATE TABLE IF NOT EXISTS %s.%s (' % (db_name, cls.table_name())]
+        cols = []
         for name, field in cls._fields:
             default = field.get_db_prep_value(field.default)
-            parts.append('    %s %s DEFAULT %s,' % (name, field.db_type, escape(default)))
+            cols.append('    %s %s DEFAULT %s' % (name, field.db_type, escape(default)))
+        parts.append(', \n'.join(cols))
         parts.append(')')
         parts.append('ENGINE = ' + cls.engine.create_table_sql())
         return '\n'.join(parts)
+
+    @classmethod
+    def drop_table_sql(cls, db_name):
+        return 'DROP TABLE IF EXISTS %s.%s' % (db_name, cls.table_name())
 
     @classmethod
     def from_tsv(cls, line):
