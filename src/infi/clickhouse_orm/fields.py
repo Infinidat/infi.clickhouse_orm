@@ -38,7 +38,7 @@ class StringField(Field):
             return value
         if isinstance(value, str):
             return value.decode('UTF-8')
-        raise ValueError('Invalid value for %s: %r', self.__class__.__name__, value)
+        raise ValueError('Invalid value for %s: %r' % (self.__class__.__name__, value))
 
     def get_db_prep_value(self, value):
         if isinstance(value, unicode):
@@ -58,7 +58,7 @@ class DateField(Field):
             return DateField.class_default + datetime.timedelta(days=value)
         if isinstance(value, basestring):
             return datetime.datetime.strptime(value, '%Y-%m-%d').date()
-        raise ValueError('Invalid value for %s: %r', self.__class__.__name__, value)
+        raise ValueError('Invalid value for %s: %r' % (self.__class__.__name__, value))
 
     def get_db_prep_value(self, value):
         return value.isoformat()
@@ -78,7 +78,7 @@ class DateTimeField(Field):
             return datetime.datetime.fromtimestamp(value, pytz.utc)
         if isinstance(value, basestring):
             return datetime.datetime.strptime(value, '%Y-%m-%d %H-%M-%S')
-        raise ValueError('Invalid value for %s: %r', self.__class__.__name__, value)
+        raise ValueError('Invalid value for %s: %r' % (self.__class__.__name__, value))
 
     def get_db_prep_value(self, value):
         return int(time.mktime(value.timetuple()))
@@ -91,7 +91,7 @@ class BaseIntField(Field):
             return value
         if isinstance(value, basestring):
             return int(value)
-        raise ValueError('Invalid value for %s: %r', self.__class__.__name__, value)
+        raise ValueError('Invalid value for %s: %r' % (self.__class__.__name__, value))
 
 
 class UInt8Field(BaseIntField):
@@ -139,9 +139,9 @@ class BaseFloatField(Field):
     def to_python(self, value):
         if isinstance(value, float):
             return value
-        if isinstance(value, basestring):
+        if isinstance(value, basestring) or isinstance(value, int):
             return float(value)
-        raise ValueError('Invalid value for %s: %r', self.__class__.__name__, value)
+        raise ValueError('Invalid value for %s: %r' % (self.__class__.__name__, value))
 
 
 class Float32Field(BaseFloatField):

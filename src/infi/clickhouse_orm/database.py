@@ -40,7 +40,7 @@ class Database(object):
         self._send(gen())
 
     def count(self, model_class, conditions=None):
-        query = 'SELECT uniq(height) FROM %s.%s' % (self.db_name, model_class.table_name())
+        query = 'SELECT count() FROM %s.%s' % (self.db_name, model_class.table_name())
         if conditions:
             query += ' WHERE ' + conditions
         r = self._send(query)

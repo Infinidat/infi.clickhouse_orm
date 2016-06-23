@@ -6,7 +6,7 @@ from infi.clickhouse_orm.fields import *
 from infi.clickhouse_orm.engines import *
 
 
-class ORMTestCase(unittest.TestCase):
+class DatabaseTestCase(unittest.TestCase):
 
     def setUp(self):
         self.database = Database('test_db')
