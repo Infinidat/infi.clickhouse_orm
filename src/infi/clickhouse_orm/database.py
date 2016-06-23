@@ -23,11 +23,35 @@ class Database(object):
     def drop_database(self):
         self._send('DROP DATABASE ' + self.db_name)
 
-    def _send(self, sql, settings=None):
+    def insert(self, model_instances):
+        i = iter(model_instances)
+        try:
+            first_instance = i.next()
+        except StopIteration:
+            return # model_instances is empty
+        model_class = first_instance.__class__
+        def gen():
+            yield 'INSERT INTO %s.%s FORMAT TabSeparated\n' % (self.db_name, model_class.table_name())
+            yield first_instance.to_tsv()
+            yield '\n'
+            for instance in i:
+                yield instance.to_tsv()
+                yield '\n'
+        self._send(gen())
+
+    def count(self, model_class, conditions=None):
+        query = 'SELECT uniq(height) FROM %s.%s' % (self.db_name, model_class.table_name())
+        if conditions:
+            query += ' WHERE ' + conditions
+        r = self._send(query)
+        return int(r.text) if r.text else 0
+
+    def _send(self, data, settings=None):
         params = self._build_params(settings)
-        r = requests.post(self.db_url, params=params, data=sql)
+        r = requests.post(self.db_url, params=params, data=data)
         if r.status_code != 200:
             raise DatabaseException(r.text)
+        return r
 
     def _build_params(self, settings):
         params = dict(settings or {})

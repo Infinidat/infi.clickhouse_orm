@@ -37,7 +37,7 @@ class Model(object):
         for name, field in cls._fields:
             default = field.get_db_prep_value(field.default)
             cols.append('    %s %s DEFAULT %s' % (name, field.db_type, escape(default)))
-        parts.append(', \n'.join(cols))
+        parts.append(',\n'.join(cols))
         parts.append(')')
         parts.append('ENGINE = ' + cls.engine.create_table_sql())
         return '\n'.join(parts)
