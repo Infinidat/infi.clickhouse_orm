@@ -32,9 +32,9 @@ Models are defined in a way reminiscent of Django's ORM:
 
         engine = engines.MergeTree('birthday', ('first_name', 'last_name', 'birthday'))
 
-It is possible to provide a default value for a field, instead of it's "natural" default (empty string for string fields, zero for numeric fields etc.).
+It is possible to provide a default value for a field, instead of its "natural" default (empty string for string fields, zero for numeric fields etc.).
 
-See below for the supported model field types.
+See below for the supported field types and table engines.
 
 Using Models
 ------------
@@ -48,8 +48,8 @@ Once you have a model, you can create model instances:
     >>> dan.first_name
     u'Dan'
 
-When values are assigned to a model fields, they are immediately converted to their Pythonic data type.
-In case the value is invalid, a ValueError is raised:
+When values are assigned to model fields, they are immediately converted to their Pythonic data type.
+In case the value is invalid, a ``ValueError`` is raised:
 
 .. code:: python
 
@@ -61,7 +61,10 @@ In case the value is invalid, a ValueError is raised:
     >>> suzy.birthday = '1922-05-31'
     ValueError: DateField out of range - 1922-05-31 is not between 1970-01-01 and 2038-01-19
 
-To write your instances to ClickHouse, you need a Database instance:
+Inserting to the Database
+-------------------------
+
+To write your instances to ClickHouse, you need a ``Database`` instance:
 
 .. code:: python
 
@@ -76,16 +79,53 @@ If necessary, you can specify a different database URL and optional credentials:
 
     db = Database('my_test_db', db_url='http://192.168.1.1:8050', username='scott', password='tiger')
 
-Using the Database instance you can create a table for your model, and insert instances to it:
+Using the ``Database`` instance you can create a table for your model, and insert instances to it:
 
 .. code:: python
 
     db.create_table(Person)
     db.insert([dan, suzy])
 
-The insert method can take any iterable of model instances, but they all must belong to the same model class.
+The ``insert`` method can take any iterable of model instances, but they all must belong to the same model class.
 
+Reading from the Database
+-------------------------
 
+Loading model instances from the database is simple:
+
+.. code:: python
+
+    for person in db.select("SELECT * FROM my_test_db.person", model_class=Person):
+        print person.first_name, person.last_name
+
+Do not include a ``FORMAT`` clause in the query, since the ORM automatically sets the format to ``TabSeparatedWithNamesAndTypes``.
+
+It is possible to select only a subset of the columns, and the rest will receive their default values:
+
+.. code:: python
+
+    for person in db.select("SELECT first_name FROM my_test_db.person WHERE last_name='Smith'", model_class=Person):
+        print person.first_name
+
+Specifying a model class is not required. In case you do not provide a model class, an ad-hoc class will
+be defined based on the column names and types returned by the query:
+
+.. code:: python
+
+    for row in db.select("SELECT max(height) as max_height FROM my_test_db.person"):
+        print row.max_height
+
+Counting
+--------
+
+The ``Database`` class also supports counting records easily:
+
+.. code:: python
+
+    >>> db.count(Person)
+    117
+    >>> db.count(Person, conditions="height > 1.90")
+    6
 
 Field Types
 -----------
@@ -106,6 +146,10 @@ Currently the following field types are supported:
 - DateField
 - DateTimeField
 
+Table Engines
+-------------
+
+TBD
 
 
 Development

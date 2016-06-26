@@ -15,23 +15,30 @@ class Field(object):
         self.default = default or self.class_default
 
     def to_python(self, value):
-        """
+        '''
         Converts the input value into the expected Python data type, raising ValueError if the
         data can't be converted. Returns the converted value. Subclasses should override this.
-        """
+        '''
         return value
 
     def validate(self, value):
+        '''
+        Called after to_python to validate that the value is suitable for the field's database type.
+        Subclasses should override this.
+        '''
         pass
 
     def _range_check(self, value, min_value, max_value):
+        '''
+        Utility method to check that the given value is between min_value and max_value.
+        '''
         if value < min_value or value > max_value:
             raise ValueError('%s out of range - %s is not between %s and %s' % (self.__class__.__name__, value, min_value, max_value))
 
     def get_db_prep_value(self, value):
-        """
+        '''
         Returns the field's value prepared for interacting with the database.
-        """
+        '''
         return value
 
 

@@ -17,6 +17,7 @@ class Database(object):
         self._send('CREATE DATABASE IF NOT EXISTS ' + db_name)
 
     def create_table(self, model_class):
+        # TODO check that model has an engine
         self._send(model_class.create_table_sql(self.db_name))
 
     def drop_table(self, model_class):

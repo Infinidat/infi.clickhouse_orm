@@ -58,6 +58,10 @@ class Model(object):
                 setattr(self, name, field.default)
 
     def __setattr__(self, name, value):
+        '''
+        When setting a field value, converts the value to its Pythonic type and validates it.
+        This may raise a ValueError.
+        '''
         field = self.get_field(name)
         if field:
             value = field.to_python(value)
@@ -65,15 +69,24 @@ class Model(object):
         super(Model, self).__setattr__(name, value)
 
     def get_field(self, name):
+        '''
+        Get a Field instance given its name, or None if not found.
+        '''
         field = getattr(self.__class__, name, None)
         return field if isinstance(field, Field) else None
 
     @classmethod
     def table_name(cls):
+        '''
+        Returns the model's database table name.
+        '''
         return cls.__name__.lower()
 
     @classmethod
     def create_table_sql(cls, db_name):
+        '''
+        Returns the SQL command for creating a table for this model.
+        '''
         parts = ['CREATE TABLE IF NOT EXISTS %s.%s (' % (db_name, cls.table_name())]
         cols = []
         for name, field in cls._fields:
@@ -86,6 +99,9 @@ class Model(object):
 
     @classmethod
     def drop_table_sql(cls, db_name):
+        '''
+        Returns the SQL command for deleting this model's table.
+        '''
         return 'DROP TABLE IF EXISTS %s.%s' % (db_name, cls.table_name())
 
     @classmethod
