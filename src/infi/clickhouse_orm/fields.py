@@ -154,22 +154,22 @@ class Int8Field(BaseIntField):
 
 class Int16Field(BaseIntField):
 
-    min_value = -2**16
-    max_value = 2**16 - 1
+    min_value = -2**15
+    max_value = 2**15 - 1
     db_type = 'Int16'
 
 
 class Int32Field(BaseIntField):
 
-    min_value = -2**32
-    max_value = 2**32 - 1
+    min_value = -2**31
+    max_value = 2**31 - 1
     db_type = 'Int32'
 
 
 class Int64Field(BaseIntField):
 
-    min_value = -2**64
-    max_value = 2**64 - 1
+    min_value = -2**63
+    max_value = 2**63 - 1
     db_type = 'Int64'
 
 
