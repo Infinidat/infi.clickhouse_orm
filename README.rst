@@ -107,6 +107,9 @@ It is possible to select only a subset of the columns, and the rest will receive
     for person in db.select("SELECT first_name FROM my_test_db.person WHERE last_name='Smith'", model_class=Person):
         print person.first_name
 
+Ad-Hoc Models
+*************
+
 Specifying a model class is not required. In case you do not provide a model class, an ad-hoc class will
 be defined based on the column names and types returned by the query:
 
@@ -114,6 +117,9 @@ be defined based on the column names and types returned by the query:
 
     for row in db.select("SELECT max(height) as max_height FROM my_test_db.person"):
         print row.max_height
+
+This is a very convenient feature that saves you the need to define a model for each query, while still letting
+you work with Pythonic column values and an elegant syntax.
 
 Counting
 --------
@@ -139,7 +145,7 @@ StringField    String      unicode            Encoded as UTF-8 when written to C
 DateField      Date        datetime.date      Range 1970-01-01 to 2038-01-19
 DateTimeField  DateTime    datetime.datetime  Minimal value is 1970-01-01 00:00:00; Always in UTC
 Int8Field      Int8        int                Range -128 to 127
-Int16Field     Int16       int                Range -32,768 to 32,767
+Int16Field     Int16       int                Range -32768 to 32767
 Int32Field     Int32       int                Range -2147483648 to 2147483647
 Int64Field     Int64       int/long           Range -9223372036854775808 to 9223372036854775807
 UInt8Field     UInt8       int                Range 0 to 255
@@ -179,6 +185,9 @@ For a ``SummingMergeTree`` you can optionally specify the summing columns:
 
     engine = engines.SummingMergeTree('EventDate', ('OrderID', 'EventDate', 'BannerID'),
                                       summing_cols=('Shows', 'Clicks', 'Cost'))
+
+Data Replication
+****************
 
 Any of the above engines can be converted to a replicated engine (e.g. ``ReplicatedMergeTree``) by adding two parameters, ``replica_table_path`` and ``replica_name``:
 
