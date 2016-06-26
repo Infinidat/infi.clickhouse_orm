@@ -132,25 +132,61 @@ Field Types
 
 Currently the following field types are supported:
 
-- UInt8Field
-- UInt16Field
-- UInt32Field
-- UInt64Field
-- Int8Field
-- Int16Field
-- Int32Field
-- Int64Field
-- Float32Field
-- Float64Field
-- StringField
-- DateField
-- DateTimeField
+=============  ========    =================  ===================================================
+Class          DB Type     Pythonic Type      Comments
+=============  ========    =================  ===================================================
+StringField    String      unicode            Encoded as UTF-8 when written to ClickHouse
+DateField      Date        datetime.date      Range 1970-01-01 to 2038-01-19
+DateTimeField  DateTime    datetime.datetime  Minimal value is 1970-01-01 00:00:00; Always in UTC
+Int8Field      Int8        int                Range -128 to 127
+Int16Field     Int16       int                Range -32,768 to 32,767
+Int32Field     Int32       int                Range -2147483648 to 2147483647
+Int64Field     Int64       int/long           Range -9223372036854775808 to 9223372036854775807
+UInt8Field     UInt8       int                Range 0 to 255
+UInt16Field    UInt16      int                Range 0 to 65535
+UInt32Field    UInt32      int                Range 0 to 4294967295
+UInt64Field    UInt64      int/long           Range 0 to 18446744073709551615
+Float32Field   Float32     float
+Float64Field   Float64     float
+=============  ========    =================  ===================================================
 
 Table Engines
 -------------
 
-TBD
+Each model must have an engine instance, used when creating the table in ClickHouse.
 
+To define a ``MergeTree`` engine, supply the date column name and the names (or expressions) for the key columns:
+
+.. code:: python
+
+    engine = engines.MergeTree('EventDate', ('CounterID', 'EventDate'))
+
+You may also provide a sampling expression:
+
+.. code:: python
+
+    engine = engines.MergeTree('EventDate', ('CounterID', 'EventDate'), sampling_expr='intHash32(UserID)')
+
+A ``CollapsingMergeTree`` engine is defined in a similar manner, but requires also a sign column:
+
+.. code:: python
+
+    engine = engines.CollapsingMergeTree('EventDate', ('CounterID', 'EventDate'), 'Sign')
+
+For a ``SummingMergeTree`` you can optionally specify the summing columns:
+
+.. code:: python
+
+    engine = engines.SummingMergeTree('EventDate', ('OrderID', 'EventDate', 'BannerID'),
+                                      summing_cols=('Shows', 'Clicks', 'Cost'))
+
+Any of the above engines can be converted to a replicated engine (e.g. ``ReplicatedMergeTree``) by adding two parameters, ``replica_table_path`` and ``replica_name``:
+
+.. code:: python
+
+    engine = engines.MergeTree('EventDate', ('CounterID', 'EventDate'),
+                               replica_table_path='/clickhouse/tables/{layer}-{shard}/hits',
+                               replica_name='{replica}')
 
 Development
 ===========
