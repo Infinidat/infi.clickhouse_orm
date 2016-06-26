@@ -37,7 +37,7 @@ class DatabaseTestCase(unittest.TestCase):
         self.assertEquals(self.database.count(Person), 100)
         self.assertEquals(self.database.count(Person, "first_name = 'Courtney'"), 2)
         self.assertEquals(self.database.count(Person, "birthday > '2000-01-01'"), 22)
-        self.assertEquals(self.database.count(Person, "birthday < '1900-01-01'"), 0)
+        self.assertEquals(self.database.count(Person, "birthday < '1970-03-01'"), 0)
 
     def test_select(self):
         self._insert_and_check(self._sample_data(), len(data))
@@ -45,7 +45,30 @@ class DatabaseTestCase(unittest.TestCase):
         results = list(self.database.select(query, Person))
         self.assertEquals(len(results), 2)
         self.assertEquals(results[0].last_name, 'Durham')
+        self.assertEquals(results[0].height, 1.72)
         self.assertEquals(results[1].last_name, 'Scott')
+        self.assertEquals(results[1].height, 1.70)
+
+    def test_select_partial_fields(self):
+        self._insert_and_check(self._sample_data(), len(data))
+        query = "SELECT first_name, last_name FROM test_db.person WHERE first_name = 'Whitney' ORDER BY last_name"
+        results = list(self.database.select(query, Person))
+        self.assertEquals(len(results), 2)
+        self.assertEquals(results[0].last_name, 'Durham')
+        self.assertEquals(results[0].height, 0) # default value
+        self.assertEquals(results[1].last_name, 'Scott')
+        self.assertEquals(results[1].height, 0) # default value
+
+    def test_select_ad_hoc_model(self):
+        self._insert_and_check(self._sample_data(), len(data))
+        query = "SELECT * FROM test_db.person WHERE first_name = 'Whitney' ORDER BY last_name"
+        results = list(self.database.select(query))
+        self.assertEquals(len(results), 2)
+        self.assertEquals(results[0].__class__.__name__, 'AdHocModel')
+        self.assertEquals(results[0].last_name, 'Durham')
+        self.assertEquals(results[0].height, 1.72)
+        self.assertEquals(results[1].last_name, 'Scott')
+        self.assertEquals(results[1].height, 1.70)
 
     def _sample_data(self):
         for entry in data:

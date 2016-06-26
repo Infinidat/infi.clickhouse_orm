@@ -1,4 +1,6 @@
 import requests
+from models import ModelBase
+from utils import escape, parse_tsv
 
 
 class DatabaseException(Exception):
@@ -47,10 +49,14 @@ class Database(object):
         return int(r.text) if r.text else 0
 
     def select(self, query, model_class=None, settings=None):
-        query += ' FORMAT TabSeparated'
+        query += ' FORMAT TabSeparatedWithNamesAndTypes'
         r = self._send(query, settings)
-        for line in r.iter_lines():
-            yield model_class.from_tsv(line)
+        lines = r.iter_lines()
+        field_names = parse_tsv(next(lines))
+        field_types = parse_tsv(next(lines))
+        model_class = model_class or ModelBase.create_ad_hoc_model(zip(field_names, field_types))
+        for line in lines:
+            yield model_class.from_tsv(line, field_names)
 
     def _send(self, data, settings=None):
         params = self._build_params(settings)

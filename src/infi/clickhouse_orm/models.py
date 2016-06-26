@@ -1,6 +1,6 @@
-from fields import *
 from utils import escape, parse_tsv
 from engines import *
+from fields import Field
 
 
 class ModelBase(type):
@@ -15,6 +15,18 @@ class ModelBase(type):
         fields.sort(key=lambda item: item[1].creation_counter)
         setattr(new_cls, '_fields', fields)
         return new_cls
+
+    @classmethod
+    def create_ad_hoc_model(cls, fields):
+        # fields is a list of tuples (name, db_type)
+        import fields as orm_fields
+        attrs = {}
+        for name, db_type in fields:
+            field_class = db_type + 'Field'
+            if not hasattr(orm_fields, field_class):
+                raise NotImplementedError('No field class for %s' % db_type)
+            attrs[name] = getattr(orm_fields, field_class)()
+        return cls.__new__(cls, 'AdHocModel', (Model,), attrs)
 
 
 class Model(object):
@@ -77,16 +89,18 @@ class Model(object):
         return 'DROP TABLE IF EXISTS %s.%s' % (db_name, cls.table_name())
 
     @classmethod
-    def from_tsv(cls, line):
+    def from_tsv(cls, line, field_names=None):
         '''
         Create a model instance from a tab-separated line. The line may or may not include a newline.
+        The field_names list must match the fields defined in the model, but does not have to include all of them.
+        If omitted, it is assumed to be the names of all fields in the model, in order of definition.
         '''
+        field_names = field_names or [name for name, field in cls._fields]
         values = iter(parse_tsv(line))
         kwargs = {}
-        for name, field in cls._fields:
+        for name in field_names:
             kwargs[name] = values.next()
         return cls(**kwargs)
-        # TODO verify that the number of values matches the number of fields
 
     def to_tsv(self):
         '''
