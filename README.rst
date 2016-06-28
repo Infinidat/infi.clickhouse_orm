@@ -17,9 +17,7 @@ Usage
 Defining Models
 ---------------
 
-Models are defined in a way reminiscent of Django's ORM:
-
-.. code:: python
+Models are defined in a way reminiscent of Django's ORM::
 
     from infi.clickhouse_orm import models, fields, engines
 
@@ -39,9 +37,7 @@ See below for the supported field types and table engines.
 Using Models
 ------------
 
-Once you have a model, you can create model instances:
-
-.. code:: python
+Once you have a model, you can create model instances::
 
     >>> dan = Person(first_name='Dan', last_name='Schwartz')
     >>> suzy = Person(first_name='Suzy', last_name='Jones')
@@ -49,9 +45,7 @@ Once you have a model, you can create model instances:
     u'Dan'
 
 When values are assigned to model fields, they are immediately converted to their Pythonic data type.
-In case the value is invalid, a ``ValueError`` is raised:
-
-.. code:: python
+In case the value is invalid, a ``ValueError`` is raised::
 
     >>> suzy.birthday = '1980-01-17'
     >>> suzy.birthday
@@ -64,24 +58,18 @@ In case the value is invalid, a ``ValueError`` is raised:
 Inserting to the Database
 -------------------------
 
-To write your instances to ClickHouse, you need a ``Database`` instance:
-
-.. code:: python
+To write your instances to ClickHouse, you need a ``Database`` instance::
 
     from infi.clickhouse_orm.database import Database
 
     db = Database('my_test_db')
 
 This automatically connects to http://localhost:8123 and creates a database called my_test_db, unless it already exists.
-If necessary, you can specify a different database URL and optional credentials:
-
-.. code:: python
+If necessary, you can specify a different database URL and optional credentials::
 
     db = Database('my_test_db', db_url='http://192.168.1.1:8050', username='scott', password='tiger')
 
-Using the ``Database`` instance you can create a table for your model, and insert instances to it:
-
-.. code:: python
+Using the ``Database`` instance you can create a table for your model, and insert instances to it::
 
     db.create_table(Person)
     db.insert([dan, suzy])
@@ -91,18 +79,14 @@ The ``insert`` method can take any iterable of model instances, but they all mus
 Reading from the Database
 -------------------------
 
-Loading model instances from the database is simple:
-
-.. code:: python
+Loading model instances from the database is simple::
 
     for person in db.select("SELECT * FROM my_test_db.person", model_class=Person):
         print person.first_name, person.last_name
 
 Do not include a ``FORMAT`` clause in the query, since the ORM automatically sets the format to ``TabSeparatedWithNamesAndTypes``.
 
-It is possible to select only a subset of the columns, and the rest will receive their default values:
-
-.. code:: python
+It is possible to select only a subset of the columns, and the rest will receive their default values::
 
     for person in db.select("SELECT first_name FROM my_test_db.person WHERE last_name='Smith'", model_class=Person):
         print person.first_name
@@ -111,9 +95,7 @@ Ad-Hoc Models
 *************
 
 Specifying a model class is not required. In case you do not provide a model class, an ad-hoc class will
-be defined based on the column names and types returned by the query:
-
-.. code:: python
+be defined based on the column names and types returned by the query::
 
     for row in db.select("SELECT max(height) as max_height FROM my_test_db.person"):
         print row.max_height
@@ -124,9 +106,7 @@ you work with Pythonic column values and an elegant syntax.
 Counting
 --------
 
-The ``Database`` class also supports counting records easily:
-
-.. code:: python
+The ``Database`` class also supports counting records easily::
 
     >>> db.count(Person)
     117
@@ -161,27 +141,19 @@ Table Engines
 
 Each model must have an engine instance, used when creating the table in ClickHouse.
 
-To define a ``MergeTree`` engine, supply the date column name and the names (or expressions) for the key columns:
-
-.. code:: python
+To define a ``MergeTree`` engine, supply the date column name and the names (or expressions) for the key columns::
 
     engine = engines.MergeTree('EventDate', ('CounterID', 'EventDate'))
 
-You may also provide a sampling expression:
-
-.. code:: python
+You may also provide a sampling expression::
 
     engine = engines.MergeTree('EventDate', ('CounterID', 'EventDate'), sampling_expr='intHash32(UserID)')
 
-A ``CollapsingMergeTree`` engine is defined in a similar manner, but requires also a sign column:
-
-.. code:: python
+A ``CollapsingMergeTree`` engine is defined in a similar manner, but requires also a sign column::
 
     engine = engines.CollapsingMergeTree('EventDate', ('CounterID', 'EventDate'), 'Sign')
 
-For a ``SummingMergeTree`` you can optionally specify the summing columns:
-
-.. code:: python
+For a ``SummingMergeTree`` you can optionally specify the summing columns::
 
     engine = engines.SummingMergeTree('EventDate', ('OrderID', 'EventDate', 'BannerID'),
                                       summing_cols=('Shows', 'Clicks', 'Cost'))
@@ -189,9 +161,7 @@ For a ``SummingMergeTree`` you can optionally specify the summing columns:
 Data Replication
 ****************
 
-Any of the above engines can be converted to a replicated engine (e.g. ``ReplicatedMergeTree``) by adding two parameters, ``replica_table_path`` and ``replica_name``:
-
-.. code:: python
+Any of the above engines can be converted to a replicated engine (e.g. ``ReplicatedMergeTree``) by adding two parameters, ``replica_table_path`` and ``replica_name``::
 
     engine = engines.MergeTree('EventDate', ('CounterID', 'EventDate'),
                                replica_table_path='/clickhouse/tables/{layer}-{shard}/hits',
