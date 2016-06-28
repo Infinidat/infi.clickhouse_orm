@@ -8,7 +8,6 @@ SETUP_INFO = dict(
     url = ${infi.recipe.template.version:homepage},
     license = 'PSF',
     description = """${project:description}""",
-    long_description = """${project:long_description}""",
 
     # http://pypi.python.org/pypi?%3Aaction=list_classifiers
     classifiers = [
