@@ -10,8 +10,13 @@ class ModelBase(type):
 
     def __new__(cls, name, bases, attrs):
         new_cls = super(ModelBase, cls).__new__(cls, name, bases, attrs)
+        # Collect fields from parent classes
+        base_fields = []
+        for base in bases:
+            if isinstance(base, ModelBase):
+                base_fields += base._fields
         # Build a list of fields, in the order they were listed in the class
-        fields = [item for item in attrs.items() if isinstance(item[1], Field)]
+        fields = base_fields + [item for item in attrs.items() if isinstance(item[1], Field)]
         fields.sort(key=lambda item: item[1].creation_counter)
         setattr(new_cls, '_fields', fields)
         return new_cls
