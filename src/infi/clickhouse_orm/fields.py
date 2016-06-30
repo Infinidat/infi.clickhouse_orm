@@ -97,7 +97,7 @@ class DateTimeField(Field):
         if isinstance(value, int):
             return datetime.datetime.fromtimestamp(value, pytz.utc)
         if isinstance(value, basestring):
-            return datetime.datetime.strptime(value, '%Y-%m-%d %H-%M-%S')
+            return datetime.datetime.strptime(value, '%Y-%m-%d %H:%M:%S')
         raise ValueError('Invalid value for %s - %r' % (self.__class__.__name__, value))
 
     def get_db_prep_value(self, value):
