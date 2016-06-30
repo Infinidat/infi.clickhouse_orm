@@ -9,7 +9,7 @@ from infi.clickhouse_orm.engines import *
 class DatabaseTestCase(unittest.TestCase):
 
     def setUp(self):
-        self.database = Database('test_db')
+        self.database = Database('test-db')
         self.database.create_table(Person)
 
     def tearDown(self):
@@ -41,7 +41,7 @@ class DatabaseTestCase(unittest.TestCase):
 
     def test_select(self):
         self._insert_and_check(self._sample_data(), len(data))
-        query = "SELECT * FROM test_db.person WHERE first_name = 'Whitney' ORDER BY last_name"
+        query = "SELECT * FROM `test-db`.person WHERE first_name = 'Whitney' ORDER BY last_name"
         results = list(self.database.select(query, Person))
         self.assertEquals(len(results), 2)
         self.assertEquals(results[0].last_name, 'Durham')
@@ -51,7 +51,7 @@ class DatabaseTestCase(unittest.TestCase):
 
     def test_select_partial_fields(self):
         self._insert_and_check(self._sample_data(), len(data))
-        query = "SELECT first_name, last_name FROM test_db.person WHERE first_name = 'Whitney' ORDER BY last_name"
+        query = "SELECT first_name, last_name FROM `test-db`.person WHERE first_name = 'Whitney' ORDER BY last_name"
         results = list(self.database.select(query, Person))
         self.assertEquals(len(results), 2)
         self.assertEquals(results[0].last_name, 'Durham')
@@ -61,7 +61,7 @@ class DatabaseTestCase(unittest.TestCase):
 
     def test_select_ad_hoc_model(self):
         self._insert_and_check(self._sample_data(), len(data))
-        query = "SELECT * FROM test_db.person WHERE first_name = 'Whitney' ORDER BY last_name"
+        query = "SELECT * FROM `test-db`.person WHERE first_name = 'Whitney' ORDER BY last_name"
         results = list(self.database.select(query))
         self.assertEquals(len(results), 2)
         self.assertEquals(results[0].__class__.__name__, 'AdHocModel')

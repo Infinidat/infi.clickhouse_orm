@@ -14,7 +14,7 @@ class Database(object):
         self.db_url = db_url
         self.username = username
         self.password = password
-        self._send('CREATE DATABASE IF NOT EXISTS ' + db_name)
+        self._send('CREATE DATABASE IF NOT EXISTS `%s`' % db_name)
 
     def create_table(self, model_class):
         # TODO check that model has an engine
@@ -24,7 +24,7 @@ class Database(object):
         self._send(model_class.drop_table_sql(self.db_name))
 
     def drop_database(self):
-        self._send('DROP DATABASE ' + self.db_name)
+        self._send('DROP DATABASE `%s`' % self.db_name)
 
     def insert(self, model_instances):
         i = iter(model_instances)
@@ -34,7 +34,7 @@ class Database(object):
             return # model_instances is empty
         model_class = first_instance.__class__
         def gen():
-            yield 'INSERT INTO %s.%s FORMAT TabSeparated\n' % (self.db_name, model_class.table_name())
+            yield 'INSERT INTO `%s`.`%s` FORMAT TabSeparated\n' % (self.db_name, model_class.table_name())
             yield first_instance.to_tsv()
             yield '\n'
             for instance in i:
@@ -43,7 +43,7 @@ class Database(object):
         self._send(gen())
 
     def count(self, model_class, conditions=None):
-        query = 'SELECT count() FROM %s.%s' % (self.db_name, model_class.table_name())
+        query = 'SELECT count() FROM `%s`.`%s`' % (self.db_name, model_class.table_name())
         if conditions:
             query += ' WHERE ' + conditions
         r = self._send(query)
