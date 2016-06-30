@@ -73,7 +73,8 @@ class DateField(Field):
         if isinstance(value, int):
             return DateField.class_default + datetime.timedelta(days=value)
         if isinstance(value, basestring):
-            # TODO parse '0000-00-00'
+            if value == '0000-00-00':
+                return DateField.min_value
             return datetime.datetime.strptime(value, '%Y-%m-%d').date()
         raise ValueError('Invalid value for %s - %r' % (self.__class__.__name__, value))
 
