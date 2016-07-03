@@ -1,6 +1,11 @@
 import requests
+from collections import namedtuple
 from models import ModelBase
 from utils import escape, parse_tsv
+from math import ceil
+
+
+Page = namedtuple('Page', 'objects number_of_objects pages_total number page_size')
 
 
 class DatabaseException(Exception):
@@ -58,6 +63,23 @@ class Database(object):
         model_class = model_class or ModelBase.create_ad_hoc_model(zip(field_names, field_types))
         for line in lines:
             yield model_class.from_tsv(line, field_names)
+
+    def paginate(self, model_class, order_by, page_num=1, page_size=100, conditions=None, settings=None):
+        count = self.count(model_class, conditions)
+        pages_total = int(ceil(count / float(page_size)))
+        offset = (page_num - 1) * page_size
+        query = 'SELECT * FROM `%s`.`%s`' % (self.db_name, model_class.table_name())
+        if conditions:
+            query += ' WHERE ' + conditions
+        query += ' ORDER BY %s' % order_by
+        query += ' LIMIT %d, %d' % (offset, page_size)
+        return Page(
+            objects=list(self.select(query, model_class, settings)),
+            number_of_objects=count,
+            pages_total=pages_total,
+            number=page_num,
+            page_size=page_size
+        )
 
     def _send(self, data, settings=None):
         params = self._build_params(settings)
