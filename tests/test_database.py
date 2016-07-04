@@ -5,11 +5,14 @@ from infi.clickhouse_orm.models import Model
 from infi.clickhouse_orm.fields import *
 from infi.clickhouse_orm.engines import *
 
+import logging
+logging.getLogger("requests").setLevel(logging.WARNING)
+
 
 class DatabaseTestCase(unittest.TestCase):
 
     def setUp(self):
-        self.database = Database('test_db')
+        self.database = Database('test-db')
         self.database.create_table(Person)
 
     def tearDown(self):
@@ -41,7 +44,7 @@ class DatabaseTestCase(unittest.TestCase):
 
     def test_select(self):
         self._insert_and_check(self._sample_data(), len(data))
-        query = "SELECT * FROM test_db.person WHERE first_name = 'Whitney' ORDER BY last_name"
+        query = "SELECT * FROM `test-db`.person WHERE first_name = 'Whitney' ORDER BY last_name"
         results = list(self.database.select(query, Person))
         self.assertEquals(len(results), 2)
         self.assertEquals(results[0].last_name, 'Durham')
@@ -51,7 +54,7 @@ class DatabaseTestCase(unittest.TestCase):
 
     def test_select_partial_fields(self):
         self._insert_and_check(self._sample_data(), len(data))
-        query = "SELECT first_name, last_name FROM test_db.person WHERE first_name = 'Whitney' ORDER BY last_name"
+        query = "SELECT first_name, last_name FROM `test-db`.person WHERE first_name = 'Whitney' ORDER BY last_name"
         results = list(self.database.select(query, Person))
         self.assertEquals(len(results), 2)
         self.assertEquals(results[0].last_name, 'Durham')
@@ -61,7 +64,7 @@ class DatabaseTestCase(unittest.TestCase):
 
     def test_select_ad_hoc_model(self):
         self._insert_and_check(self._sample_data(), len(data))
-        query = "SELECT * FROM test_db.person WHERE first_name = 'Whitney' ORDER BY last_name"
+        query = "SELECT * FROM `test-db`.person WHERE first_name = 'Whitney' ORDER BY last_name"
         results = list(self.database.select(query))
         self.assertEquals(len(results), 2)
         self.assertEquals(results[0].__class__.__name__, 'AdHocModel')
@@ -69,6 +72,24 @@ class DatabaseTestCase(unittest.TestCase):
         self.assertEquals(results[0].height, 1.72)
         self.assertEquals(results[1].last_name, 'Scott')
         self.assertEquals(results[1].height, 1.70)
+
+    def test_pagination(self):
+        self._insert_and_check(self._sample_data(), len(data))
+        # Try different page sizes
+        for page_size in (1, 2, 7, 10, 30, 100, 150):
+            # Iterate over pages and collect all intances
+            page_num = 1
+            instances = set()
+            while True:
+                page = self.database.paginate(Person, 'first_name, last_name', page_num, page_size)
+                self.assertEquals(page.number_of_objects, len(data))
+                self.assertGreater(page.pages_total, 0)
+                [instances.add(obj.to_tsv()) for obj in page.objects]
+                if page.pages_total == page_num:
+                    break
+                page_num += 1
+            # Verify that all instances were returned
+            self.assertEquals(len(instances), len(data))
 
     def _sample_data(self):
         for entry in data:

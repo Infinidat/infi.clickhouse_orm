@@ -1,6 +1,11 @@
 import requests
+from collections import namedtuple
 from models import ModelBase
 from utils import escape, parse_tsv
+from math import ceil
+
+
+Page = namedtuple('Page', 'objects number_of_objects pages_total number page_size')
 
 
 class DatabaseException(Exception):
@@ -14,7 +19,7 @@ class Database(object):
         self.db_url = db_url
         self.username = username
         self.password = password
-        self._send('CREATE DATABASE IF NOT EXISTS ' + db_name)
+        self._send('CREATE DATABASE IF NOT EXISTS `%s`' % db_name)
 
     def create_table(self, model_class):
         # TODO check that model has an engine
@@ -24,7 +29,7 @@ class Database(object):
         self._send(model_class.drop_table_sql(self.db_name))
 
     def drop_database(self):
-        self._send('DROP DATABASE ' + self.db_name)
+        self._send('DROP DATABASE `%s`' % self.db_name)
 
     def insert(self, model_instances):
         i = iter(model_instances)
@@ -34,7 +39,7 @@ class Database(object):
             return # model_instances is empty
         model_class = first_instance.__class__
         def gen():
-            yield 'INSERT INTO %s.%s FORMAT TabSeparated\n' % (self.db_name, model_class.table_name())
+            yield 'INSERT INTO `%s`.`%s` FORMAT TabSeparated\n' % (self.db_name, model_class.table_name())
             yield first_instance.to_tsv()
             yield '\n'
             for instance in i:
@@ -43,7 +48,7 @@ class Database(object):
         self._send(gen())
 
     def count(self, model_class, conditions=None):
-        query = 'SELECT count() FROM %s.%s' % (self.db_name, model_class.table_name())
+        query = 'SELECT count() FROM `%s`.`%s`' % (self.db_name, model_class.table_name())
         if conditions:
             query += ' WHERE ' + conditions
         r = self._send(query)
@@ -58,6 +63,23 @@ class Database(object):
         model_class = model_class or ModelBase.create_ad_hoc_model(zip(field_names, field_types))
         for line in lines:
             yield model_class.from_tsv(line, field_names)
+
+    def paginate(self, model_class, order_by, page_num=1, page_size=100, conditions=None, settings=None):
+        count = self.count(model_class, conditions)
+        pages_total = int(ceil(count / float(page_size)))
+        offset = (page_num - 1) * page_size
+        query = 'SELECT * FROM `%s`.`%s`' % (self.db_name, model_class.table_name())
+        if conditions:
+            query += ' WHERE ' + conditions
+        query += ' ORDER BY %s' % order_by
+        query += ' LIMIT %d, %d' % (offset, page_size)
+        return Page(
+            objects=list(self.select(query, model_class, settings)),
+            number_of_objects=count,
+            pages_total=pages_total,
+            number=page_num,
+            page_size=page_size
+        )
 
     def _send(self, data, settings=None):
         params = self._build_params(settings)

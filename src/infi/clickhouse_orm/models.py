@@ -92,7 +92,7 @@ class Model(object):
         '''
         Returns the SQL command for creating a table for this model.
         '''
-        parts = ['CREATE TABLE IF NOT EXISTS %s.%s (' % (db_name, cls.table_name())]
+        parts = ['CREATE TABLE IF NOT EXISTS `%s`.`%s` (' % (db_name, cls.table_name())]
         cols = []
         for name, field in cls._fields:
             default = field.get_db_prep_value(field.default)
@@ -107,7 +107,7 @@ class Model(object):
         '''
         Returns the SQL command for deleting this model's table.
         '''
-        return 'DROP TABLE IF EXISTS %s.%s' % (db_name, cls.table_name())
+        return 'DROP TABLE IF EXISTS `%s`.`%s`' % (db_name, cls.table_name())
 
     @classmethod
     def from_tsv(cls, line, field_names=None):

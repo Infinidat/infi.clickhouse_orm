@@ -73,7 +73,8 @@ class DateField(Field):
         if isinstance(value, int):
             return DateField.class_default + datetime.timedelta(days=value)
         if isinstance(value, basestring):
-            # TODO parse '0000-00-00'
+            if value == '0000-00-00':
+                return DateField.min_value
             return datetime.datetime.strptime(value, '%Y-%m-%d').date()
         raise ValueError('Invalid value for %s - %r' % (self.__class__.__name__, value))
 
@@ -97,7 +98,7 @@ class DateTimeField(Field):
         if isinstance(value, int):
             return datetime.datetime.fromtimestamp(value, pytz.utc)
         if isinstance(value, basestring):
-            return datetime.datetime.strptime(value, '%Y-%m-%d %H-%M-%S')
+            return datetime.datetime.strptime(value, '%Y-%m-%d %H:%M:%S')
         raise ValueError('Invalid value for %s - %r' % (self.__class__.__name__, value))
 
     def get_db_prep_value(self, value):
@@ -107,11 +108,10 @@ class DateTimeField(Field):
 class BaseIntField(Field):
 
     def to_python(self, value):
-        if isinstance(value, int):
-            return value
-        if isinstance(value, basestring):
+        try:
             return int(value)
-        raise ValueError('Invalid value for %s - %r' % (self.__class__.__name__, value))
+        except:
+            raise ValueError('Invalid value for %s - %r' % (self.__class__.__name__, value))
 
     def validate(self, value):
         self._range_check(value, self.min_value, self.max_value)
@@ -176,11 +176,10 @@ class Int64Field(BaseIntField):
 class BaseFloatField(Field):
 
     def to_python(self, value):
-        if isinstance(value, float):
-            return value
-        if isinstance(value, basestring) or isinstance(value, int):
+        try:
             return float(value)
-        raise ValueError('Invalid value for %s - %r' % (self.__class__.__name__, value))
+        except:
+            raise ValueError('Invalid value for %s - %r' % (self.__class__.__name__, value))
 
 
 class Float32Field(BaseFloatField):

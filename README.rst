@@ -113,6 +113,35 @@ The ``Database`` class also supports counting records easily::
     >>> db.count(Person, conditions="height > 1.90")
     6
 
+Pagination
+----------
+
+It is possible to paginate through model instances::
+
+    >>> order_by = 'first_name, last_name'
+    >>> page = db.paginate(Person, order_by, page_num=1, page_size=100)
+    >>> print page.number_of_objects
+    2507
+    >>> print page.pages_total
+    251
+    >>> for person in page.objects:
+    >>>     # do something
+
+The ``paginate`` method returns a ``namedtuple`` containing the following fields:
+
+- ``objects`` - the list of objects in this page
+- ``number_of_objects`` - total number of objects in all pages
+- ``pages_total`` - total number of pages
+- ``number`` - the page number
+- ``page_size`` - the number of objects per page
+
+You can optionally pass conditions to the query::
+
+    >>> page = db.paginate(Person, order_by, page_num=1, page_size=100, conditions='height > 1.90')
+
+Note that ``order_by`` must be chosen so that the ordering is unique, otherwise there might be
+inconsistencies in the pagination (such as an instance that appears on two different pages).
+
 Field Types
 -----------
 
