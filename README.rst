@@ -139,6 +139,9 @@ You can optionally pass conditions to the query::
 
     >>> page = db.paginate(Person, order_by, page_num=1, page_size=100, conditions='height > 1.90')
 
+Note that ``order_by`` must be chosen so that the ordering is unique, otherwise there might be
+inconsistencies in the pagination (such as an instance that appears on two different pages).
+
 Field Types
 -----------
 
