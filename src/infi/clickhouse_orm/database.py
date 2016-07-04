@@ -1,8 +1,10 @@
 import requests
 from collections import namedtuple
 from models import ModelBase
-from utils import escape, parse_tsv
+from utils import escape, parse_tsv, import_submodules
 from math import ceil
+import datetime
+import logging
 
 
 Page = namedtuple('Page', 'objects number_of_objects pages_total number page_size')
@@ -80,6 +82,26 @@ class Database(object):
             number=page_num,
             page_size=page_size
         )
+
+    def migrate(self, migrations_package_name, up_to=9999):
+        from migrations import MigrationHistory
+        logger = logging.getLogger('migrations')
+        applied_migrations = self._get_applied_migrations(migrations_package_name)
+        modules = import_submodules(migrations_package_name)
+        unapplied_migrations = set(modules.keys()) - applied_migrations
+        for name in sorted(unapplied_migrations):
+            logger.info('Applying migration %s...', name)
+            for operation in modules[name].operations:
+                operation.apply(self)
+            self.insert([MigrationHistory(package_name=migrations_package_name, module_name=name, applied=datetime.date.today())])
+            if int(name[:4]) >= up_to:
+                break
+
+    def _get_applied_migrations(self, migrations_package_name):
+        from migrations import MigrationHistory
+        self.create_table(MigrationHistory)
+        query = "SELECT module_name from `%s`.`%s` WHERE package_name = '%s'" % (self.db_name, MigrationHistory.table_name(), migrations_package_name)
+        return set(obj.module_name for obj in self.select(query))
 
     def _send(self, data, settings=None):
         params = self._build_params(settings)
