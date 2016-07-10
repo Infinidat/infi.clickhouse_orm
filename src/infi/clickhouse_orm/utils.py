@@ -26,3 +26,15 @@ def parse_tsv(line):
     if line[-1] == '\n':
         line = line[:-1]
     return [unescape(value) for value in line.split('\t')]
+
+
+def import_submodules(package_name):
+    """
+    Import all submodules of a module.
+    """
+    import importlib, pkgutil
+    package = importlib.import_module(package_name)
+    return {
+        name: importlib.import_module(package_name + '.' + name)
+        for _, name, _ in pkgutil.iter_modules(package.__path__)
+    }
