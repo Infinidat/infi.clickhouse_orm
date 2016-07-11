@@ -22,7 +22,7 @@ class MigrationsTestCase(unittest.TestCase):
         self.database.drop_table(MigrationHistory)
 
     def tableExists(self, model_class):
-        query = "EXISTS TABLE `%s`.`%s`" % (self.database.db_name, model_class.table_name())
+        query = "EXISTS TABLE $db.`%s`" % model_class.table_name()
         return next(self.database.select(query)).result == 1
 
     def getTableFields(self, model_class):

@@ -91,6 +91,25 @@ It is possible to select only a subset of the columns, and the rest will receive
     for person in db.select("SELECT first_name FROM my_test_db.person WHERE last_name='Smith'", model_class=Person):
         print person.first_name
 
+SQL Placeholders
+****************
+
+There are a couple of special placeholders that you can use inside the SQL to make it easier to write:
+``$db`` and ``$table``. The first one is replaced by the database name, and the second is replaced by
+the database name plus table name (but is available only when the model is specified).
+
+So instead of this::
+
+    db.select("SELECT * FROM my_test_db.person", model_class=Person)
+
+you can use::
+
+    db.select("SELECT * FROM $db.person", model_class=Person)
+
+or even::
+
+    db.select("SELECT * FROM $table", model_class=Person)
+
 Ad-Hoc Models
 *************
 
