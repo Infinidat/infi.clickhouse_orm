@@ -58,7 +58,7 @@ class Database(object):
 
     def select(self, query, model_class=None, settings=None):
         query += ' FORMAT TabSeparatedWithNamesAndTypes'
-        r = self._send(query, settings)
+        r = self._send(query, settings, True)
         lines = r.iter_lines()
         field_names = parse_tsv(next(lines))
         field_types = parse_tsv(next(lines))
@@ -103,9 +103,9 @@ class Database(object):
         query = "SELECT module_name from `%s`.`%s` WHERE package_name = '%s'" % (self.db_name, MigrationHistory.table_name(), migrations_package_name)
         return set(obj.module_name for obj in self.select(query))
 
-    def _send(self, data, settings=None):
+    def _send(self, data, settings=None, stream=False):
         params = self._build_params(settings)
-        r = requests.post(self.db_url, params=params, data=data, stream=True)
+        r = requests.post(self.db_url, params=params, data=data, stream=stream)
         if r.status_code != 200:
             raise DatabaseException(r.text)
         return r

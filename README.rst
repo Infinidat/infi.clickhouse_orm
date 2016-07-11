@@ -142,6 +142,15 @@ You can optionally pass conditions to the query::
 Note that ``order_by`` must be chosen so that the ordering is unique, otherwise there might be
 inconsistencies in the pagination (such as an instance that appears on two different pages).
 
+Schema Migrations
+-----------------
+
+Over time, your models may change and the database will have to be modified accordingly.
+Migrations allow you to describe these changes succinctly using Python, and to apply them
+to the database. A migrations table automatically keeps track of which migrations were already applied.
+
+For details please refer to the MIGRATIONS.rst document.
+
 Field Types
 -----------
 
