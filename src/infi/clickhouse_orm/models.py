@@ -8,6 +8,8 @@ class ModelBase(type):
     A metaclass for ORM models. It adds the _fields list to model classes.
     '''
 
+    ad_hoc_model_cache = {}
+
     def __new__(cls, name, bases, attrs):
         new_cls = super(ModelBase, cls).__new__(cls, name, bases, attrs)
         # Collect fields from parent classes
@@ -25,13 +27,21 @@ class ModelBase(type):
     def create_ad_hoc_model(cls, fields):
         # fields is a list of tuples (name, db_type)
         import fields as orm_fields
+        # Check if model exists in cache
+        cache_key = unicode(fields)
+        if cache_key in cls.ad_hoc_model_cache:
+            return cls.ad_hoc_model_cache[cache_key]
+        # Create an ad hoc model class
         attrs = {}
         for name, db_type in fields:
             field_class = db_type + 'Field'
             if not hasattr(orm_fields, field_class):
                 raise NotImplementedError('No field class for %s' % db_type)
             attrs[name] = getattr(orm_fields, field_class)()
-        return cls.__new__(cls, 'AdHocModel', (Model,), attrs)
+        model_class = cls.__new__(cls, 'AdHocModel', (Model,), attrs)
+        # Add the model class to the cache
+        cls.ad_hoc_model_cache[cache_key] = model_class
+        return model_class
 
 
 class Model(object):
