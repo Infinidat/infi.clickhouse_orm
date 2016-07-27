@@ -118,9 +118,9 @@ class Database(object):
     def _build_params(self, settings):
         params = dict(settings or {})
         if self.username:
-            params['username'] = username
+            params['username'] = self.username
         if self.password:
-            params['password'] = password
+            params['password'] = self.password
         return params
 
     def _substitute(self, query, model_class=None):
