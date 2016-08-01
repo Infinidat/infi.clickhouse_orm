@@ -1,9 +1,9 @@
-from models import Model
-from fields import DateField, StringField
-from engines import MergeTree
-from utils import escape
+from .models import Model
+from .fields import DateField, StringField
+from .engines import MergeTree
+from .utils import escape
 
-from itertools import izip
+from six.moves import zip
 
 import logging
 logger = logging.getLogger('migrations')
@@ -74,7 +74,7 @@ class AlterTable(Operation):
             prev_name = name
         # Identify fields whose type was changed
         model_fields = [(name, field.db_type) for name, field in self.model_class._fields]
-        for model_field, table_field in izip(model_fields, self._get_table_fields(database)):
+        for model_field, table_field in zip(model_fields, self._get_table_fields(database)):
             assert model_field[0] == table_field[0], 'Model fields and table columns in disagreement'
             if model_field[1] != table_field[1]:
                 logger.info('        Change type of column %s from %s to %s', table_field[0], table_field[1], model_field[1])

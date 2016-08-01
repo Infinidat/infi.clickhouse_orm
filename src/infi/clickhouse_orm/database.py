@@ -1,11 +1,12 @@
 import requests
 from collections import namedtuple
-from models import ModelBase
-from utils import escape, parse_tsv, import_submodules
+from .models import ModelBase
+from .utils import escape, parse_tsv, import_submodules
 from math import ceil
 import datetime
 import logging
 from string import Template
+from six import PY3, string_types
 
 
 Page = namedtuple('Page', 'objects number_of_objects pages_total number page_size')
@@ -35,19 +36,20 @@ class Database(object):
         self._send('DROP DATABASE `%s`' % self.db_name)
 
     def insert(self, model_instances):
+        from six import next
         i = iter(model_instances)
         try:
-            first_instance = i.next()
+            first_instance = next(i)
         except StopIteration:
             return # model_instances is empty
         model_class = first_instance.__class__
         def gen():
-            yield self._substitute('INSERT INTO $table FORMAT TabSeparated\n', model_class)
-            yield first_instance.to_tsv()
-            yield '\n'
+            yield self._substitute('INSERT INTO $table FORMAT TabSeparated\n', model_class).encode('utf-8')
+            yield first_instance.to_tsv().encode('utf-8')
+            yield '\n'.encode('utf-8')
             for instance in i:
-                yield instance.to_tsv()
-                yield '\n'
+                yield instance.to_tsv().encode('utf-8')
+                yield '\n'.encode('utf-8')
         self._send(gen())
 
     def count(self, model_class, conditions=None):
@@ -88,7 +90,7 @@ class Database(object):
         )
 
     def migrate(self, migrations_package_name, up_to=9999):
-        from migrations import MigrationHistory
+        from .migrations import MigrationHistory
         logger = logging.getLogger('migrations')
         applied_migrations = self._get_applied_migrations(migrations_package_name)
         modules = import_submodules(migrations_package_name)
@@ -102,13 +104,15 @@ class Database(object):
                 break
 
     def _get_applied_migrations(self, migrations_package_name):
-        from migrations import MigrationHistory
+        from .migrations import MigrationHistory
         self.create_table(MigrationHistory)
         query = "SELECT module_name from $table WHERE package_name = '%s'" % migrations_package_name
         query = self._substitute(query, MigrationHistory)
         return set(obj.module_name for obj in self.select(query))
 
     def _send(self, data, settings=None, stream=False):
+        if PY3 and isinstance(data, string_types):
+            data = data.encode('utf-8')
         params = self._build_params(settings)
         r = requests.post(self.db_url, params=params, data=data, stream=stream)
         if r.status_code != 200:
@@ -118,7 +122,7 @@ class Database(object):
     def _build_params(self, settings):
         params = dict(settings or {})
         if self.username:
-            params['username'] = self.username
+            params['user'] = self.username
         if self.password:
             params['password'] = self.password
         return params

@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import unittest
 
 from infi.clickhouse_orm.database import Database
@@ -90,6 +92,13 @@ class DatabaseTestCase(unittest.TestCase):
                 page_num += 1
             # Verify that all instances were returned
             self.assertEquals(len(instances), len(data))
+
+    def test_special_chars(self):
+        s = u'אבגד \\\'"`,.;éåäöšž\n\t\0\b\r'
+        p = Person(first_name=s)
+        self.database.insert([p])
+        p = list(self.database.select("SELECT * from $table", Person))[0]
+        self.assertEquals(p.first_name, s)
 
     def _sample_data(self):
         for entry in data:

@@ -1,3 +1,4 @@
+from six import string_types, text_type, binary_type
 import datetime
 import pytz
 import time
@@ -48,16 +49,11 @@ class StringField(Field):
     db_type = 'String'
 
     def to_python(self, value):
-        if isinstance(value, unicode):
+        if isinstance(value, text_type):
             return value
-        if isinstance(value, str):
+        if isinstance(value, binary_type):
             return value.decode('UTF-8')
         raise ValueError('Invalid value for %s: %r' % (self.__class__.__name__, value))
-
-    def get_db_prep_value(self, value):
-        if isinstance(value, unicode):
-            return value.encode('UTF-8')
-        return value
 
 
 class DateField(Field):
@@ -72,7 +68,7 @@ class DateField(Field):
             return value
         if isinstance(value, int):
             return DateField.class_default + datetime.timedelta(days=value)
-        if isinstance(value, basestring):
+        if isinstance(value, string_types):
             if value == '0000-00-00':
                 return DateField.min_value
             return datetime.datetime.strptime(value, '%Y-%m-%d').date()
@@ -97,7 +93,7 @@ class DateTimeField(Field):
             return datetime.datetime(value.year, value.month, value.day)
         if isinstance(value, int):
             return datetime.datetime.fromtimestamp(value, pytz.utc)
-        if isinstance(value, basestring):
+        if isinstance(value, string_types):
             return datetime.datetime.strptime(value, '%Y-%m-%d %H:%M:%S')
         raise ValueError('Invalid value for %s - %r' % (self.__class__.__name__, value))
 
