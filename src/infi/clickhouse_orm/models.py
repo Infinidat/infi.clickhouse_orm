@@ -1,6 +1,8 @@
-from utils import escape, parse_tsv
-from engines import *
-from fields import Field
+from .utils import escape, parse_tsv
+from .engines import *
+from .fields import Field
+
+from six import with_metaclass
 
 
 class ModelBase(type):
@@ -26,9 +28,10 @@ class ModelBase(type):
     @classmethod
     def create_ad_hoc_model(cls, fields):
         # fields is a list of tuples (name, db_type)
-        import fields as orm_fields
+        import infi.clickhouse_orm.fields as orm_fields
         # Check if model exists in cache
-        cache_key = unicode(fields)
+        fields = list(fields)
+        cache_key = str(fields)
         if cache_key in cls.ad_hoc_model_cache:
             return cls.ad_hoc_model_cache[cache_key]
         # Create an ad hoc model class
@@ -44,12 +47,11 @@ class ModelBase(type):
         return model_class
 
 
-class Model(object):
+class Model(with_metaclass(ModelBase)):
     '''
     A base class for ORM models.
     '''
 
-    __metaclass__ = ModelBase
     engine = None
 
     def __init__(self, **kwargs):
@@ -61,7 +63,7 @@ class Model(object):
         '''
         super(Model, self).__init__()
         # Assign field values from keyword arguments
-        for name, value in kwargs.iteritems():
+        for name, value in kwargs.items():
             field = self.get_field(name)
             if field:
                 setattr(self, name, value)
@@ -126,11 +128,12 @@ class Model(object):
         The field_names list must match the fields defined in the model, but does not have to include all of them.
         If omitted, it is assumed to be the names of all fields in the model, in order of definition.
         '''
+        from six import next
         field_names = field_names or [name for name, field in cls._fields]
         values = iter(parse_tsv(line))
         kwargs = {}
         for name in field_names:
-            kwargs[name] = values.next()
+            kwargs[name] = next(values)
         return cls(**kwargs)
 
     def to_tsv(self):
