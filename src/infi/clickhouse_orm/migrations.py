@@ -68,12 +68,11 @@ class AlterTable(Operation):
             if name not in table_fields:
                 logger.info('        Add column %s', name)
                 assert prev_name, 'Cannot add a column to the beginning of the table'
-                default = field.get_db_prep_value(field.default)
-                cmd = 'ADD COLUMN %s %s DEFAULT %s AFTER %s' % (name, field.db_type, escape(default), prev_name)
+                cmd = 'ADD COLUMN %s %s AFTER %s' % (name, field.get_sql(), prev_name)
                 self._alter_table(database, cmd)
             prev_name = name
         # Identify fields whose type was changed
-        model_fields = [(name, field.db_type) for name, field in self.model_class._fields]
+        model_fields = [(name, field.get_sql(with_default=False)) for name, field in self.model_class._fields]
         for model_field, table_field in zip(model_fields, self._get_table_fields(database)):
             assert model_field[0] == table_field[0], 'Model fields and table columns in disagreement'
             if model_field[1] != table_field[1]:

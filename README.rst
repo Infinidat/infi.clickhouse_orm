@@ -191,7 +191,33 @@ UInt32Field    UInt32      int                Range 0 to 4294967295
 UInt64Field    UInt64      int/long           Range 0 to 18446744073709551615
 Float32Field   Float32     float
 Float64Field   Float64     float
+Enum8Field     Enum8       Enum               See below
+Enum16Field    Enum16      Enum               See below
 =============  ========    =================  ===================================================
+
+Working with enum fields
+************************
+
+``Enum8Field`` and ``Enum16Field`` provide support for working with ClickHouse enum columns. They accept
+strings or integers as values, and convert them to the matching Pythonic Enum member.
+
+Python 3.4 and higher supports Enums natively. When using previous Python versions you 
+need to install the `enum34` library.
+
+Example of a model with an enum field::
+
+    Gender = Enum('Gender', 'male female unspecified')
+
+    class Person(models.Model):
+
+        first_name = fields.StringField()
+        last_name = fields.StringField()
+        birthday = fields.DateField()
+        gender = fields.Enum32Field(Gender)
+
+        engine = engines.MergeTree('birthday', ('first_name', 'last_name', 'birthday'))
+
+    suzy = Person(first_name='Suzy', last_name='Jones', gender=Gender.female)
 
 Table Engines
 -------------

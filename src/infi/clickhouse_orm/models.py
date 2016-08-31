@@ -37,10 +37,13 @@ class ModelBase(type):
         # Create an ad hoc model class
         attrs = {}
         for name, db_type in fields:
-            field_class = db_type + 'Field'
-            if not hasattr(orm_fields, field_class):
-                raise NotImplementedError('No field class for %s' % db_type)
-            attrs[name] = getattr(orm_fields, field_class)()
+            if db_type.startswith('Enum'):
+                attrs[name] = orm_fields.BaseEnumField.create_ad_hoc_field(db_type)
+            else:
+                field_class = db_type + 'Field'
+                if not hasattr(orm_fields, field_class):
+                    raise NotImplementedError('No field class for %s' % db_type)
+                attrs[name] = getattr(orm_fields, field_class)()
         model_class = cls.__new__(cls, 'AdHocModel', (Model,), attrs)
         # Add the model class to the cache
         cls.ad_hoc_model_cache[cache_key] = model_class
@@ -107,8 +110,7 @@ class Model(with_metaclass(ModelBase)):
         parts = ['CREATE TABLE IF NOT EXISTS `%s`.`%s` (' % (db_name, cls.table_name())]
         cols = []
         for name, field in cls._fields:
-            default = field.get_db_prep_value(field.default)
-            cols.append('    %s %s DEFAULT %s' % (name, field.db_type, escape(default)))
+            cols.append('    %s %s' % (name, field.get_sql()))
         parts.append(',\n'.join(cols))
         parts.append(')')
         parts.append('ENGINE = ' + cls.engine.create_table_sql())

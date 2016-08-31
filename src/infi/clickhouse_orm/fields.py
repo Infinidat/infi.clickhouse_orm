@@ -13,7 +13,7 @@ class Field(object):
     def __init__(self, default=None):
         self.creation_counter = Field.creation_counter
         Field.creation_counter += 1
-        self.default = default or self.class_default
+        self.default = self.class_default if default is None else default
 
     def to_python(self, value):
         '''
@@ -41,6 +41,17 @@ class Field(object):
         Returns the field's value prepared for interacting with the database.
         '''
         return value
+
+    def get_sql(self, with_default=True):
+        '''
+        Returns an SQL expression describing the field (e.g. for CREATE TABLE).
+        '''
+        from .utils import escape
+        if with_default:
+            default = self.get_db_prep_value(self.default)
+            return '%s DEFAULT %s' % (self.db_type, escape(default))
+        else:
+            return self.db_type
 
 
 class StringField(Field):
@@ -186,4 +197,68 @@ class Float32Field(BaseFloatField):
 class Float64Field(BaseFloatField):
 
     db_type = 'Float64'
+
+
+class BaseEnumField(Field):
+
+    def __init__(self, enum_cls, default=None):
+        self.enum_cls = enum_cls
+        if default is None:
+            default = list(enum_cls)[0]
+        super(BaseEnumField, self).__init__(default)
+
+    def to_python(self, value):
+        if isinstance(value, self.enum_cls):
+            return value
+        try:
+            if isinstance(value, text_type):
+                return self.enum_cls[value]
+            if isinstance(value, binary_type):
+                return self.enum_cls[value.decode('UTF-8')]
+            if isinstance(value, int):
+                return self.enum_cls(value)
+        except (KeyError, ValueError):
+            pass
+        raise ValueError('Invalid value for %s: %r' % (self.enum_cls.__name__, value))
+
+    def get_db_prep_value(self, value):
+        return value.name
+
+    def get_sql(self, with_default=True):
+        from .utils import escape
+        values = ['%s = %d' % (escape(item.name), item.value) for item in self.enum_cls]
+        sql = '%s(%s)' % (self.db_type, ' ,'.join(values))
+        if with_default:
+            default = self.get_db_prep_value(self.default)
+            sql = '%s DEFAULT %s' % (sql, escape(default))
+        return sql
+        
+    @classmethod
+    def create_ad_hoc_field(cls, db_type):
+        '''
+        Give an SQL column description such as "Enum8('apple' = 1, 'banana' = 2, 'orange' = 3)"
+        this method returns a matching enum field.
+        '''
+        import re
+        try:
+            Enum # exists in Python 3.4+
+        except NameError:
+            from enum import Enum # use the enum34 library instead
+        members = {}
+        for match in re.finditer("'(\w+)' = (\d+)", db_type):
+            members[match.group(1)] = int(match.group(2))
+        enum_cls = Enum('AdHocEnum', members)
+        field_class = Enum8Field if db_type.startswith('Enum8') else Enum16Field
+        return field_class(enum_cls)
+
+
+class Enum8Field(BaseEnumField):
+
+    db_type = 'Enum8'
+
+
+class Enum16Field(BaseEnumField):
+
+    db_type = 'Enum16'
+
 
