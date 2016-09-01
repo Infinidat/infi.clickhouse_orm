@@ -4,6 +4,9 @@ from .fields import Field
 
 from six import with_metaclass
 
+from logging import getLogger
+logger = getLogger('clickhouse_orm')
+
 
 class ModelBase(type):
     '''
@@ -28,7 +31,6 @@ class ModelBase(type):
     @classmethod
     def create_ad_hoc_model(cls, fields):
         # fields is a list of tuples (name, db_type)
-        import infi.clickhouse_orm.fields as orm_fields
         # Check if model exists in cache
         fields = list(fields)
         cache_key = str(fields)
@@ -37,17 +39,27 @@ class ModelBase(type):
         # Create an ad hoc model class
         attrs = {}
         for name, db_type in fields:
-            if db_type.startswith('Enum'):
-                attrs[name] = orm_fields.BaseEnumField.create_ad_hoc_field(db_type)
-            else:
-                field_class = db_type + 'Field'
-                if not hasattr(orm_fields, field_class):
-                    raise NotImplementedError('No field class for %s' % db_type)
-                attrs[name] = getattr(orm_fields, field_class)()
+            attrs[name] = cls.create_ad_hoc_field(db_type)
         model_class = cls.__new__(cls, 'AdHocModel', (Model,), attrs)
         # Add the model class to the cache
         cls.ad_hoc_model_cache[cache_key] = model_class
         return model_class
+
+    @classmethod
+    def create_ad_hoc_field(cls, db_type):
+        import infi.clickhouse_orm.fields as orm_fields
+        # Enums
+        if db_type.startswith('Enum'):
+            return orm_fields.BaseEnumField.create_ad_hoc_field(db_type)
+        # Arrays
+        if db_type.startswith('Array'):
+            inner_field = cls.create_ad_hoc_field(db_type[6 : -1])
+            return orm_fields.ArrayField(inner_field)
+        # Simple fields
+        name = db_type + 'Field'
+        if not hasattr(orm_fields, name):
+            raise NotImplementedError('No field class for %s' % db_type)
+        return getattr(orm_fields, name)()
 
 
 class Model(with_metaclass(ModelBase)):
@@ -144,6 +156,8 @@ class Model(with_metaclass(ModelBase)):
         '''
         parts = []
         for name, field in self._fields:
-            value = field.get_db_prep_value(field.to_python(getattr(self, name)))
-            parts.append(escape(value, quote=False))
-        return '\t'.join(parts)
+            value = field.to_db_string(getattr(self, name), quote=False)
+            parts.append(value)
+        tsv = '\t'.join(parts)
+        logger.debug(tsv)
+        return tsv

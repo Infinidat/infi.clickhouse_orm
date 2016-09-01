@@ -193,6 +193,7 @@ Float32Field   Float32     float
 Float64Field   Float64     float
 Enum8Field     Enum8       Enum               See below
 Enum16Field    Enum16      Enum               See below
+ArrayField     Array       list               See below
 =============  ========    =================  ===================================================
 
 Working with enum fields
@@ -218,6 +219,21 @@ Example of a model with an enum field::
         engine = engines.MergeTree('birthday', ('first_name', 'last_name', 'birthday'))
 
     suzy = Person(first_name='Suzy', last_name='Jones', gender=Gender.female)
+
+Working with array fields
+*************************
+
+You can create array fields containing any data type, for example::
+
+    class SensorData(models.Model):
+
+        date = fields.DateField()
+        temperatures = fields.ArrayField(fields.Float32Field)
+        humidity_levels = fields.ArrayField(fields.UInt8Field)
+
+        engine = engines.MergeTree('date', ('date',))
+
+    data = SensorData(date=date.today(), temperatures=[25.5, 31.2, 28.7], humidity_levels=[41, 39, 66])
 
 Table Engines
 -------------

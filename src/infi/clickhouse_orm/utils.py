@@ -1,5 +1,6 @@
 from six import string_types, binary_type, text_type, PY3
 import codecs
+import re
 
 
 SPECIAL_CHARS = {
@@ -15,6 +16,11 @@ SPECIAL_CHARS = {
 
 
 def escape(value, quote=True):
+    '''
+    If the value is a string, escapes any special characters and optionally
+    surrounds it with single quotes. If the value is not a string (e.g. a number), 
+    converts it to one.
+    '''
     if isinstance(value, string_types):
         chars = (SPECIAL_CHARS.get(c, c) for c in value)
         value = "'" + "".join(chars) + "'" if quote else "".join(chars)
@@ -31,6 +37,40 @@ def parse_tsv(line):
     if line[-1] == '\n':
         line = line[:-1]
     return [unescape(value) for value in line.split('\t')]
+
+
+def parse_array(array_string):
+    """
+    Parse an array string as returned by clickhouse. For example:
+        "['hello', 'world']" ==> ["hello", "world"]
+        "[1,2,3]"            ==> [1, 2, 3]
+    """
+    # Sanity check
+    if len(array_string) < 2 or array_string[0] != '[' or array_string[-1] != ']':
+        raise ValueError('Invalid array string: "%s"' % array_string)
+    # Drop opening brace
+    array_string = array_string[1:] 
+    # Go over the string, lopping off each value at the beginning until nothing is left
+    values = []
+    while True:
+        if array_string == ']':
+            # End of array
+            return values
+        elif array_string[0] in ', ':
+            # In between values
+            array_string = array_string[1:] 
+        elif array_string[0] == "'":
+            # Start of quoted value, find its end
+            match = re.search(r"[^\\]'", array_string)
+            if match is None:
+                raise ValueError('Missing closing quote: "%s"' % array_string)
+            values.append(array_string[1 : match.start() + 1])
+            array_string = array_string[match.end():]
+        else:
+            # Start of non-quoted value, find its end
+            match = re.search(r",|\]", array_string)
+            values.append(array_string[1 : match.start() + 1])
+            array_string = array_string[match.end():]
 
 
 def import_submodules(package_name):

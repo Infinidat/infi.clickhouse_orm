@@ -3,6 +3,8 @@ import datetime
 import pytz
 import time
 
+from .utils import escape, parse_array
+
 
 class Field(object):
 
@@ -36,20 +38,20 @@ class Field(object):
         if value < min_value or value > max_value:
             raise ValueError('%s out of range - %s is not between %s and %s' % (self.__class__.__name__, value, min_value, max_value))
 
-    def get_db_prep_value(self, value):
+    def to_db_string(self, value, quote=True):
         '''
-        Returns the field's value prepared for interacting with the database.
+        Returns the field's value prepared for writing to the database.
+        When quote is true, strings are surrounded by single quotes.
         '''
-        return value
+        return escape(value, quote)
 
     def get_sql(self, with_default=True):
         '''
         Returns an SQL expression describing the field (e.g. for CREATE TABLE).
         '''
-        from .utils import escape
         if with_default:
-            default = self.get_db_prep_value(self.default)
-            return '%s DEFAULT %s' % (self.db_type, escape(default))
+            default = self.to_db_string(self.default)
+            return '%s DEFAULT %s' % (self.db_type, default)
         else:
             return self.db_type
 
@@ -88,8 +90,8 @@ class DateField(Field):
     def validate(self, value):
         self._range_check(value, DateField.min_value, DateField.max_value)
 
-    def get_db_prep_value(self, value):
-        return value.isoformat()
+    def to_db_string(self, value, quote=True):
+        return escape(value.isoformat(), quote)
 
 
 class DateTimeField(Field):
@@ -108,8 +110,8 @@ class DateTimeField(Field):
             return datetime.datetime.strptime(value, '%Y-%m-%d %H:%M:%S')
         raise ValueError('Invalid value for %s - %r' % (self.__class__.__name__, value))
 
-    def get_db_prep_value(self, value):
-        return int(time.mktime(value.timetuple()))
+    def to_db_string(self, value, quote=True):
+        return escape(int(time.mktime(value.timetuple())), quote)
 
 
 class BaseIntField(Field):
@@ -221,18 +223,17 @@ class BaseEnumField(Field):
             pass
         raise ValueError('Invalid value for %s: %r' % (self.enum_cls.__name__, value))
 
-    def get_db_prep_value(self, value):
-        return value.name
+    def to_db_string(self, value, quote=True):
+        return escape(value.name, quote)
 
     def get_sql(self, with_default=True):
-        from .utils import escape
         values = ['%s = %d' % (escape(item.name), item.value) for item in self.enum_cls]
         sql = '%s(%s)' % (self.db_type, ' ,'.join(values))
         if with_default:
-            default = self.get_db_prep_value(self.default)
-            sql = '%s DEFAULT %s' % (sql, escape(default))
+            default = self.to_db_string(self.default)
+            sql = '%s DEFAULT %s' % (sql, default)
         return sql
-        
+
     @classmethod
     def create_ad_hoc_field(cls, db_type):
         '''
@@ -262,3 +263,31 @@ class Enum16Field(BaseEnumField):
     db_type = 'Enum16'
 
 
+class ArrayField(Field):
+
+    class_default = []
+
+    def __init__(self, inner_field, default=None):
+        self.inner_field = inner_field
+        super(ArrayField, self).__init__(default)
+
+    def to_python(self, value):
+        if isinstance(value, text_type):
+            value = parse_array(value)
+        elif isinstance(value, binary_type):
+            value = parse_array(value.decode('UTF-8'))
+        elif not isinstance(value, (list, tuple)):
+            raise ValueError('ArrayField expects list or tuple, not %s' % type(value))
+        return [self.inner_field.to_python(v) for v in value]
+
+    def validate(self, value):
+        for v in value:
+            self.inner_field.validate(v)
+
+    def to_db_string(self, value, quote=True):
+        array = [self.inner_field.to_db_string(v, quote=True) for v in value]
+        return '[' + ', '.join(array) + ']'
+
+    def get_sql(self, with_default=True):
+        from .utils import escape
+        return 'Array(%s)' % self.inner_field.get_sql(with_default=False)
