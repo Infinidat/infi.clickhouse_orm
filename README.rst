@@ -202,7 +202,7 @@ Working with enum fields
 ``Enum8Field`` and ``Enum16Field`` provide support for working with ClickHouse enum columns. They accept
 strings or integers as values, and convert them to the matching Pythonic Enum member.
 
-Python 3.4 and higher supports Enums natively. When using previous Python versions you 
+Python 3.4 and higher supports Enums natively. When using previous Python versions you
 need to install the `enum34` library.
 
 Example of a model with an enum field::
@@ -228,8 +228,8 @@ You can create array fields containing any data type, for example::
     class SensorData(models.Model):
 
         date = fields.DateField()
-        temperatures = fields.ArrayField(fields.Float32Field)
-        humidity_levels = fields.ArrayField(fields.UInt8Field)
+        temperatures = fields.ArrayField(fields.Float32Field())
+        humidity_levels = fields.ArrayField(fields.UInt8Field())
 
         engine = engines.MergeTree('date', ('date',))
 
