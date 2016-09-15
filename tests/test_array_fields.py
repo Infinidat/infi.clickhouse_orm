@@ -46,6 +46,21 @@ class ArrayFieldsTest(unittest.TestCase):
             with self.assertRaises(ValueError):
                 instance.arr_int = value
 
+    def test_parse_array(self):
+        from infi.clickhouse_orm.utils import parse_array, unescape
+        self.assertEquals(parse_array("[]"), [])
+        self.assertEquals(parse_array("[1, 2, 395, -44]"), ["1", "2", "395", "-44"])
+        self.assertEquals(parse_array("['big','mouse','','!']"), ["big", "mouse", "", "!"])
+        self.assertEquals(parse_array(unescape("['\\r\\n\\0\\t\\b']")), ["\r\n\0\t\b"])
+        for s in ("", 
+                  "[", 
+                  "]", 
+                  "[1, 2", 
+                  "3, 4]", 
+                  "['aaa', 'aaa]"):
+            with self.assertRaises(ValueError):
+                parse_array(s)
+
 
 class ModelWithArrays(Model):
 

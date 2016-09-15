@@ -73,8 +73,8 @@ def parse_array(array_string):
         else:
             # Start of non-quoted value, find its end
             match = re.search(r",|\]", array_string)
-            values.append(array_string[1 : match.start() + 1])
-            array_string = array_string[match.end():]
+            values.append(array_string[0 : match.start()])
+            array_string = array_string[match.end() - 1:]
 
 
 def import_submodules(package_name):
