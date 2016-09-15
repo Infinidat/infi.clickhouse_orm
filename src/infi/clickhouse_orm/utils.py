@@ -14,6 +14,8 @@ SPECIAL_CHARS = {
     "'"  : "\\'"
 }
 
+SPECIAL_CHARS_REGEX = re.compile("[" + ''.join(SPECIAL_CHARS.values()) + "]")
+
 
 def escape(value, quote=True):
     '''
@@ -22,8 +24,10 @@ def escape(value, quote=True):
     converts it to one.
     '''
     if isinstance(value, string_types):
-        chars = (SPECIAL_CHARS.get(c, c) for c in value)
-        value = "'" + "".join(chars) + "'" if quote else "".join(chars)
+        if SPECIAL_CHARS_REGEX.search(value):
+            value = "".join(SPECIAL_CHARS.get(c, c) for c in value)
+        if quote:
+            value = "'" + value + "'"
     return text_type(value)
 
 
