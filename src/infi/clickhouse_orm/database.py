@@ -23,7 +23,10 @@ class Database(object):
         self.db_url = db_url
         self.username = username
         self.password = password
-        self._send('CREATE DATABASE IF NOT EXISTS `%s`' % db_name)
+        self.create_database()
+
+    def create_database(self):
+        self._send('CREATE DATABASE IF NOT EXISTS `%s`' % self.db_name)
 
     def create_table(self, model_class):
         # TODO check that model has an engine
