@@ -107,6 +107,8 @@ class DateTimeField(Field):
         if isinstance(value, int):
             return datetime.datetime.fromtimestamp(value, pytz.utc)
         if isinstance(value, string_types):
+            if value == '0000-00-00 00:00:00':
+                return self.class_default
             return datetime.datetime.strptime(value, '%Y-%m-%d %H:%M:%S')
         raise ValueError('Invalid value for %s - %r' % (self.__class__.__name__, value))
 
