@@ -68,6 +68,7 @@ class Model(with_metaclass(ModelBase)):
     '''
 
     engine = None
+    _table_name = None
 
     def __init__(self, **kwargs):
         '''
@@ -112,7 +113,7 @@ class Model(with_metaclass(ModelBase)):
         '''
         Returns the model's database table name.
         '''
-        return cls.__name__.lower()
+        return cls._table_name or cls.__name__.lower()
 
     @classmethod
     def create_table_sql(cls, db_name):

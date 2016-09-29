@@ -22,6 +22,7 @@ Models are defined in a way reminiscent of Django's ORM::
     from infi.clickhouse_orm import models, fields, engines
 
     class Person(models.Model):
+        _table_name = 'person'
 
         first_name = fields.StringField()
         last_name = fields.StringField()
@@ -31,6 +32,8 @@ Models are defined in a way reminiscent of Django's ORM::
         engine = engines.MergeTree('birthday', ('first_name', 'last_name', 'birthday'))
 
 It is possible to provide a default value for a field, instead of its "natural" default (empty string for string fields, zero for numeric fields etc.).
+
+Also, there is an opportunity to define a custom name for the underlying table via ``_table_name`` variable.
 
 See below for the supported field types and table engines.
 

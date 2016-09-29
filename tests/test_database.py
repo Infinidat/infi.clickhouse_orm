@@ -16,9 +16,11 @@ class DatabaseTestCase(unittest.TestCase):
     def setUp(self):
         self.database = Database('test-db')
         self.database.create_table(Person)
+        self.database.create_table(NamedModel)
 
     def tearDown(self):
         self.database.drop_table(Person)
+        self.database.drop_table(NamedModel)
         self.database.drop_database()
 
     def _insert_and_check(self, data, count):
@@ -93,6 +95,10 @@ class DatabaseTestCase(unittest.TestCase):
             # Verify that all instances were returned
             self.assertEquals(len(instances), len(data))
 
+    def test_models_naming(self):
+        names = set(map(lambda x: x.name, self.database.select('SHOW TABLES FROM `test-db`')))
+        self.assertSetEqual(names, {'person', 'custom_name'})
+
     def test_special_chars(self):
         s = u'אבגד \\\'"`,.;éåäöšž\n\t\0\b\r'
         p = Person(first_name=s)
@@ -113,6 +119,15 @@ class Person(Model):
     height = Float32Field()
 
     engine = MergeTree('birthday', ('first_name', 'last_name', 'birthday'))
+
+
+class NamedModel(Model):
+    _table_name = 'custom_name'
+
+    date_column = DateField()
+    field = StringField()
+
+    engine = MergeTree('date_column', ('field',))
 
 
 data = [
