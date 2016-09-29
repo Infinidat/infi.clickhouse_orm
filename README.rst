@@ -228,8 +228,8 @@ You can create array fields containing any data type, for example::
     class SensorData(models.Model):
 
         date = fields.DateField()
-        temperatures = fields.ArrayField(fields.Float32Field)
-        humidity_levels = fields.ArrayField(fields.UInt8Field)
+        temperatures = fields.ArrayField(fields.Float32Field())
+        humidity_levels = fields.ArrayField(fields.UInt8Field())
 
         engine = engines.MergeTree('date', ('date',))
 

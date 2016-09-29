@@ -14,6 +14,8 @@ SPECIAL_CHARS = {
     "'"  : "\\'"
 }
 
+SPECIAL_CHARS_REGEX = re.compile("[" + ''.join(SPECIAL_CHARS.values()) + "]")
+
 
 def escape(value, quote=True):
     '''
@@ -22,8 +24,10 @@ def escape(value, quote=True):
     converts it to one.
     '''
     if isinstance(value, string_types):
-        chars = (SPECIAL_CHARS.get(c, c) for c in value)
-        value = "'" + "".join(chars) + "'" if quote else "".join(chars)
+        if SPECIAL_CHARS_REGEX.search(value):
+            value = "".join(SPECIAL_CHARS.get(c, c) for c in value)
+        if quote:
+            value = "'" + value + "'"
     return text_type(value)
 
 
@@ -69,8 +73,8 @@ def parse_array(array_string):
         else:
             # Start of non-quoted value, find its end
             match = re.search(r",|\]", array_string)
-            values.append(array_string[1 : match.start() + 1])
-            array_string = array_string[match.end():]
+            values.append(array_string[0 : match.start()])
+            array_string = array_string[match.end() - 1:]
 
 
 def import_submodules(package_name):

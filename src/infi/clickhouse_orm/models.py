@@ -154,10 +154,5 @@ class Model(with_metaclass(ModelBase)):
         '''
         Returns the instance's column values as a tab-separated line. A newline is not included.
         '''
-        parts = []
-        for name, field in self._fields:
-            value = field.to_db_string(getattr(self, name), quote=False)
-            parts.append(value)
-        tsv = '\t'.join(parts)
-        logger.debug(tsv)
-        return tsv
+        data = self.__dict__
+        return '\t'.join(field.to_db_string(data[name], quote=False) for name, field in self._fields)
