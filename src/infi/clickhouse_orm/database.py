@@ -18,12 +18,14 @@ class DatabaseException(Exception):
 
 class Database(object):
 
-    def __init__(self, db_name, db_url='http://localhost:8123/', username=None, password=None):
+    def __init__(self, db_name, db_url='http://localhost:8123/', username=None, password=None, readonly=False):
         self.db_name = db_name
         self.db_url = db_url
         self.username = username
         self.password = password
-        self._send('CREATE DATABASE IF NOT EXISTS `%s`' % db_name)
+        self.readonly = readonly
+        if not self.readonly:
+            self._send('CREATE DATABASE IF NOT EXISTS `%s`' % db_name)
 
     def create_table(self, model_class):
         # TODO check that model has an engine
