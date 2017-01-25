@@ -152,7 +152,7 @@ Pagination
 It is possible to paginate through model instances::
 
     >>> order_by = 'first_name, last_name'
-    >>> page = db.paginate(Person, order_by, page_num=1, page_size=100)
+    >>> page = db.paginate(Person, order_by, page_num=1, page_size=10)
     >>> print page.number_of_objects
     2507
     >>> print page.pages_total
