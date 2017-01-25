@@ -87,6 +87,10 @@ class Database(object):
     def paginate(self, model_class, order_by, page_num=1, page_size=100, conditions=None, settings=None):
         count = self.count(model_class, conditions)
         pages_total = int(ceil(count / float(page_size)))
+        if page_num == -1:
+            page_num = pages_total
+        elif page_num < 1:
+            raise ValueError('Invalid page number: %d' % page_num)
         offset = (page_num - 1) * page_size
         query = 'SELECT * FROM $table'
         if conditions:
