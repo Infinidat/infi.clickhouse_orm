@@ -34,6 +34,20 @@ It is possible to provide a default value for a field, instead of its "natural" 
 
 See below for the supported field types and table engines.
 
+Table Names
+***********
+
+The table name used for the model is its class name, converted to lowercase. To override the default name,
+implement the ``table_name`` method::
+
+    class Person(models.Model):
+
+        ...
+
+        @classmethod
+        def table_name(cls):
+            return 'people'
+
 Using Models
 ------------
 
