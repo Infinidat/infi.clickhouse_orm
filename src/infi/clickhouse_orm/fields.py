@@ -79,6 +79,8 @@ class DateField(Field):
     def to_python(self, value):
         if isinstance(value, datetime.date):
             return value
+        if isinstance(value, datetime.datetime):
+            return value.date()
         if isinstance(value, int):
             return DateField.class_default + datetime.timedelta(days=value)
         if isinstance(value, string_types):
