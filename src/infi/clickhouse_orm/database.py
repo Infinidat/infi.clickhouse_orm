@@ -25,7 +25,13 @@ class Database(object):
         self.password = password
         self.readonly = readonly
         if not self.readonly:
-            self._send('CREATE DATABASE IF NOT EXISTS `%s`' % db_name)
+            self.create_database()
+
+    def create_database(self):
+        self._send('CREATE DATABASE IF NOT EXISTS `%s`' % self.db_name)
+
+    def drop_database(self):
+        self._send('DROP DATABASE `%s`' % self.db_name)
 
     def create_table(self, model_class):
         # TODO check that model has an engine
@@ -33,9 +39,6 @@ class Database(object):
 
     def drop_table(self, model_class):
         self._send(model_class.drop_table_sql(self.db_name))
-
-    def drop_database(self):
-        self._send('DROP DATABASE `%s`' % self.db_name)
 
     def insert(self, model_instances, batch_size=1000):
         from six import next
