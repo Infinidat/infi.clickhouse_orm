@@ -12,6 +12,9 @@ class Field(object):
     class_default = 0
     db_type = None
 
+    # This flag indicates, if we should take this field value when inserting data
+    insertable = True
+
     def __init__(self, default=None):
         self.creation_counter = Field.creation_counter
         Field.creation_counter += 1
@@ -295,3 +298,76 @@ class ArrayField(Field):
     def get_sql(self, with_default=True):
         from .utils import escape
         return 'Array(%s)' % self.inner_field.get_sql(with_default=False)
+
+
+class RelativeField(Field):
+    insertable = False
+
+    def __init__(self, inner_field):
+        """
+        Creates MATERIALIZED or ALIAS field
+        :param inner_field: Field subclass this field is acting like
+        """
+        assert isinstance(inner_field, Field), "field must be Field subclass"
+        self.class_default = inner_field.class_default
+        self.default = inner_field.default
+        super(RelativeField, self).__init__()
+        self.inner_field = inner_field
+
+    def to_python(self, value):
+        return self.inner_field.to_python(value)
+
+    def validate(self, value):
+        return self.inner_field.validate(value)
+
+    def to_db_string(self, value, quote=True):
+        return self.inner_field.to_db_string(value, quote=quote)
+
+
+class MaterializedField(RelativeField):
+    """
+    Creates ClickHouse MATERIALIZED field. It doesn't contain real data in database, it is counted on the spot
+    https://clickhouse.yandex/reference_en.html#Default values
+    """
+
+    def __init__(self, inner_field, code):
+        """
+        Creates MATERIALIZED field
+        :param inner_field: Field subclass this field is acting like
+        :param code: ClickHouse code to execute when materialized field is called. See ClickHouse docs.
+        """
+        super(MaterializedField, self).__init__(inner_field)
+
+        self._code = code
+
+    def get_sql(self, with_default=True):
+        """
+        Generates SQL for create table command
+        :param with_default: This flag is inherited from Field model. Does nothing (MATERIALIZED have no default)
+        :return: Creation SQL string
+        """
+        return '%s MATERIALIZED %s' % (self.inner_field.db_type, self._code)
+
+
+class AliasField(RelativeField):
+    """
+    Creates ClickHouse ALIAS field. It doesn't contain real data in database, only copies other one
+    https://clickhouse.yandex/reference_en.html#Default values
+    """
+
+    def __init__(self, inner_field, base_field_name):
+        """
+        Creates ALIAS field
+        :param inner_field: Field instance this field is acting like
+        :param base_field_name: Name of field, to which alias is built
+        """
+        super(AliasField, self).__init__(inner_field)
+        self.base_field_name = base_field_name
+
+    def get_sql(self, with_default=True):
+        """
+        Generates SQL for create table command
+        :param with_default: This flag is inherited from Field model. Does nothing (ALIAS have no default)
+        :return: Creation SQL string
+        """
+        return '%s ALIAS %s' % (self.inner_field.db_type, self.base_field_name)
