@@ -140,7 +140,7 @@ class EnumModel2(Model):
 
 class MaterializedModel(Model):
     date_time = DateTimeField()
-    date = MaterializedField(DateField(), 'toDate(date_time)')
+    date = DateField(materialized='toDate(date_time)')
 
     engine = MergeTree('date', ('date',))
 
@@ -151,7 +151,7 @@ class MaterializedModel(Model):
 
 class AliasModel(Model):
     date = DateField()
-    date_alias = AliasField(DateField(), 'date')
+    date_alias = DateField(alias='date')
 
     engine = MergeTree('date', ('date',))
 

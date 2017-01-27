@@ -12,13 +12,17 @@ class Field(object):
     class_default = 0
     db_type = None
 
-    # This flag indicates, if we should take this field value when inserting data
-    insertable = True
+    def __init__(self, default=None, alias=None, materialized=None):
+        assert (None, None) in {(default, alias), (alias, materialized), (default, materialized)}, \
+            "Only one of default, alias and materialized parameters can be given"
+        assert alias is None or isinstance(alias, str), "Alias field must be string field name, if given"
+        assert materialized is None or isinstance(materialized, str), "Materialized field must be string, if given"
 
-    def __init__(self, default=None):
         self.creation_counter = Field.creation_counter
         Field.creation_counter += 1
         self.default = self.class_default if default is None else default
+        self.alias = alias
+        self.materialized = materialized
 
     def to_python(self, value):
         '''
@@ -51,12 +55,21 @@ class Field(object):
     def get_sql(self, with_default=True):
         '''
         Returns an SQL expression describing the field (e.g. for CREATE TABLE).
+        :param with_default: If True, adds default value to sql.
+            It doesn't affect fields with alias and materialized values.
         '''
-        if with_default:
+        if self.alias:
+            return '%s ALIAS %s' % (self.db_type, self.alias)
+        elif self.materialized:
+            return '%s MATERIALIZED %s' % (self.db_type, self.materialized)
+        elif with_default:
             default = self.to_db_string(self.default)
             return '%s DEFAULT %s' % (self.db_type, default)
         else:
             return self.db_type
+
+    def is_insertable(self):
+        return self.alias is None and self.materialized is None
 
 
 class StringField(Field):
@@ -210,11 +223,11 @@ class Float64Field(BaseFloatField):
 
 class BaseEnumField(Field):
 
-    def __init__(self, enum_cls, default=None):
+    def __init__(self, enum_cls, default=None, alias=None, materialized=None):
         self.enum_cls = enum_cls
         if default is None:
             default = list(enum_cls)[0]
-        super(BaseEnumField, self).__init__(default)
+        super(BaseEnumField, self).__init__(default, alias, materialized)
 
     def to_python(self, value):
         if isinstance(value, self.enum_cls):
@@ -274,9 +287,9 @@ class ArrayField(Field):
 
     class_default = []
 
-    def __init__(self, inner_field, default=None):
+    def __init__(self, inner_field, default=None, alias=None, materialized=None):
         self.inner_field = inner_field
-        super(ArrayField, self).__init__(default)
+        super(ArrayField, self).__init__(default, alias, materialized)
 
     def to_python(self, value):
         if isinstance(value, text_type):
@@ -299,75 +312,3 @@ class ArrayField(Field):
         from .utils import escape
         return 'Array(%s)' % self.inner_field.get_sql(with_default=False)
 
-
-class RelativeField(Field):
-    insertable = False
-
-    def __init__(self, inner_field):
-        """
-        Creates MATERIALIZED or ALIAS field
-        :param inner_field: Field subclass this field is acting like
-        """
-        assert isinstance(inner_field, Field), "field must be Field subclass"
-        self.class_default = inner_field.class_default
-        self.default = inner_field.default
-        super(RelativeField, self).__init__()
-        self.inner_field = inner_field
-
-    def to_python(self, value):
-        return self.inner_field.to_python(value)
-
-    def validate(self, value):
-        return self.inner_field.validate(value)
-
-    def to_db_string(self, value, quote=True):
-        return self.inner_field.to_db_string(value, quote=quote)
-
-
-class MaterializedField(RelativeField):
-    """
-    Creates ClickHouse MATERIALIZED field. It doesn't contain real data in database, it is counted on the spot
-    https://clickhouse.yandex/reference_en.html#Default values
-    """
-
-    def __init__(self, inner_field, code):
-        """
-        Creates MATERIALIZED field
-        :param inner_field: Field subclass this field is acting like
-        :param code: ClickHouse code to execute when materialized field is called. See ClickHouse docs.
-        """
-        super(MaterializedField, self).__init__(inner_field)
-
-        self._code = code
-
-    def get_sql(self, with_default=True):
-        """
-        Generates SQL for create table command
-        :param with_default: This flag is inherited from Field model. Does nothing (MATERIALIZED have no default)
-        :return: Creation SQL string
-        """
-        return '%s MATERIALIZED %s' % (self.inner_field.db_type, self._code)
-
-
-class AliasField(RelativeField):
-    """
-    Creates ClickHouse ALIAS field. It doesn't contain real data in database, only copies other one
-    https://clickhouse.yandex/reference_en.html#Default values
-    """
-
-    def __init__(self, inner_field, base_field_name):
-        """
-        Creates ALIAS field
-        :param inner_field: Field instance this field is acting like
-        :param base_field_name: Name of field, to which alias is built
-        """
-        super(AliasField, self).__init__(inner_field)
-        self.base_field_name = base_field_name
-
-    def get_sql(self, with_default=True):
-        """
-        Generates SQL for create table command
-        :param with_default: This flag is inherited from Field model. Does nothing (ALIAS have no default)
-        :return: Creation SQL string
-        """
-        return '%s ALIAS %s' % (self.inner_field.db_type, self.base_field_name)

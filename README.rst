@@ -31,6 +31,8 @@ Models are defined in a way reminiscent of Django's ORM::
         engine = engines.MergeTree('birthday', ('first_name', 'last_name', 'birthday'))
 
 It is possible to provide a default value for a field, instead of its "natural" default (empty string for string fields, zero for numeric fields etc.).
+It is always possible to pass alias or materialized parameters. See below for usage examples.
+Only one of default, alias and materialized parameters can be provided
 
 See below for the supported field types and table engines.
 
@@ -208,8 +210,6 @@ Float64Field         Float64     float
 Enum8Field           Enum8       Enum               See below
 Enum16Field          Enum16      Enum               See below
 ArrayField           Array       list               See below
-AliasField           See below   See below          See below
-MaterializedField    See below   See below          See below
 ===================  ==========  =================  ===================================================
 
 Working with enum fields
@@ -270,9 +270,9 @@ Usage::
     class Event(models.Model):
 
         created = fields.DateTimeField()
-        created_date = fields.MaterializedField(fields.DateTimeField(), 'toDate(created)')
-        name = StringField()
-        username = AliasField(StringField(), 'name')
+        created_date = fields.DateTimeField(materialized='toDate(created)')
+        name = fields.StringField()
+        username = fields.StringField(alias='name')
 
         engine = engines.MergeTree('created_date', ('created_date', 'created'))
 

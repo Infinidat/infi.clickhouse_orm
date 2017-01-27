@@ -43,15 +43,27 @@ class MaterializedFieldsTest(unittest.TestCase):
             with self.assertRaises(ValueError):
                 instance.mat_date = value
 
+    def test_wrong_field(self):
+        with self.assertRaises(AssertionError):
+            StringField(materialized=123)
+
+    def test_duplicate_default(self):
+        with self.assertRaises(AssertionError):
+            StringField(materialized='str_field', default='with default')
+
+        with self.assertRaises(AssertionError):
+            StringField(materialized='str_field', alias='str_field')
+
 
 class ModelWithMaterializedFields(Model):
     int_field = Int32Field()
     date_time_field = DateTimeField()
     str_field = StringField()
 
-    mat_str = MaterializedField(StringField(), 'lower(str_field)')
-    mat_int = MaterializedField(Int32Field(), 'abs(int_field)')
-    mat_date = MaterializedField(DateField(), 'toDate(date_time_field)')
+    mat_str = StringField(materialized='lower(str_field)')
+    mat_int = Int32Field(materialized='abs(int_field)')
+    mat_date = DateField(materialized='toDate(date_time_field)')
 
     engine = MergeTree('mat_date', ('mat_date',))
+
 

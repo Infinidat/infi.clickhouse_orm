@@ -157,7 +157,7 @@ class Model(with_metaclass(ModelBase)):
         '''
         data = self.__dict__
 
-        fields = [f for f in self._fields if f[1].insertable] if insertable_only else self._fields
+        fields = [f for f in self._fields if f[1].is_insertable()] if insertable_only else self._fields
         return '\t'.join(field.to_db_string(data[name], quote=False) for name, field in fields)
 
 
