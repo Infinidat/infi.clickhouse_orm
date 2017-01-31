@@ -39,9 +39,13 @@ class Database(object):
 
     def create_table(self, model_class):
         # TODO check that model has an engine
+        if model_class.readonly:
+            raise DatabaseException("You can't create read only table")
         self._send(model_class.create_table_sql(self.db_name))
 
     def drop_table(self, model_class):
+        if model_class.readonly:
+            raise DatabaseException("You can't drop read only table")
         self._send(model_class.drop_table_sql(self.db_name))
 
     def insert(self, model_instances, batch_size=1000):
@@ -52,6 +56,10 @@ class Database(object):
         except StopIteration:
             return # model_instances is empty
         model_class = first_instance.__class__
+
+        if first_instance.readonly:
+            raise DatabaseException("You can't insert into read only table")
+
         def gen():
             yield self._substitute('INSERT INTO $table FORMAT TabSeparated\n', model_class).encode('utf-8')
             yield (first_instance.to_tsv(insertable_only=True) + '\n').encode('utf-8')
@@ -87,6 +95,17 @@ class Database(object):
         model_class = model_class or ModelBase.create_ad_hoc_model(zip(field_names, field_types))
         for line in lines:
             yield model_class.from_tsv(line, field_names, self.server_timezone)
+
+    def raw(self, query, settings=None, stream=False):
+        """
+        Performs raw query to database. Returns its output
+        :param query: Query to execute
+        :param settings: Query settings to send as query GET parameters
+        :param stream: If flag is true, Http response from ClickHouse will be streamed.
+        :return: Query execution result
+        """
+        query = self._substitute(query, None)
+        return self._send(query, settings=settings, stream=stream).text
 
     def paginate(self, model_class, order_by, page_num=1, page_size=100, conditions=None, settings=None):
         count = self.count(model_class, conditions)
