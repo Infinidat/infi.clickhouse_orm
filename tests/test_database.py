@@ -2,7 +2,7 @@
 
 import unittest
 
-from infi.clickhouse_orm.database import Database
+from infi.clickhouse_orm.database import Database, DatabaseException
 from infi.clickhouse_orm.models import Model
 from infi.clickhouse_orm.fields import *
 from infi.clickhouse_orm.engines import *
@@ -121,6 +121,25 @@ class DatabaseTestCase(unittest.TestCase):
         for entry in data:
             yield Person(**entry)
 
+    def test_raw(self):
+        self._insert_and_check(self._sample_data(), len(data))
+        query = "SELECT * FROM `test-db`.person WHERE first_name = 'Whitney' ORDER BY last_name"
+        results = self.database.raw(query)
+        self.assertEqual(results, "Whitney\tDurham\t1977-09-15\t1.72\nWhitney\tScott\t1971-07-04\t1.7\n")
+
+    def test_insert_readonly(self):
+        m = ReadOnlyModel(name='readonly')
+        with self.assertRaises(DatabaseException):
+            self.database.insert([m])
+
+    def test_create_readonly_table(self):
+        with self.assertRaises(DatabaseException):
+            self.database.create_table(ReadOnlyModel)
+
+    def test_drop_readonly_table(self):
+        with self.assertRaises(DatabaseException):
+            self.database.drop_table(ReadOnlyModel)
+
 
 class Person(Model):
 
@@ -130,6 +149,13 @@ class Person(Model):
     height = Float32Field()
 
     engine = MergeTree('birthday', ('first_name', 'last_name', 'birthday'))
+
+
+class ReadOnlyModel(Model):
+    readonly = True
+
+    name = StringField()
+
 
 
 data = [

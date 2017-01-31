@@ -1,10 +1,10 @@
-from .utils import escape, parse_tsv
-from .engines import *
-from .fields import Field
+from logging import getLogger
 
 from six import with_metaclass
 
-from logging import getLogger
+from .fields import Field
+from .utils import parse_tsv
+
 logger = getLogger('clickhouse_orm')
 
 
@@ -68,6 +68,7 @@ class Model(with_metaclass(ModelBase)):
     '''
 
     engine = None
+    readonly = False
 
     def __init__(self, **kwargs):
         '''
@@ -159,5 +160,4 @@ class Model(with_metaclass(ModelBase)):
 
         fields = [f for f in self._fields if f[1].is_insertable()] if insertable_only else self._fields
         return '\t'.join(field.to_db_string(data[name], quote=False) for name, field in fields)
-
 
