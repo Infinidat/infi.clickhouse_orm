@@ -21,9 +21,9 @@ class SystemPartTest(unittest.TestCase):
     def tearDown(self):
         self.database.drop_database()
 
-    def _get_backups_count(self):
+    def _get_backups(self):
         _, dirnames, _ = next(os.walk(self.BACKUP_DIR))
-        return len(dirnames)
+        return dirnames
 
     def test_get_all(self):
         parts = SystemPart.all(self.database)
@@ -51,12 +51,12 @@ class SystemPartTest(unittest.TestCase):
     def test_freeze(self):
         parts = list(SystemPart.all(self.database))
         # There can be other backups in the folder
-        backups_count = self._get_backups_count()
+        prev_backups = set(self._get_backups())
         parts[0].freeze(self.database)
-        backup_number = self._get_backups_count()
-        self.assertEqual(backup_number, backups_count + 1)
+        backups = set(self._get_backups())
+        self.assertEqual(len(backups), len(prev_backups) + 1)
         # Clean created backup
-        shutil.rmtree(self.BACKUP_DIR + '{0}'.format(backup_number))
+        shutil.rmtree(self.BACKUP_DIR + '{0}'.format(list(backups - prev_backups)[0]))
 
     def test_fetch(self):
         # TODO Not tested, as I have no replication set
