@@ -2,7 +2,7 @@
 
 import unittest
 
-from infi.clickhouse_orm.database import Database
+from infi.clickhouse_orm.database import Database, DatabaseException
 from infi.clickhouse_orm.models import Model
 from infi.clickhouse_orm.fields import *
 from infi.clickhouse_orm.engines import *
@@ -116,6 +116,18 @@ class DatabaseTestCase(unittest.TestCase):
         self.database.insert([p])
         p = list(self.database.select("SELECT * from $table", Person))[0]
         self.assertEquals(p.first_name, s)
+
+    def test_readonly(self):
+        orig_database = self.database
+        self.database = Database(orig_database.db_name, readonly=True)
+        with self.assertRaises(DatabaseException):
+            self._insert_and_check(self._sample_data(), len(data))
+        self.assertEquals(self.database.count(Person), 0)
+        with self.assertRaises(DatabaseException):
+            self.database.drop_table(Person)
+        with self.assertRaises(DatabaseException):
+            self.database.drop_database()
+        self.database = orig_database
 
     def _sample_data(self):
         for entry in data:

@@ -146,6 +146,8 @@ class Database(object):
             params['user'] = self.username
         if self.password:
             params['password'] = self.password
+        if self.readonly:
+            params['readonly'] = '1'
         return params
 
     def _substitute(self, query, model_class=None):
