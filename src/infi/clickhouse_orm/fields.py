@@ -12,10 +12,17 @@ class Field(object):
     class_default = 0
     db_type = None
 
-    def __init__(self, default=None):
+    def __init__(self, default=None, alias=None, materialized=None):
+        assert (None, None) in {(default, alias), (alias, materialized), (default, materialized)}, \
+            "Only one of default, alias and materialized parameters can be given"
+        assert alias is None or isinstance(alias, str), "Alias field must be string field name, if given"
+        assert materialized is None or isinstance(materialized, str), "Materialized field must be string, if given"
+
         self.creation_counter = Field.creation_counter
         Field.creation_counter += 1
         self.default = self.class_default if default is None else default
+        self.alias = alias
+        self.materialized = materialized
 
     def to_python(self, value):
         '''
@@ -48,12 +55,21 @@ class Field(object):
     def get_sql(self, with_default=True):
         '''
         Returns an SQL expression describing the field (e.g. for CREATE TABLE).
+        :param with_default: If True, adds default value to sql.
+            It doesn't affect fields with alias and materialized values.
         '''
-        if with_default:
+        if self.alias:
+            return '%s ALIAS %s' % (self.db_type, self.alias)
+        elif self.materialized:
+            return '%s MATERIALIZED %s' % (self.db_type, self.materialized)
+        elif with_default:
             default = self.to_db_string(self.default)
             return '%s DEFAULT %s' % (self.db_type, default)
         else:
             return self.db_type
+
+    def is_insertable(self):
+        return self.alias is None and self.materialized is None
 
 
 class StringField(Field):
@@ -207,11 +223,11 @@ class Float64Field(BaseFloatField):
 
 class BaseEnumField(Field):
 
-    def __init__(self, enum_cls, default=None):
+    def __init__(self, enum_cls, default=None, alias=None, materialized=None):
         self.enum_cls = enum_cls
         if default is None:
             default = list(enum_cls)[0]
-        super(BaseEnumField, self).__init__(default)
+        super(BaseEnumField, self).__init__(default, alias, materialized)
 
     def to_python(self, value):
         if isinstance(value, self.enum_cls):
@@ -271,9 +287,9 @@ class ArrayField(Field):
 
     class_default = []
 
-    def __init__(self, inner_field, default=None):
+    def __init__(self, inner_field, default=None, alias=None, materialized=None):
         self.inner_field = inner_field
-        super(ArrayField, self).__init__(default)
+        super(ArrayField, self).__init__(default, alias, materialized)
 
     def to_python(self, value):
         if isinstance(value, text_type):
@@ -295,3 +311,4 @@ class ArrayField(Field):
     def get_sql(self, with_default=True):
         from .utils import escape
         return 'Array(%s)' % self.inner_field.get_sql(with_default=False)
+
