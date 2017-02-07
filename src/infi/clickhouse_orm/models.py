@@ -168,6 +168,6 @@ class BufferModel(Model):
         Returns the SQL command for creating a table for this model.
         '''
         parts = ['CREATE TABLE IF NOT EXISTS `%s`.`%s` AS `%s`.`%s`' % (db_name, cls.table_name(), db_name, cls.main_model.table_name())]
-        engine_str = cls.engine.create_table_sql(db_name, cls)
+        engine_str = cls.engine.create_table_sql(db_name, cls.main_model)
         parts.append(engine_str)
         return ' '.join(parts)

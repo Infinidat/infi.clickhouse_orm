@@ -80,11 +80,11 @@ class Buffer(Engine):
         self.max_bytes = max_bytes
 
 
-    def create_table_sql(self, db_name, target):
+    def create_table_sql(self, db_name, main_model):
         # Overriden create_table_sql example: 
         #sql = 'ENGINE = Buffer(merge, hits, 16, 10, 100, 10000, 1000000, 10000000, 100000000)'
         sql = 'ENGINE = Buffer(%s, %s, %d, %d, %d, %d, %d, %d, %d)' % (
-                   db_name, target.table_name(), self.num_layers,
+                   db_name, main_model.table_name(), self.num_layers,
                    self.min_time, self.max_time, self.min_rows,
                    self.max_rows, self.min_bytes, self.max_bytes
               )
