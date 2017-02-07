@@ -275,7 +275,9 @@ A ``Buffer`` engine is available for BufferModels. (See below how to use BufferM
 
     engine = engines.Buffer(Person) # you need to initialize engine with main Model. Other default parameters will be used
     # or:
-    engine = engines.Buffer(Person, table, num_layers=16, min_time=10, max_time=100, min_rows=10000, max_rows=1000000, min_bytes=10000000, max_bytes=100000000):
+    engine = engines.Buffer(Person, table, num_layers=16, min_time=10, 
+                            max_time=100, min_rows=10000, max_rows=1000000, 
+                            min_bytes=10000000, max_bytes=100000000)
 
 Buffer Models
 -------------
