@@ -210,7 +210,25 @@ Float64Field         Float64     float
 Enum8Field           Enum8       Enum               See below
 Enum16Field          Enum16      Enum               See below
 ArrayField           Array       list               See below
-===================  ==========  =================  ===================================================
+===================  ========    =================  ===================================================
+
+DateTimeField and Time Zones
+****************************
+
+A ``DateTimeField`` can be assigned values from one of the following types:
+
+- datetime
+- date
+- integer - number of seconds since the Unix epoch
+- string in ``YYYY-MM-DD HH:MM:SS`` format
+
+The assigned value always gets converted to a timezone-aware ``datetime`` in UTC. If the assigned
+value is a timezone-aware ``datetime`` in another timezone, it will be converted to UTC. Otherwise, the assigned value is assumed to already be in UTC. 
+
+DateTime values that are read from the database are also converted to UTC. ClickHouse formats them according to the
+timezone of the server, and the ORM makes the necessary conversions. This requires a ClickHouse version which is new
+enough to support the ``timezone()`` function, otherwise it is assumed to be using UTC. In any case, we recommend
+settings the server timezone to UTC in order to prevent confusion.
 
 Working with enum fields
 ************************
@@ -255,15 +273,12 @@ You can create array fields containing any data type, for example::
 Working with materialized and alias fields
 ******************************************
 
-ClickHouse provides an opportunity to create MATERIALIZED and ALIAS Fields.
+ClickHouse provides an opportunity to create MATERIALIZED and ALIAS fields.
+See documentation `here <https://clickhouse.yandex/reference_en.html#Default values>`_.
 
-See documentation `here <https://clickhouse.yandex/reference_en.html#Default values>`.
-
-Both field types can't be inserted into database directly.
-These field values are ignored, when using database.insert() method.
-These fields are set to default values if you use database.select('SELECT * FROM mymodel', model_class=MyModel),
-because ClickHouse doesn't return them.
-Nevertheless, attribute values (as well as defaults) can be set for model object from python.
+Both field types can't be inserted into the database directly, so they are ignored when using the ``Database.insert()`` method.
+ClickHouse does not return the field values if you use ``"SELECT * FROM ..."`` - you have to list these field
+names explicitly in the query.
 
 Usage::
 
@@ -281,7 +296,7 @@ Usage::
     db.insert([obj])
     # All values will be retrieved from database
     db.select('SELECT created, created_date, username, name FROM $db.event', model_class=Event)
-    # created_date, username will contain default value
+    # created_date and username will contain a default value
     db.select('SELECT * FROM $db.event', model_class=Event)
 
 
