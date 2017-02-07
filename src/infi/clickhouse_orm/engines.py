@@ -62,3 +62,56 @@ class SummingMergeTree(MergeTree):
             params.append('(%s)' % ', '.join(self.summing_cols))
         return params
 
+
+class Merge(Engine):
+
+    def __init__(self, database, tablePattern):
+        try:
+            from infi.clickhouse_orm.utils import escape
+        except:
+            from src.infi.clickhouse_orm.utils import escape
+        self.database = escape(database, True)
+        self.tablePattern = escape(tablePattern, True)
+
+    def create_table_sql(self):
+        name = self.__class__.__name__
+        params = self._build_sql_params()
+        return '%s(%s)' % (name, ', '.join(params))
+
+    def _build_sql_params(self):
+        params = [str(self.database), str(self.tablePattern)]
+        return params
+
+class ReplacingMergeTree(Engine):
+
+    def __init__(self, date_col, key_cols, ver_col, index_granularity=8192):
+        self.date_col = date_col
+        self.key_cols = key_cols
+        self.ver_col = ver_col
+        self.index_granularity = index_granularity
+
+    def create_table_sql(self):
+        '''
+        return demo: ReplacingMergeTree(EventDate, (OrderID, EventDate, BannerID, ...), 8192, ver)
+        :return:
+        '''
+        # MergeTree(EventDate, intHash32(UserID), (CounterID, EventDate, intHash32(UserID)), 8192)
+        name = self.__class__.__name__
+        params = self._build_sql_params()
+        return '%s(%s)' % (name, ', '.join(params))
+
+    def _build_sql_params(self):
+        params = []
+        params.append(self.date_col)
+        params.append('(%s)' % ', '.join(self.key_cols))
+        params.append(str(self.index_granularity))
+        params.append(str(self.ver_col))
+        return params
+
+if __name__ == "__main__":
+    # tester = Merge("test", "^user_event")
+    tester = ReplacingMergeTree("partition", ("jhd_userkey", "jhd_opTime"), "jhd_userkey")
+    print(tester.create_table_sql())
+
+
+

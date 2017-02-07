@@ -96,7 +96,7 @@ class DateField(Field):
 
 class DateTimeField(Field):
 
-    class_default = datetime.datetime.fromtimestamp(0, pytz.utc)
+    class_default = datetime.datetime.fromtimestamp(0, pytz.timezone('Asia/Shanghai'))
     db_type = 'DateTime'
 
     def to_python(self, value):
@@ -105,7 +105,7 @@ class DateTimeField(Field):
         if isinstance(value, datetime.date):
             return datetime.datetime(value.year, value.month, value.day)
         if isinstance(value, int):
-            return datetime.datetime.fromtimestamp(value, pytz.utc)
+            return datetime.datetime.fromtimestamp(value, pytz.timezone('Asia/Shanghai'))
         if isinstance(value, string_types):
             if value == '0000-00-00 00:00:00':
                 return self.class_default
