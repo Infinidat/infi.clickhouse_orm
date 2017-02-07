@@ -31,8 +31,8 @@ Models are defined in a way reminiscent of Django's ORM::
         engine = engines.MergeTree('birthday', ('first_name', 'last_name', 'birthday'))
 
 It is possible to provide a default value for a field, instead of its "natural" default (empty string for string fields, zero for numeric fields etc.).
-It is always possible to pass alias or materialized parameters. See below for usage examples.
-Only one of default, alias and materialized parameters can be provided
+Alternatively it is possible to pass alias or materialized parameters (see below for usage examples).
+Only one of ``default``, ``alias`` and ``materialized`` parameters can be provided.
 
 See below for the supported field types and table engines.
 
@@ -91,6 +91,11 @@ Using the ``Database`` instance you can create a table for your model, and inser
     db.insert([dan, suzy])
 
 The ``insert`` method can take any iterable of model instances, but they all must belong to the same model class.
+
+Creating a read-only database is also supported. Such a ``Database`` instance can only read data, and cannot
+modify data or schemas::
+
+    db = Database('my_test_db', readonly=True)
 
 Reading from the Database
 -------------------------
