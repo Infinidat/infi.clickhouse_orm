@@ -166,15 +166,12 @@ class Model(with_metaclass(ModelBase)):
 
 class BufferModel(Model):
 
-    main_model = None # table's Model should be defined in implementation. It's a table where data will be flushed
-
     @classmethod
     def create_table_sql(cls, db_name):
         '''
         Returns the SQL command for creating a table for this model.
         '''
-        parts = ['CREATE TABLE IF NOT EXISTS `%s`.`%s` AS `%s`.`%s`' % (db_name, cls.table_name(), db_name, cls.main_model.table_name())]
-        engine_str = cls.engine.create_table_sql(db_name, cls.main_model)
+        parts = ['CREATE TABLE IF NOT EXISTS `%s`.`%s` AS `%s`.`%s`' % (db_name, cls.table_name(), db_name, cls.engine.main_model.table_name())]
+        engine_str = cls.engine.create_table_sql(db_name)
         parts.append(engine_str)
         return ' '.join(parts)
-

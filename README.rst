@@ -331,18 +331,16 @@ A ``Buffer`` engine is available for BufferModels. (See below how to use BufferM
 
     engine = engines.Buffer(Person) # you need to initialize engine with main Model. Other default parameters will be used
     # or:
-    engine = engines.Buffer(Person, table, num_layers=16, min_time=10, 
+    engine = engines.Buffer(Person, num_layers=16, min_time=10, 
                             max_time=100, min_rows=10000, max_rows=1000000, 
                             min_bytes=10000000, max_bytes=100000000)
 
 Buffer Models
 -------------
-Here's how you can define Model for Buffer Engine. The Buffer Model should be inherited from models.BufferModel and main model
-Main model also should be specified in class::
+Here's how you can define Model for Buffer Engine. The Buffer Model should be inherited from models.BufferModel and main Model::
 
     class PersonBuffer(models.BufferModel, Person):
 
-        main_model = Person
         engine = engines.Buffer(Person)
 
 Then you can insert objects into Buffer model and they will be handled by Clickhouse properly::
