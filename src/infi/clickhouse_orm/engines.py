@@ -62,3 +62,30 @@ class SummingMergeTree(MergeTree):
             params.append('(%s)' % ', '.join(self.summing_cols))
         return params
 
+
+class Buffer(Engine):
+    """Here we define Buffer engine
+    Read more here https://clickhouse.yandex/reference_en.html#Buffer
+    """
+    
+    #Buffer(database, table, num_layers, min_time, max_time, min_rows, max_rows, min_bytes, max_bytes)
+    def __init__(self, table, num_layers=16, min_time=10, max_time=100, min_rows=10000, max_rows=1000000, min_bytes=10000000, max_bytes=100000000):
+        self.table = table
+        self.num_layers = num_layers
+        self.min_time = min_time
+        self.max_time = max_time
+        self.min_rows = min_rows
+        self.max_rows = max_rows
+        self.min_bytes = min_bytes
+        self.max_bytes = max_bytes
+
+
+    def create_table_sql(self, db_name, target):
+        # Overriden create_table_sql example: 
+        #sql = 'ENGINE = Buffer(merge, hits, 16, 10, 100, 10000, 1000000, 10000000, 100000000)'
+        sql = 'ENGINE = Buffer(%s, %s, %d, %d, %d, %d, %d, %d, %d)' % (
+                   db_name, target.table_name(), self.num_layers,
+                   self.min_time, self.max_time, self.min_rows,
+                   self.max_rows, self.min_bytes, self.max_bytes
+              )
+        return sql
