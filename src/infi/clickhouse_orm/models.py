@@ -3,6 +3,7 @@ from .engines import *
 from .fields import Field
 
 from six import with_metaclass
+import pytz
 
 from logging import getLogger
 logger = getLogger('clickhouse_orm')
@@ -96,7 +97,7 @@ class Model(with_metaclass(ModelBase)):
         '''
         field = self.get_field(name)
         if field:
-            value = field.to_python(value)
+            value = field.to_python(value, pytz.utc)
             field.validate(value)
         super(Model, self).__setattr__(name, value)
 
@@ -136,7 +137,7 @@ class Model(with_metaclass(ModelBase)):
         return 'DROP TABLE IF EXISTS `%s`.`%s`' % (db_name, cls.table_name())
 
     @classmethod
-    def from_tsv(cls, line, field_names=None):
+    def from_tsv(cls, line, field_names=None, timezone_in_use=pytz.utc):
         '''
         Create a model instance from a tab-separated line. The line may or may not include a newline.
         The field_names list must match the fields defined in the model, but does not have to include all of them.
@@ -147,7 +148,8 @@ class Model(with_metaclass(ModelBase)):
         values = iter(parse_tsv(line))
         kwargs = {}
         for name in field_names:
-            kwargs[name] = next(values)
+            field = getattr(cls, name)
+            kwargs[name] = field.to_python(next(values), timezone_in_use)
         return cls(**kwargs)
 
     def to_tsv(self, insertable_only=False):
