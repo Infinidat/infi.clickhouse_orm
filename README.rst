@@ -34,6 +34,20 @@ It is possible to provide a default value for a field, instead of its "natural" 
 
 See below for the supported field types and table engines.
 
+Table Names
+***********
+
+The table name used for the model is its class name, converted to lowercase. To override the default name,
+implement the ``table_name`` method::
+
+    class Person(models.Model):
+
+        ...
+
+        @classmethod
+        def table_name(cls):
+            return 'people'
+
 Using Models
 ------------
 
@@ -151,7 +165,7 @@ The ``paginate`` method returns a ``namedtuple`` containing the following fields
 - ``objects`` - the list of objects in this page
 - ``number_of_objects`` - total number of objects in all pages
 - ``pages_total`` - total number of pages
-- ``number`` - the page number
+- ``number`` - the page number, starting from 1; the special value -1 may be used to retrieve the last page
 - ``page_size`` - the number of objects per page
 
 You can optionally pass conditions to the query::
@@ -191,7 +205,49 @@ UInt32Field    UInt32      int                Range 0 to 4294967295
 UInt64Field    UInt64      int/long           Range 0 to 18446744073709551615
 Float32Field   Float32     float
 Float64Field   Float64     float
+Enum8Field     Enum8       Enum               See below
+Enum16Field    Enum16      Enum               See below
+ArrayField     Array       list               See below
 =============  ========    =================  ===================================================
+
+Working with enum fields
+************************
+
+``Enum8Field`` and ``Enum16Field`` provide support for working with ClickHouse enum columns. They accept
+strings or integers as values, and convert them to the matching Pythonic Enum member.
+
+Python 3.4 and higher supports Enums natively. When using previous Python versions you 
+need to install the `enum34` library.
+
+Example of a model with an enum field::
+
+    Gender = Enum('Gender', 'male female unspecified')
+
+    class Person(models.Model):
+
+        first_name = fields.StringField()
+        last_name = fields.StringField()
+        birthday = fields.DateField()
+        gender = fields.Enum32Field(Gender)
+
+        engine = engines.MergeTree('birthday', ('first_name', 'last_name', 'birthday'))
+
+    suzy = Person(first_name='Suzy', last_name='Jones', gender=Gender.female)
+
+Working with array fields
+*************************
+
+You can create array fields containing any data type, for example::
+
+    class SensorData(models.Model):
+
+        date = fields.DateField()
+        temperatures = fields.ArrayField(fields.Float32Field())
+        humidity_levels = fields.ArrayField(fields.UInt8Field())
+
+        engine = engines.MergeTree('date', ('date',))
+
+    data = SensorData(date=date.today(), temperatures=[25.5, 31.2, 28.7], humidity_levels=[41, 39, 66])
 
 Table Engines
 -------------

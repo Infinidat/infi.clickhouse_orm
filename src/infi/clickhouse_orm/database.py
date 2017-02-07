@@ -18,12 +18,20 @@ class DatabaseException(Exception):
 
 class Database(object):
 
-    def __init__(self, db_name, db_url='http://localhost:8123/', username=None, password=None):
+    def __init__(self, db_name, db_url='http://localhost:8123/', username=None, password=None, readonly=False):
         self.db_name = db_name
         self.db_url = db_url
         self.username = username
         self.password = password
-        self._send('CREATE DATABASE IF NOT EXISTS `%s`' % db_name)
+        self.readonly = readonly
+        if not self.readonly:
+            self.create_database()
+
+    def create_database(self):
+        self._send('CREATE DATABASE IF NOT EXISTS `%s`' % self.db_name)
+
+    def drop_database(self):
+        self._send('DROP DATABASE `%s`' % self.db_name)
 
     def create_table(self, model_class):
         # TODO check that model has an engine
@@ -32,10 +40,7 @@ class Database(object):
     def drop_table(self, model_class):
         self._send(model_class.drop_table_sql(self.db_name))
 
-    def drop_database(self):
-        self._send('DROP DATABASE `%s`' % self.db_name)
-
-    def insert(self, model_instances):
+    def insert(self, model_instances, batch_size=1000):
         from six import next
         i = iter(model_instances)
         try:
@@ -45,11 +50,19 @@ class Database(object):
         model_class = first_instance.__class__
         def gen():
             yield self._substitute('INSERT INTO $table FORMAT TabSeparated\n', model_class).encode('utf-8')
-            yield first_instance.to_tsv().encode('utf-8')
-            yield '\n'.encode('utf-8')
+            yield (first_instance.to_tsv() + '\n').encode('utf-8')
+            # Collect lines in batches of batch_size
+            batch = []
             for instance in i:
-                yield instance.to_tsv().encode('utf-8')
-                yield '\n'.encode('utf-8')
+                batch.append(instance.to_tsv())
+                if len(batch) >= batch_size:
+                    # Return the current batch of lines
+                    yield ('\n'.join(batch) + '\n').encode('utf-8')
+                    # Start a new batch
+                    batch = []
+            # Return any remaining lines in partial batch
+            if batch:
+                yield ('\n'.join(batch) + '\n').encode('utf-8')
         self._send(gen())
 
     def count(self, model_class, conditions=None):
@@ -74,6 +87,10 @@ class Database(object):
     def paginate(self, model_class, order_by, page_num=1, page_size=100, conditions=None, settings=None):
         count = self.count(model_class, conditions)
         pages_total = int(ceil(count / float(page_size)))
+        if page_num == -1:
+            page_num = pages_total
+        elif page_num < 1:
+            raise ValueError('Invalid page number: %d' % page_num)
         offset = (page_num - 1) * page_size
         query = 'SELECT * FROM $table'
         if conditions:
