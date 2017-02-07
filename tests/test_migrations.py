@@ -60,6 +60,15 @@ class MigrationsTestCase(unittest.TestCase):
         self.assertTrue(self.tableExists(EnumModel1))
         self.assertEquals(self.getTableFields(EnumModel2), 
                           [('date', 'Date'), ('f1', "Enum16('dog' = 1, 'cat' = 2, 'horse' = 3, 'pig' = 4)")])
+        self.database.migrate('tests.sample_migrations', 8)
+        self.assertTrue(self.tableExists(MaterializedModel))
+        self.assertEquals(self.getTableFields(MaterializedModel),
+                          [('date_time', "DateTime"), ('date', 'Date')])
+        self.database.migrate('tests.sample_migrations', 9)
+        self.assertTrue(self.tableExists(AliasModel))
+        self.assertEquals(self.getTableFields(AliasModel),
+                          [('date', 'Date'), ('date_alias', "Date")])
+
 
 # Several different models with the same table name, to simulate a table that changes over time
 
@@ -127,3 +136,25 @@ class EnumModel2(Model):
     @classmethod
     def table_name(cls):
         return 'enum_mig'
+
+
+class MaterializedModel(Model):
+    date_time = DateTimeField()
+    date = DateField(materialized='toDate(date_time)')
+
+    engine = MergeTree('date', ('date',))
+
+    @classmethod
+    def table_name(cls):
+        return 'materalized_date'
+
+
+class AliasModel(Model):
+    date = DateField()
+    date_alias = DateField(alias='date')
+
+    engine = MergeTree('date', ('date',))
+
+    @classmethod
+    def table_name(cls):
+        return 'alias_date'
