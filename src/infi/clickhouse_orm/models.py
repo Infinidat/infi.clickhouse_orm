@@ -156,8 +156,9 @@ class Model(with_metaclass(ModelBase)):
         :param bool insertable_only: If True, returns only fields, that can be inserted into database
         '''
         data = self.__dict__
-
-        fields = [f for f in self._fields if f[1].is_insertable()] if insertable_only else self._fields
+        fields = self._fields
+        if insertable_only:
+            fields = [f for f in fields if f[1].is_insertable()]
         return '\t'.join(field.to_db_string(data[name], quote=False) for name, field in fields)
 
 
