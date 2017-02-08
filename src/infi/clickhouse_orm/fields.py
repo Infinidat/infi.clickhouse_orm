@@ -96,7 +96,7 @@ class DateField(Field):
 
     def to_python(self, value, timezone_in_use):
         if isinstance(value, datetime.datetime):
-            return value.date()
+            return value.astimezone(pytz.utc).date() if value.tzinfo else value.date()
         if isinstance(value, datetime.date):
             return value
         if isinstance(value, int):

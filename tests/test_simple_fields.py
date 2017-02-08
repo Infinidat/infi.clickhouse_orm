@@ -38,6 +38,27 @@ class SimpleFieldsTest(unittest.TestCase):
             with self.assertRaises(ValueError):
                 f.to_python(value, pytz.utc)
 
+    def test_date_field(self):
+        f = DateField()
+        epoch = date(1970, 1, 1)
+        # Valid values
+        for value in (datetime(1970, 1, 1), epoch, '1970-01-01', '0000-00-00', 0):
+            d = f.to_python(value, pytz.utc)
+            self.assertEquals(d, epoch)
+            # Verify that conversion to and from db string does not change value
+            d2 = f.to_python(f.to_db_string(d, quote=False), pytz.utc)
+            self.assertEquals(d, d2)
+        # Invalid values
+        for value in ('nope', '21/7/1999', 0.5):
+            with self.assertRaises(ValueError):
+                f.to_python(value, pytz.utc)
+
+    def test_date_field_timezone(self):
+        # Verify that conversion of timezone-aware datetime is correct
+        f = DateField()
+        dt = datetime(2017, 10, 5, tzinfo=pytz.timezone('Asia/Jerusalem'))
+        self.assertEquals(f.to_python(dt, pytz.utc), date(2017, 10, 4))
+
     def test_uint8_field(self):
         f = UInt8Field()
         # Valid values
