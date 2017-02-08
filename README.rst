@@ -179,7 +179,9 @@ inconsistencies in the pagination (such as an instance that appears on two diffe
 
 System models
 -------------
+
 `Clickhouse docs <https://clickhouse.yandex/reference_en.html#System tables>`
+
 System models are read only models for implementing part of the system's functionality,
 and for providing access to information about how the system is working.
 
@@ -188,16 +190,33 @@ Usage example:
     >>>> from infi.clickhouse_orm import system_models
     >>>> print(system_models.SystemPart.all())
 
-Currently the fllowing system models are supported:
+Currently the following system models are supported:
 
-===================  ========    =================  ===================================================
-Class                DB Table     Pythonic Type      Comments
-===================  ========    =================  ===================================================
-SystemPart
+===================  ============    ===================================================
+Class                DB Table        Comments
+===================  ============    ===================================================
+SystemPart           system.parts    Gives methods to work with partitions. See below.
 
 Partitions and parts
 --------------------
+
 `ClickHouse docs <https://clickhouse.yandex/reference_en.html#Manipulations with partitions and parts>`
+
+A partition in a table is data for a single calendar month. Table "system.parts" contains information about each part.
+
+===================  =======================    =============================================================================================
+Method               Parameters                 Comments
+===================  =======================    =============================================================================================
+get(static)          database, conditions=""    Gets database partitions, filtered by conditions
+get_active(static)   database, conditions=""    Gets only active (not detached or dropped) partitions, filtered by conditions
+detach               database, settings=None    Detaches the partition. Settings is a dict of params to pass to http request
+drop                 database, settings=None    Drops the partition. Settings is a dict of params to pass to http request
+attach               database, settings=None    Attaches already detached partition. Settings is a dict of params to pass to http request
+freeze               database, settings=None    Freezes (makes backup) of the partition. Settings is a dict of params to pass to http request
+fetch                database, settings=None    Fetches partition. Settings is a dict of params to pass to http request
+
+``Note``: system.parts stores information for all databases. To be correct,
+SystemPart model was designed to receive only given database parts.
 
 
 Schema Migrations
