@@ -186,15 +186,15 @@ inconsistencies in the pagination (such as an instance that appears on two diffe
 System models
 -------------
 
-`Clickhouse docs <https://clickhouse.yandex/reference_en.html#System tables>`
+`Clickhouse docs <https://clickhouse.yandex/reference_en.html#System tables>`_.
 
 System models are read only models for implementing part of the system's functionality,
 and for providing access to information about how the system is working.
 
-Usage example:
+Usage example::
 
     >>>> from infi.clickhouse_orm import system_models
-    >>>> print(system_models.SystemPart.all())
+    >>>> print(system_models.SystemPart.get(Database()))
 
 Currently the following system models are supported:
 
@@ -208,7 +208,7 @@ SystemPart           system.parts    Gives methods to work with partitions. See 
 Partitions and parts
 --------------------
 
-`ClickHouse docs <https://clickhouse.yandex/reference_en.html#Manipulations with partitions and parts>`
+`ClickHouse docs <https://clickhouse.yandex/reference_en.html#Manipulations with partitions and parts>`_.
 
 A partition in a table is data for a single calendar month. Table "system.parts" contains information about each part.
 
@@ -324,7 +324,8 @@ You can create array fields containing any data type, for example::
 Working with materialized and alias fields
 ******************************************
 
-ClickHouse provides an opportunity to create MATERIALIZED and ALIAS fields.
+ClickHouse provides an opportunity to create MATERIALIZED and ALIAS Fields.
+
 See documentation `here <https://clickhouse.yandex/reference_en.html#Default values>`_.
 
 Both field types can't be inserted into the database directly, so they are ignored when using the ``Database.insert()`` method.
