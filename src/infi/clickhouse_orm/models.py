@@ -164,15 +164,16 @@ class Model(with_metaclass(ModelBase)):
             fields = [f for f in fields if not f[1].readonly]
         return '\t'.join(field.to_db_string(data[name], quote=False) for name, field in fields)
 
-    def to_dict(self, insertable_only=False, field_names=None):
+    def to_dict(self, insertable_only=False, field_names=None, timezone_in_use=pytz.utc):
         '''
         Returns the instance's column values as a dict.
         :param bool insertable_only: If True, returns only fields, that can be inserted into database
         :param field_names: An iterable of field names to return
+        :param timezone_in_use: timezone to convert DateField and DateTimeField.
         '''
         fields = [f for f in self._fields if not f[1].readonly] if insertable_only else self._fields
         if field_names is not None:
             fields = [f for f in fields if f[0] in field_names]
 
         data = self.__dict__
-        return {name: field.to_python(data[name]) for name, field in fields}
+        return {name: field.to_python(data[name], timezone_in_use) for name, field in fields}
