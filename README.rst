@@ -182,6 +182,7 @@ You can optionally pass conditions to the query::
 Note that ``order_by`` must be chosen so that the ordering is unique, otherwise there might be
 inconsistencies in the pagination (such as an instance that appears on two different pages).
 
+
 System models
 -------------
 
@@ -201,6 +202,8 @@ Currently the following system models are supported:
 Class                DB Table        Comments
 ===================  ============    ===================================================
 SystemPart           system.parts    Gives methods to work with partitions. See below.
+===================  ============    ===================================================
+
 
 Partitions and parts
 --------------------
@@ -219,6 +222,7 @@ drop                 database, settings=None    Drops the partition. Settings is
 attach               database, settings=None    Attaches already detached partition. Settings is a dict of params to pass to http request
 freeze               database, settings=None    Freezes (makes backup) of the partition. Settings is a dict of params to pass to http request
 fetch                database, settings=None    Fetches partition. Settings is a dict of params to pass to http request
+===================  =======================    =============================================================================================
 
 ``Note``: system.parts stores information for all databases. To be correct,
 SystemPart model was designed to receive only given database parts.
