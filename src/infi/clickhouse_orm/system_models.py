@@ -113,25 +113,30 @@ class SystemPart(Model):
         return self._partition_operation_sql(database, 'FETCH', settings=settings, from_part=zookeeper_path)
 
     @classmethod
-    def get_active(cls, database):
+    def get(cls, database, conditions=""):
         """
-        Get all active parts
+        Get all data from system.parts table
         :param database: A database object to fetch data from.
+        :param conditions: WHERE clause conditions. Database condition is added automatically
         :return: A list of SystemPart objects
         """
         assert isinstance(database, Database), "database must be database.Database class instance"
+        assert isinstance(conditions, str), "conditions must be a string"
+        if conditions:
+            conditions += " AND"
         field_names = ','.join([f[0] for f in cls._fields])
-        return database.select("SELECT %s FROM %s WHERE active AND database='%s'" %
-                               (field_names,  cls.table_name(), database.db_name), model_class=cls)
+        return database.select("SELECT %s FROM %s WHERE %s database='%s'" %
+                               (field_names,  cls.table_name(), conditions, database.db_name), model_class=cls)
 
     @classmethod
-    def all(cls, database):
+    def get_active(cls, database, conditions=""):
         """
-        Gets all data from system.parts database
-        :param database:
-        :return:
+        Gets active data from system.parts table
+        :param database: A database object to fetch data from.
+        :param conditions: WHERE clause conditions. Database and active conditions are added automatically
+        :return: A list of SystemPart objects
         """
-        assert isinstance(database, Database), "database must be database.Database class instance"
-        field_names = ','.join([f[0] for f in cls._fields])
-        return database.select("SELECT %s FROM %s WHERE database='%s'" %
-                               (field_names, cls.table_name(), database.db_name), model_class=cls)
+        if conditions:
+            conditions += ' AND '
+        conditions += 'active'
+        return SystemPart.get(database, conditions=conditions)
