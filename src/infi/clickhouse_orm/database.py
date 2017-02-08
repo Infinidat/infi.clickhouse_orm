@@ -62,11 +62,11 @@ class Database(object):
 
         def gen():
             yield self._substitute('INSERT INTO $table FORMAT TabSeparated\n', model_class).encode('utf-8')
-            yield (first_instance.to_tsv(insertable_only=True) + '\n').encode('utf-8')
+            yield (first_instance.to_tsv(include_readonly=False) + '\n').encode('utf-8')
             # Collect lines in batches of batch_size
             batch = []
             for instance in i:
-                batch.append(instance.to_tsv(insertable_only=True))
+                batch.append(instance.to_tsv(include_readonly=False))
                 if len(batch) >= batch_size:
                     # Return the current batch of lines
                     yield ('\n'.join(batch) + '\n').encode('utf-8')

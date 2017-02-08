@@ -65,7 +65,7 @@ class ModelTestCase(unittest.TestCase):
             "alias_field": 0.0,
             'str_field': 'dozo'
         })
-        self.assertDictEqual(instance.to_dict(insertable_only=True), {
+        self.assertDictEqual(instance.to_dict(include_readonly=False), {
             "date_field": datetime.date(1973, 12, 6),
             "int_field": 100,
             "float_field": 7.0,
@@ -73,7 +73,7 @@ class ModelTestCase(unittest.TestCase):
             'str_field': 'dozo'
         })
         self.assertDictEqual(
-            instance.to_dict(insertable_only=True, field_names=('int_field', 'alias_field', 'datetime_field')), {
+            instance.to_dict(include_readonly=False, field_names=('int_field', 'alias_field', 'datetime_field')), {
                 "int_field": 100,
                 "datetime_field": datetime.datetime(1970, 1, 1, 0, 0, 0, tzinfo=pytz.utc)
             })
