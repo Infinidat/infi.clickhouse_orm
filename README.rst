@@ -31,8 +31,8 @@ Models are defined in a way reminiscent of Django's ORM::
         engine = engines.MergeTree('birthday', ('first_name', 'last_name', 'birthday'))
 
 It is possible to provide a default value for a field, instead of its "natural" default (empty string for string fields, zero for numeric fields etc.).
-It is always possible to pass alias or materialized parameters. See below for usage examples.
-Only one of default, alias and materialized parameters can be provided
+Alternatively it is possible to pass alias or materialized parameters (see below for usage examples).
+Only one of ``default``, ``alias`` and ``materialized`` parameters can be provided.
 
 See below for the supported field types and table engines.
 
@@ -91,6 +91,11 @@ Using the ``Database`` instance you can create a table for your model, and inser
     db.insert([dan, suzy])
 
 The ``insert`` method can take any iterable of model instances, but they all must belong to the same model class.
+
+Creating a read-only database is also supported. Such a ``Database`` instance can only read data, and cannot
+modify data or schemas::
+
+    db = Database('my_test_db', readonly=True)
 
 Reading from the Database
 -------------------------
@@ -256,7 +261,25 @@ Float64Field         Float64     float
 Enum8Field           Enum8       Enum               See below
 Enum16Field          Enum16      Enum               See below
 ArrayField           Array       list               See below
-===================  ==========  =================  ===================================================
+===================  ========    =================  ===================================================
+
+DateTimeField and Time Zones
+****************************
+
+A ``DateTimeField`` can be assigned values from one of the following types:
+
+- datetime
+- date
+- integer - number of seconds since the Unix epoch
+- string in ``YYYY-MM-DD HH:MM:SS`` format
+
+The assigned value always gets converted to a timezone-aware ``datetime`` in UTC. If the assigned
+value is a timezone-aware ``datetime`` in another timezone, it will be converted to UTC. Otherwise, the assigned value is assumed to already be in UTC. 
+
+DateTime values that are read from the database are also converted to UTC. ClickHouse formats them according to the
+timezone of the server, and the ORM makes the necessary conversions. This requires a ClickHouse version which is new
+enough to support the ``timezone()`` function, otherwise it is assumed to be using UTC. In any case, we recommend
+settings the server timezone to UTC in order to prevent confusion.
 
 Working with enum fields
 ************************
@@ -301,15 +324,12 @@ You can create array fields containing any data type, for example::
 Working with materialized and alias fields
 ******************************************
 
-ClickHouse provides an opportunity to create MATERIALIZED and ALIAS Fields.
-
+ClickHouse provides an opportunity to create MATERIALIZED and ALIAS fields.
 See documentation `here <https://clickhouse.yandex/reference_en.html#Default values>`_.
 
-Both field types can't be inserted into database directly.
-These field values are ignored, when using database.insert() method.
-These fields are set to default values if you use database.select('SELECT * FROM mymodel', model_class=MyModel),
-because ClickHouse doesn't return them.
-Nevertheless, attribute values (as well as defaults) can be set for model object from python.
+Both field types can't be inserted into the database directly, so they are ignored when using the ``Database.insert()`` method.
+ClickHouse does not return the field values if you use ``"SELECT * FROM ..."`` - you have to list these field
+names explicitly in the query.
 
 Usage::
 
@@ -327,7 +347,7 @@ Usage::
     db.insert([obj])
     # All values will be retrieved from database
     db.select('SELECT created, created_date, username, name FROM $db.event', model_class=Event)
-    # created_date, username will contain default value
+    # created_date and username will contain a default value
     db.select('SELECT * FROM $db.event', model_class=Event)
 
 
@@ -374,3 +394,7 @@ After cloning the project, run the following commands::
 To run the tests, ensure that the ClickHouse server is running on http://localhost:8123/ (this is the default), and run::
 
     bin/nosetests
+
+To see test coverage information run::
+
+    bin/nosetests --with-coverage --cover-package=infi.clickhouse_orm

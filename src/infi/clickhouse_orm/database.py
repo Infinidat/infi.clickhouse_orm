@@ -4,9 +4,12 @@ from .models import ModelBase
 from .utils import escape, parse_tsv, import_submodules
 from math import ceil
 import datetime
-import logging
 from string import Template
 from six import PY3, string_types
+import pytz
+
+import logging
+logger = logging.getLogger('clickhouse_orm')
 
 
 Page = namedtuple('Page', 'objects number_of_objects pages_total number page_size')
@@ -26,6 +29,7 @@ class Database(object):
         self.readonly = readonly
         if not self.readonly:
             self.create_database()
+        self.server_timezone = self._get_server_timezone()
 
     def create_database(self):
         self._send('CREATE DATABASE IF NOT EXISTS `%s`' % self.db_name)
@@ -90,7 +94,7 @@ class Database(object):
         field_types = parse_tsv(next(lines))
         model_class = model_class or ModelBase.create_ad_hoc_model(zip(field_names, field_types))
         for line in lines:
-            yield model_class.from_tsv(line, field_names)
+            yield model_class.from_tsv(line, field_names, self.server_timezone)
 
     def raw(self, query, settings=None, stream=False):
         """
@@ -161,6 +165,8 @@ class Database(object):
             params['user'] = self.username
         if self.password:
             params['password'] = self.password
+        if self.readonly:
+            params['readonly'] = '1'
         return params
 
     def _substitute(self, query, model_class=None):
@@ -173,3 +179,11 @@ class Database(object):
                 mapping['table'] = "`%s`.`%s`" % (self.db_name, model_class.table_name())
             query = Template(query).substitute(mapping)
         return query
+
+    def _get_server_timezone(self):
+        try:
+            r = self._send('SELECT timezone()')
+            return pytz.timezone(r.text.strip())
+        except DatabaseException:
+            logger.exception('Cannot determine server timezone, assuming UTC')
+            return pytz.utc
