@@ -68,8 +68,9 @@ class Field(object):
         else:
             return self.db_type
 
-    def is_insertable(self):
-        return self.alias is None and self.materialized is None
+    @property
+    def readonly(self):
+        return self.alias is not None or self.materialized is not None
 
 
 class StringField(Field):

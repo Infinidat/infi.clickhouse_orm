@@ -177,6 +177,29 @@ You can optionally pass conditions to the query::
 Note that ``order_by`` must be chosen so that the ordering is unique, otherwise there might be
 inconsistencies in the pagination (such as an instance that appears on two different pages).
 
+System models
+-------------
+`Clickhouse docs <https://clickhouse.yandex/reference_en.html#System tables>`
+System models are read only models for implementing part of the system's functionality,
+and for providing access to information about how the system is working.
+
+Usage example:
+
+    >>>> from infi.clickhouse_orm import system_models
+    >>>> print(system_models.SystemPart.all())
+
+Currently the fllowing system models are supported:
+
+===================  ========    =================  ===================================================
+Class                DB Table     Pythonic Type      Comments
+===================  ========    =================  ===================================================
+SystemPart
+
+Partitions and parts
+--------------------
+`ClickHouse docs <https://clickhouse.yandex/reference_en.html#Manipulations with partitions and parts>`
+
+
 Schema Migrations
 -----------------
 

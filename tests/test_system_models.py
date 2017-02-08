@@ -26,7 +26,7 @@ class SystemPartTest(unittest.TestCase):
         return dirnames
 
     def test_get_all(self):
-        parts = SystemPart.all(self.database)
+        parts = SystemPart.get(self.database)
         self.assertEqual(len(list(parts)), 1)
 
     def test_get_active(self):
@@ -34,6 +34,12 @@ class SystemPartTest(unittest.TestCase):
         self.assertEqual(len(parts), 1)
         parts[0].detach(self.database)
         self.assertEqual(len(list(SystemPart.get_active(self.database))), 0)
+
+    def test_get_conditions(self):
+        parts = list(SystemPart.get(self.database, conditions="table='testtable'"))
+        self.assertEqual(len(parts), 1)
+        parts = list(SystemPart.get(self.database, conditions="table='othertable'"))
+        self.assertEqual(len(parts), 0)
 
     def test_attach_detach(self):
         parts = list(SystemPart.get_active(self.database))
@@ -49,7 +55,7 @@ class SystemPartTest(unittest.TestCase):
         self.assertEqual(len(list(SystemPart.get_active(self.database))), 0)
 
     def test_freeze(self):
-        parts = list(SystemPart.all(self.database))
+        parts = list(SystemPart.get(self.database))
         # There can be other backups in the folder
         prev_backups = set(self._get_backups())
         parts[0].freeze(self.database)
