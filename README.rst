@@ -212,11 +212,11 @@ Method               Parameters                 Comments
 ===================  =======================    =============================================================================================
 get(static)          database, conditions=""    Gets database partitions, filtered by conditions
 get_active(static)   database, conditions=""    Gets only active (not detached or dropped) partitions, filtered by conditions
-detach               database, settings=None    Detaches the partition. Settings is a dict of params to pass to http request
-drop                 database, settings=None    Drops the partition. Settings is a dict of params to pass to http request
-attach               database, settings=None    Attaches already detached partition. Settings is a dict of params to pass to http request
-freeze               database, settings=None    Freezes (makes backup) of the partition. Settings is a dict of params to pass to http request
-fetch                database, settings=None    Fetches partition. Settings is a dict of params to pass to http request
+detach               settings=None              Detaches the partition. Settings is a dict of params to pass to http request
+drop                 settings=None              Drops the partition. Settings is a dict of params to pass to http request
+attach               settings=None              Attaches already detached partition. Settings is a dict of params to pass to http request
+freeze               settings=None              Freezes (makes backup) of the partition. Settings is a dict of params to pass to http request
+fetch                settings=None              Fetches partition. Settings is a dict of params to pass to http request
 ===================  =======================    =============================================================================================
 
 Usage example::
@@ -227,7 +227,7 @@ Usage example::
     partitions = SystemPart.get_active(db, conditions='')  # Getting all active partitions of the database
     if len(partitions) > 0:
         partitions = sorted(partitions, key=lambda obj: obj.name)  # Partition name is YYYYMM, so we can sort so
-        partitions[0].freeze(db)  # Make a backup in /opt/clickhouse/shadow directory
+        partitions[0].freeze()  # Make a backup in /opt/clickhouse/shadow directory
         partitions[0].drop()  # Dropped partition
 
 ``Note``: system.parts stores information for all databases. To be correct,
