@@ -32,7 +32,7 @@ class SystemPartTest(unittest.TestCase):
     def test_get_active(self):
         parts = list(SystemPart.get_active(self.database))
         self.assertEqual(len(parts), 1)
-        parts[0].detach(self.database)
+        parts[0].detach()
         self.assertEqual(len(list(SystemPart.get_active(self.database))), 0)
 
     def test_get_conditions(self):
@@ -44,21 +44,21 @@ class SystemPartTest(unittest.TestCase):
     def test_attach_detach(self):
         parts = list(SystemPart.get_active(self.database))
         self.assertEqual(len(parts), 1)
-        parts[0].detach(self.database)
+        parts[0].detach()
         self.assertEqual(len(list(SystemPart.get_active(self.database))), 0)
-        parts[0].attach(self.database)
+        parts[0].attach()
         self.assertEqual(len(list(SystemPart.get_active(self.database))), 1)
 
     def test_drop(self):
         parts = list(SystemPart.get_active(self.database))
-        parts[0].drop(self.database)
+        parts[0].drop()
         self.assertEqual(len(list(SystemPart.get_active(self.database))), 0)
 
     def test_freeze(self):
         parts = list(SystemPart.get(self.database))
         # There can be other backups in the folder
         prev_backups = set(self._get_backups())
-        parts[0].freeze(self.database)
+        parts[0].freeze()
         backups = set(self._get_backups())
         self.assertEqual(len(backups), len(prev_backups) + 1)
         # Clean created backup

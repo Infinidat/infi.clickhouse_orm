@@ -79,6 +79,9 @@ class Model(with_metaclass(ModelBase)):
         Unrecognized field names will cause an AttributeError.
         '''
         super(Model, self).__init__()
+
+        self._database = None
+
         # Assign field values from keyword arguments
         for name, value in kwargs.items():
             field = self.get_field(name)
@@ -101,6 +104,17 @@ class Model(with_metaclass(ModelBase)):
             value = field.to_python(value, pytz.utc)
             field.validate(value)
         super(Model, self).__setattr__(name, value)
+
+    def set_database(self, db):
+        """
+        Sets _database attribute for current model instance
+        :param db: Database instance
+        :return: None
+        """
+        # This can not be imported globally due to circular import
+        from .database import Database
+        assert isinstance(db, Database), "database must be database.Database instance"
+        self._database = db
 
     def get_field(self, name):
         '''
@@ -138,11 +152,12 @@ class Model(with_metaclass(ModelBase)):
         return 'DROP TABLE IF EXISTS `%s`.`%s`' % (db_name, cls.table_name())
 
     @classmethod
-    def from_tsv(cls, line, field_names=None, timezone_in_use=pytz.utc):
+    def from_tsv(cls, line, field_names=None, timezone_in_use=pytz.utc, database=None):
         '''
         Create a model instance from a tab-separated line. The line may or may not include a newline.
         The field_names list must match the fields defined in the model, but does not have to include all of them.
         If omitted, it is assumed to be the names of all fields in the model, in order of definition.
+        :param database: if given, model receives database
         '''
         from six import next
         field_names = field_names or [name for name, field in cls._fields]
@@ -151,7 +166,12 @@ class Model(with_metaclass(ModelBase)):
         for name in field_names:
             field = getattr(cls, name)
             kwargs[name] = field.to_python(next(values), timezone_in_use)
-        return cls(**kwargs)
+
+        obj = cls(**kwargs)
+        if database is not None:
+            obj.set_database(database)
+
+        return obj
 
     def to_tsv(self, include_readonly=True):
         '''
