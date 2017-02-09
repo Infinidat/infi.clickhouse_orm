@@ -2,10 +2,9 @@
 This file contains system readonly models that can be got from database
 https://clickhouse.yandex/reference_en.html#System tables
 """
-from .database import Database  # Can't import it globally, due to circular import
+from .database import Database
 from .fields import *
 from .models import Model
-from .engines import MergeTree
 
 
 class SystemPart(Model):
@@ -51,7 +50,7 @@ class SystemPart(Model):
     Next methods return SQL for some operations, which can be done with partitions
     https://clickhouse.yandex/reference_en.html#Manipulations with partitions and parts
     """
-    def _partition_operation_sql(self, db, operation, settings=None, from_part=None):
+    def _partition_operation_sql(self, operation, settings=None, from_part=None):
         """
         Performs some operation over partition
         :param db: Database object to execute operation on
@@ -61,56 +60,51 @@ class SystemPart(Model):
         """
         operation = operation.upper()
         assert operation in self.OPERATIONS, "operation must be in [%s]" % ', '.join(self.OPERATIONS)
-        sql = "ALTER TABLE `%s`.`%s` %s PARTITION '%s'" % (db.db_name, self.table, operation, self.partition)
+        sql = "ALTER TABLE `%s`.`%s` %s PARTITION '%s'" % (self._database.db_name, self.table, operation, self.partition)
         if from_part is not None:
             sql += " FROM %s" % from_part
-        db.raw(sql, settings=settings, stream=False)
+        self._database.raw(sql, settings=settings, stream=False)
 
-    def detach(self, database, settings=None):
+    def detach(self, settings=None):
         """
         Move a partition to the 'detached' directory and forget it.
-        :param database: Database object to execute operation on
         :param settings: Settings for executing request to ClickHouse over db.raw() method
         :return: SQL Query
         """
-        return self._partition_operation_sql(database, 'DETACH', settings=settings)
+        return self._partition_operation_sql('DETACH', settings=settings)
 
-    def drop(self, database, settings=None):
+    def drop(self, settings=None):
         """
         Delete a partition
-        :param database: Database object to execute operation on
         :param settings: Settings for executing request to ClickHouse over db.raw() method
         :return: SQL Query
         """
-        return self._partition_operation_sql(database, 'DROP', settings=settings)
+        return self._partition_operation_sql('DROP', settings=settings)
 
-    def attach(self, database, settings=None):
+    def attach(self, settings=None):
         """
          Add a new part or partition from the 'detached' directory to the table.
-        :param database: Database object to execute operation on
         :param settings: Settings for executing request to ClickHouse over db.raw() method
         :return: SQL Query
         """
-        return self._partition_operation_sql(database, 'ATTACH', settings=settings)
+        return self._partition_operation_sql('ATTACH', settings=settings)
 
-    def freeze(self, database, settings=None):
+    def freeze(self, settings=None):
         """
         Create a backup of a partition.
-        :param database: Database object to execute operation on
         :param settings: Settings for executing request to ClickHouse over db.raw() method
         :return: SQL Query
         """
-        return self._partition_operation_sql(database, 'FREEZE', settings=settings)
+        return self._partition_operation_sql('FREEZE', settings=settings)
 
-    def fetch(self, database, zookeeper_path, settings=None):
+    def fetch(self, zookeeper_path, settings=None):
         """
         Download a partition from another server.
-        :param database: Database object to execute operation on
         :param zookeeper_path: Path in zookeeper to fetch from
         :param settings: Settings for executing request to ClickHouse over db.raw() method
         :return: SQL Query
         """
-        return self._partition_operation_sql(database, 'FETCH', settings=settings, from_part=zookeeper_path)
+        return self._partition_operation_sql('FETCH', settings=settings, from_part=zookeeper_path)
 
     @classmethod
     def get(cls, database, conditions=""):

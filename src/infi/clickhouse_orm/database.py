@@ -94,7 +94,7 @@ class Database(object):
         field_types = parse_tsv(next(lines))
         model_class = model_class or ModelBase.create_ad_hoc_model(zip(field_names, field_types))
         for line in lines:
-            yield model_class.from_tsv(line, field_names, self.server_timezone)
+            yield model_class.from_tsv(line, field_names, self.server_timezone, self)
 
     def raw(self, query, settings=None, stream=False):
         """
