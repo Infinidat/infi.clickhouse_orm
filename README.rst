@@ -191,17 +191,6 @@ System models
 System models are read only models for implementing part of the system's functionality,
 and for providing access to information about how the system is working.
 
-Usage example::
-
-    from infi.clickhouse_orm.database import Database
-    from infi.clickhouse_orm.system_models import SystemPart
-    db = Database('my_test_db', db_url='http://192.168.1.1:8050', username='scott', password='tiger')
-    partitions = SystemPart.get_active(db, conditions='')  # Getting all active partitions of the database
-    if len(partitions) > 0:
-        partitions = sorted(partitions, key=lambda obj: obj.name)  # Partition name is YYYYMM, so we can sort so
-        partitions[0].freeze(db)  # Make a backup in /opt/clickhouse/shadow directory
-        partitions[0].drop()  # Dropped partition
-
 Currently the following system models are supported:
 
 ===================  ============    ===================================================
@@ -229,6 +218,17 @@ attach               database, settings=None    Attaches already detached partit
 freeze               database, settings=None    Freezes (makes backup) of the partition. Settings is a dict of params to pass to http request
 fetch                database, settings=None    Fetches partition. Settings is a dict of params to pass to http request
 ===================  =======================    =============================================================================================
+
+Usage example::
+
+    from infi.clickhouse_orm.database import Database
+    from infi.clickhouse_orm.system_models import SystemPart
+    db = Database('my_test_db', db_url='http://192.168.1.1:8050', username='scott', password='tiger')
+    partitions = SystemPart.get_active(db, conditions='')  # Getting all active partitions of the database
+    if len(partitions) > 0:
+        partitions = sorted(partitions, key=lambda obj: obj.name)  # Partition name is YYYYMM, so we can sort so
+        partitions[0].freeze(db)  # Make a backup in /opt/clickhouse/shadow directory
+        partitions[0].drop()  # Dropped partition
 
 ``Note``: system.parts stores information for all databases. To be correct,
 SystemPart model was designed to receive only given database parts.
