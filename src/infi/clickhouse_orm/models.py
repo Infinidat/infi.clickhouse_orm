@@ -116,6 +116,13 @@ class Model(with_metaclass(ModelBase)):
         assert isinstance(db, Database), "database must be database.Database instance"
         self._database = db
 
+    def get_database(self):
+        """
+        Gets _database attribute for current model instance
+        :return: database.Database instance, model was inserted or selected from or None
+        """
+        return self._database
+
     def get_field(self, name):
         '''
         Get a Field instance given its name, or None if not found.

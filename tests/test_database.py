@@ -24,6 +24,8 @@ class DatabaseTestCase(unittest.TestCase):
     def _insert_and_check(self, data, count):
         self.database.insert(data)
         self.assertEquals(count, self.database.count(Person))
+        for instance in data:
+            self.assertEquals(self.database, instance.get_database())
 
     def test_insert__generator(self):
         self._insert_and_check(self._sample_data(), len(data))
@@ -53,6 +55,8 @@ class DatabaseTestCase(unittest.TestCase):
         self.assertEquals(results[0].height, 1.72)
         self.assertEquals(results[1].last_name, 'Scott')
         self.assertEquals(results[1].height, 1.70)
+        self.assertEqual(results[0].get_database(), self.database)
+        self.assertEqual(results[1].get_database(), self.database)
 
     def test_select_partial_fields(self):
         self._insert_and_check(self._sample_data(), len(data))
@@ -63,6 +67,8 @@ class DatabaseTestCase(unittest.TestCase):
         self.assertEquals(results[0].height, 0) # default value
         self.assertEquals(results[1].last_name, 'Scott')
         self.assertEquals(results[1].height, 0) # default value
+        self.assertEqual(results[0].get_database(), self.database)
+        self.assertEqual(results[1].get_database(), self.database)
 
     def test_select_ad_hoc_model(self):
         self._insert_and_check(self._sample_data(), len(data))
@@ -74,6 +80,8 @@ class DatabaseTestCase(unittest.TestCase):
         self.assertEquals(results[0].height, 1.72)
         self.assertEquals(results[1].last_name, 'Scott')
         self.assertEquals(results[1].height, 1.70)
+        self.assertEqual(results[0].get_database(), self.database)
+        self.assertEqual(results[1].get_database(), self.database)
 
     def test_pagination(self):
         self._insert_and_check(self._sample_data(), len(data))
