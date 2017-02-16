@@ -25,7 +25,13 @@ class Database(object):
         self.password = password
         self.readonly = readonly
         if not self.readonly:
-            self._send('CREATE DATABASE IF NOT EXISTS `%s`' % db_name)
+            self.create_database()
+
+    def create_database(self):
+        self._send('CREATE DATABASE IF NOT EXISTS `%s`' % self.db_name)
+
+    def drop_database(self):
+        self._send('DROP DATABASE `%s`' % self.db_name)
 
     def create_table(self, model_class):
         # TODO check that model has an engine
@@ -33,9 +39,6 @@ class Database(object):
 
     def drop_table(self, model_class):
         self._send(model_class.drop_table_sql(self.db_name))
-
-    def drop_database(self):
-        self._send('DROP DATABASE `%s`' % self.db_name)
 
     def insert(self, model_instances, batch_size=1000):
         from six import next
@@ -47,11 +50,11 @@ class Database(object):
         model_class = first_instance.__class__
         def gen():
             yield self._substitute('INSERT INTO $table FORMAT TabSeparated\n', model_class).encode('utf-8')
-            yield (first_instance.to_tsv() + '\n').encode('utf-8')
+            yield (first_instance.to_tsv(insertable_only=True) + '\n').encode('utf-8')
             # Collect lines in batches of batch_size
             batch = []
             for instance in i:
-                batch.append(instance.to_tsv())
+                batch.append(instance.to_tsv(insertable_only=True))
                 if len(batch) >= batch_size:
                     # Return the current batch of lines
                     yield ('\n'.join(batch) + '\n').encode('utf-8')
@@ -84,6 +87,10 @@ class Database(object):
     def paginate(self, model_class, order_by, page_num=1, page_size=100, conditions=None, settings=None):
         count = self.count(model_class, conditions)
         pages_total = int(ceil(count / float(page_size)))
+        if page_num == -1:
+            page_num = pages_total
+        elif page_num < 1:
+            raise ValueError('Invalid page number: %d' % page_num)
         offset = (page_num - 1) * page_size
         query = 'SELECT * FROM $table'
         if conditions:

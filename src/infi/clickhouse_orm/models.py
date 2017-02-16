@@ -150,9 +150,15 @@ class Model(with_metaclass(ModelBase)):
             kwargs[name] = next(values)
         return cls(**kwargs)
 
-    def to_tsv(self):
+    def to_tsv(self, insertable_only=False):
         '''
         Returns the instance's column values as a tab-separated line. A newline is not included.
+        :param bool insertable_only: If True, returns only fields, that can be inserted into database
         '''
         data = self.__dict__
-        return '\t'.join(field.to_db_string(data[name], quote=False) for name, field in self._fields)
+        fields = self._fields
+        if insertable_only:
+            fields = [f for f in fields if f[1].is_insertable()]
+        return '\t'.join(field.to_db_string(data[name], quote=False) for name, field in fields)
+
+

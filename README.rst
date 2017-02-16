@@ -31,8 +31,24 @@ Models are defined in a way reminiscent of Django's ORM::
         engine = engines.MergeTree('birthday', ('first_name', 'last_name', 'birthday'))
 
 It is possible to provide a default value for a field, instead of its "natural" default (empty string for string fields, zero for numeric fields etc.).
+It is always possible to pass alias or materialized parameters. See below for usage examples.
+Only one of default, alias and materialized parameters can be provided
 
 See below for the supported field types and table engines.
+
+Table Names
+***********
+
+The table name used for the model is its class name, converted to lowercase. To override the default name,
+implement the ``table_name`` method::
+
+    class Person(models.Model):
+
+        ...
+
+        @classmethod
+        def table_name(cls):
+            return 'people'
 
 Using Models
 ------------
@@ -138,7 +154,7 @@ Pagination
 It is possible to paginate through model instances::
 
     >>> order_by = 'first_name, last_name'
-    >>> page = db.paginate(Person, order_by, page_num=1, page_size=100)
+    >>> page = db.paginate(Person, order_by, page_num=1, page_size=10)
     >>> print page.number_of_objects
     2507
     >>> print page.pages_total
@@ -151,7 +167,7 @@ The ``paginate`` method returns a ``namedtuple`` containing the following fields
 - ``objects`` - the list of objects in this page
 - ``number_of_objects`` - total number of objects in all pages
 - ``pages_total`` - total number of pages
-- ``number`` - the page number
+- ``number`` - the page number, starting from 1; the special value -1 may be used to retrieve the last page
 - ``page_size`` - the number of objects per page
 
 You can optionally pass conditions to the query::
@@ -175,26 +191,26 @@ Field Types
 
 Currently the following field types are supported:
 
-=============  ========    =================  ===================================================
-Class          DB Type     Pythonic Type      Comments
-=============  ========    =================  ===================================================
-StringField    String      unicode            Encoded as UTF-8 when written to ClickHouse
-DateField      Date        datetime.date      Range 1970-01-01 to 2038-01-19
-DateTimeField  DateTime    datetime.datetime  Minimal value is 1970-01-01 00:00:00; Always in UTC
-Int8Field      Int8        int                Range -128 to 127
-Int16Field     Int16       int                Range -32768 to 32767
-Int32Field     Int32       int                Range -2147483648 to 2147483647
-Int64Field     Int64       int/long           Range -9223372036854775808 to 9223372036854775807
-UInt8Field     UInt8       int                Range 0 to 255
-UInt16Field    UInt16      int                Range 0 to 65535
-UInt32Field    UInt32      int                Range 0 to 4294967295
-UInt64Field    UInt64      int/long           Range 0 to 18446744073709551615
-Float32Field   Float32     float
-Float64Field   Float64     float
-Enum8Field     Enum8       Enum               See below
-Enum16Field    Enum16      Enum               See below
-ArrayField     Array       list               See below
-=============  ========    =================  ===================================================
+===================  ========    =================  ===================================================
+Class                DB Type     Pythonic Type      Comments
+===================  ========    =================  ===================================================
+StringField          String      unicode            Encoded as UTF-8 when written to ClickHouse
+DateField            Date        datetime.date      Range 1970-01-01 to 2038-01-19
+DateTimeField        DateTime    datetime.datetime  Minimal value is 1970-01-01 00:00:00; Always in UTC
+Int8Field            Int8        int                Range -128 to 127
+Int16Field           Int16       int                Range -32768 to 32767
+Int32Field           Int32       int                Range -2147483648 to 2147483647
+Int64Field           Int64       int/long           Range -9223372036854775808 to 9223372036854775807
+UInt8Field           UInt8       int                Range 0 to 255
+UInt16Field          UInt16      int                Range 0 to 65535
+UInt32Field          UInt32      int                Range 0 to 4294967295
+UInt64Field          UInt64      int/long           Range 0 to 18446744073709551615
+Float32Field         Float32     float
+Float64Field         Float64     float
+Enum8Field           Enum8       Enum               See below
+Enum16Field          Enum16      Enum               See below
+ArrayField           Array       list               See below
+===================  ==========  =================  ===================================================
 
 Working with enum fields
 ************************
@@ -234,6 +250,40 @@ You can create array fields containing any data type, for example::
         engine = engines.MergeTree('date', ('date',))
 
     data = SensorData(date=date.today(), temperatures=[25.5, 31.2, 28.7], humidity_levels=[41, 39, 66])
+
+
+Working with materialized and alias fields
+******************************************
+
+ClickHouse provides an opportunity to create MATERIALIZED and ALIAS Fields.
+
+See documentation `here <https://clickhouse.yandex/reference_en.html#Default values>`.
+
+Both field types can't be inserted into database directly.
+These field values are ignored, when using database.insert() method.
+These fields are set to default values if you use database.select('SELECT * FROM mymodel', model_class=MyModel),
+because ClickHouse doesn't return them.
+Nevertheless, attribute values (as well as defaults) can be set for model object from python.
+
+Usage::
+
+    class Event(models.Model):
+
+        created = fields.DateTimeField()
+        created_date = fields.DateTimeField(materialized='toDate(created)')
+        name = fields.StringField()
+        username = fields.StringField(alias='name')
+
+        engine = engines.MergeTree('created_date', ('created_date', 'created'))
+
+    obj = Event(created=datetime.now(), name='MyEvent')
+    db = Database('my_test_db')
+    db.insert([obj])
+    # All values will be retrieved from database
+    db.select('SELECT created, created_date, username, name FROM $db.event', model_class=Event)
+    # created_date, username will contain default value
+    db.select('SELECT * FROM $db.event', model_class=Event)
+
 
 Table Engines
 -------------
@@ -278,3 +328,7 @@ After cloning the project, run the following commands::
 To run the tests, ensure that the ClickHouse server is running on http://localhost:8123/ (this is the default), and run::
 
     bin/nosetests
+
+To see test coverage information run::
+
+    bin/nosetests --with-coverage --cover-package=infi.clickhouse_orm

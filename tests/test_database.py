@@ -93,6 +93,23 @@ class DatabaseTestCase(unittest.TestCase):
             # Verify that all instances were returned
             self.assertEquals(len(instances), len(data))
 
+    def test_pagination_last_page(self):
+        self._insert_and_check(self._sample_data(), len(data))
+        # Try different page sizes
+        for page_size in (1, 2, 7, 10, 30, 100, 150):
+            # Ask for the last page in two different ways and verify equality
+            page_a = self.database.paginate(Person, 'first_name, last_name', -1, page_size)
+            page_b = self.database.paginate(Person, 'first_name, last_name', page_a.pages_total, page_size)
+            self.assertEquals(page_a[1:], page_b[1:])
+            self.assertEquals([obj.to_tsv() for obj in page_a.objects], 
+                              [obj.to_tsv() for obj in page_b.objects])
+
+    def test_pagination_invalid_page(self):
+        self._insert_and_check(self._sample_data(), len(data))
+        for page_num in (0, -2, -100):
+            with self.assertRaises(ValueError):
+                self.database.paginate(Person, 'first_name, last_name', page_num, 100)
+
     def test_special_chars(self):
         s = u'אבגד \\\'"`,.;éåäöšž\n\t\0\b\r'
         p = Person(first_name=s)
