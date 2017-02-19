@@ -202,3 +202,16 @@ class Model(with_metaclass(ModelBase)):
 
         data = self.__dict__
         return {name: data[name] for name, field in fields}
+
+        
+class BufferModel(Model):
+
+    @classmethod
+    def create_table_sql(cls, db_name):
+        '''
+        Returns the SQL command for creating a table for this model.
+        '''
+        parts = ['CREATE TABLE IF NOT EXISTS `%s`.`%s` AS `%s`.`%s`' % (db_name, cls.table_name(), db_name, cls.engine.main_model.table_name())]
+        engine_str = cls.engine.create_table_sql(db_name)
+        parts.append(engine_str)
+        return ' '.join(parts)
