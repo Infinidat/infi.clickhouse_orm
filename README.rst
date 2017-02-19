@@ -380,6 +380,30 @@ For a ``SummingMergeTree`` you can optionally specify the summing columns::
     engine = engines.SummingMergeTree('EventDate', ('OrderID', 'EventDate', 'BannerID'),
                                       summing_cols=('Shows', 'Clicks', 'Cost'))
 
+A ``Buffer`` engine is available for BufferModels. (See below how to use BufferModel). You can specify following parameters::
+
+    engine = engines.Buffer(Person) # you need to initialize engine with main Model. Other default parameters will be used
+    # or:
+    engine = engines.Buffer(Person, num_layers=16, min_time=10, 
+                            max_time=100, min_rows=10000, max_rows=1000000, 
+                            min_bytes=10000000, max_bytes=100000000)
+
+Buffer Models
+-------------
+Here's how you can define Model for Buffer Engine. The Buffer Model should be inherited from models.BufferModel and main Model::
+
+    class PersonBuffer(models.BufferModel, Person):
+
+        engine = engines.Buffer(Person)
+
+Then you can insert objects into Buffer model and they will be handled by Clickhouse properly::
+
+    db.create_table(PersonBuffer)
+    suzy = PersonBuffer(first_name='Suzy', last_name='Jones')
+    dan = PersonBuffer(first_name='Dan', last_name='Schwartz')
+    db.insert([dan, suzy])
+
+
 Data Replication
 ****************
 
@@ -401,6 +425,7 @@ After cloning the project, run the following commands::
 To run the tests, ensure that the ClickHouse server is running on http://localhost:8123/ (this is the default), and run::
 
     bin/nosetests
+=======
 
 To see test coverage information run::
 

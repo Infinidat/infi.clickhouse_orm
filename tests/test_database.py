@@ -3,7 +3,7 @@
 import unittest
 
 from infi.clickhouse_orm.database import Database, DatabaseException
-from infi.clickhouse_orm.models import Model
+from infi.clickhouse_orm.models import Model, BufferModel
 from infi.clickhouse_orm.fields import *
 from infi.clickhouse_orm.engines import *
 
@@ -16,8 +16,10 @@ class DatabaseTestCase(unittest.TestCase):
     def setUp(self):
         self.database = Database('test-db')
         self.database.create_table(Person)
+        self.database.create_table(PersonBuffer)
 
     def tearDown(self):
+        self.database.drop_table(PersonBuffer)
         self.database.drop_table(Person)
         self.database.drop_database()
 
@@ -26,6 +28,10 @@ class DatabaseTestCase(unittest.TestCase):
         self.assertEquals(count, self.database.count(Person))
         for instance in data:
             self.assertEquals(self.database, instance.get_database())
+
+    def _insert_and_check_buffer(self, data, count):
+        self.database.insert(data)
+        self.assertEquals(count, self.database.count(PersonBuffer))
 
     def test_insert__generator(self):
         self._insert_and_check(self._sample_data(), len(data))
@@ -137,6 +143,9 @@ class DatabaseTestCase(unittest.TestCase):
             self.database.drop_database()
         self.database = orig_database
 
+    def test_insert_buffer(self):
+        self._insert_and_check_buffer(self._sample_buffer_data(), len(data))
+
     def _sample_data(self):
         for entry in data:
             yield Person(**entry)
@@ -160,6 +169,11 @@ class DatabaseTestCase(unittest.TestCase):
         with self.assertRaises(DatabaseException):
             self.database.drop_table(ReadOnlyModel)
 
+    def _sample_buffer_data(self):
+        for entry in data:
+            yield PersonBuffer(**entry)
+
+
 
 class Person(Model):
 
@@ -175,6 +189,11 @@ class ReadOnlyModel(Model):
     readonly = True
 
     name = StringField()
+
+
+class PersonBuffer(BufferModel, Person):
+    
+    engine = Buffer(Person)    
 
 
 
