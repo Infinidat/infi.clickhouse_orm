@@ -22,6 +22,8 @@ class SystemPartTest(unittest.TestCase):
         self.database.drop_database()
 
     def _get_backups(self):
+        if not os.path.exists(self.BACKUP_DIR):
+            return []
         _, dirnames, _ = next(os.walk(self.BACKUP_DIR))
         return dirnames
 
