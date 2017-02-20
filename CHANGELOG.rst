@@ -8,6 +8,10 @@ Change Log
 - Pagination: passing -1 as the page number now returns the last page
 - Accept datetime values for date fields (Zloool)
 - Support readonly mode in Database class (tswr)
+- Added support for the Buffer table engine (emakarov)
+- Added the SystemPart readonly model, which provides operations on partitions (M1ha)
+- Added Model.to_dict() that converts a model instance to a dictionary (M1ha)
+- Added Database.raw() to perform arbitrary queries (M1ha)
 
 v0.7.1
 ------
