@@ -66,10 +66,7 @@ class SummingMergeTree(MergeTree):
 class Merge(Engine):
 
     def __init__(self, database, tablePattern):
-        try:
-            from infi.clickhouse_orm.utils import escape
-        except:
-            from src.infi.clickhouse_orm.utils import escape
+        from .utils import escape
         self.database = escape(database, True)
         self.tablePattern = escape(tablePattern, True)
 
@@ -81,6 +78,7 @@ class Merge(Engine):
     def _build_sql_params(self):
         params = [str(self.database), str(self.tablePattern)]
         return params
+
 
 class ReplacingMergeTree(Engine):
 
