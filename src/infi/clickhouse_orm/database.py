@@ -17,6 +17,7 @@ Page = namedtuple('Page', 'objects number_of_objects pages_total number page_siz
 
 logger = logging.getLogger(__name__)
 
+
 class DatabaseException(Exception):
     pass
 
@@ -99,10 +100,10 @@ class Database(object):
                 except:
                     # binary insertion
                     if len(cache) > 1:
-                        self.insert(self, cache[:(len(cache) / 2)],
+                        self.insert_try_best(self, cache[:(len(cache) / 2)],
                                     bulksize=min(len(cache[:(len(cache) / 2)]), batch_size), is_create=is_create,
                                     insert_count=insert_count, first_recu=False)
-                        self.insert(self, cache[(len(cache) / 2):],
+                        self.insert_try_best(self, cache[(len(cache) / 2):],
                                     bulksize=min(len(cache[(len(cache) / 2):]), batch_size), is_create=is_create,
                                     insert_count=insert_count, first_recu=False)
                     elif len(cache) == 1:
@@ -117,9 +118,9 @@ class Database(object):
             except:
                 # binary insertion
                 if len(cache) > 1:
-                    self.insert(self, cache[:(len(cache) / 2)], min(len(cache[:(len(cache) / 2)]) / 2, batch_size),
+                    self.insert_try_best(self, cache[:(len(cache) / 2)], min(len(cache[:(len(cache) / 2)]) / 2, batch_size),
                                 is_create=is_create, insert_count=insert_count, first_recu=False)
-                    self.insert(self, cache[(len(cache) / 2):], min(len(cache[(len(cache) / 2):]) / 2, batch_size),
+                    self.insert_try_best(self, cache[(len(cache) / 2):], min(len(cache[(len(cache) / 2):]) / 2, batch_size),
                                 is_create=is_create, insert_count=insert_count, first_recu=False)
                 elif len(cache) == 1:
                     logger.error("%s; LOG: %s" % (str(sys.exc_info()), ))
