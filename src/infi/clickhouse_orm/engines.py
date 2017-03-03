@@ -140,4 +140,3 @@ class Buffer(Engine):
                    self.max_rows, self.min_bytes, self.max_bytes
               )
         return sql
-
