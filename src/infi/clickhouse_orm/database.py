@@ -85,8 +85,12 @@ class Database(object):
                 except:
                     # binary insertion
                     if len(cache) > 1:
-                        self.insert(self, cache[:(len(cache) / 2)], bulksize = min(len(cache[:(len(cache) / 2)]), batch_size), is_create=is_create, insert_count=insert_count, first_recu=False)
-                        self.insert(self, cache[(len(cache) / 2):], bulksize = min(len(cache[(len(cache) / 2):]), batch_size), is_create=is_create, insert_count=insert_count, first_recu=False)
+                        self.insert(self, cache[:(len(cache) / 2)],
+                                    bulksize=min(len(cache[:(len(cache) / 2)]), batch_size), is_create=is_create,
+                                    insert_count=insert_count, first_recu=False)
+                        self.insert(self, cache[(len(cache) / 2):],
+                                    bulksize=min(len(cache[(len(cache) / 2):]), batch_size), is_create=is_create,
+                                    insert_count=insert_count, first_recu=False)
                     elif len(cache) == 1:
                         import sys
                         logger.error("%s" % (str(sys.exc_info()), ))
@@ -99,8 +103,10 @@ class Database(object):
             except:
                 # binary insertion
                 if len(cache) > 1:
-                    self.insert(self, cache[:(len(cache) / 2)], min(len(cache[:(len(cache) / 2)]) / 2, batch_size), is_create=is_create, insert_count=insert_count, first_recu=False)
-                    self.insert(self, cache[(len(cache) / 2):], min(len(cache[(len(cache) / 2):]) / 2, batch_size), is_create=is_create, insert_count=insert_count, first_recu=False)
+                    self.insert(self, cache[:(len(cache) / 2)], min(len(cache[:(len(cache) / 2)]) / 2, batch_size),
+                                is_create=is_create, insert_count=insert_count, first_recu=False)
+                    self.insert(self, cache[(len(cache) / 2):], min(len(cache[(len(cache) / 2):]) / 2, batch_size),
+                                is_create=is_create, insert_count=insert_count, first_recu=False)
                 elif len(cache) == 1:
                     logger.error("%s; LOG: %s" % (str(sys.exc_info()), ))
         if first_recu:
