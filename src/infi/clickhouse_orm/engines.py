@@ -64,9 +64,12 @@ class SummingMergeTree(MergeTree):
 
 
 class Merge(Engine):
+    """Here we define Merge engine
+    Read more here https://clickhouse.yandex/reference_en.html#Merge
+    """
 
     def __init__(self, database, tablePattern):
-        from .utils import escape
+        from utils import escape
         self.database = escape(database, True)
         self.tablePattern = escape(tablePattern, True)
 
@@ -81,6 +84,9 @@ class Merge(Engine):
 
 
 class ReplacingMergeTree(Engine):
+    """Here we define ReplacingMergeTree engine
+    Read more here https://clickhouse.yandex/reference_en.html#ReplacingMergeTree
+    """
 
     def __init__(self, date_col, key_cols, ver_col, index_granularity=8192):
         self.date_col = date_col
