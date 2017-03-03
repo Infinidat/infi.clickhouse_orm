@@ -4,9 +4,12 @@ from .models import ModelBase
 from .utils import escape, parse_tsv, import_submodules
 from math import ceil
 import datetime
-import logging
 from string import Template
 from six import PY3, string_types
+import pytz
+
+import logging
+logger = logging.getLogger('clickhouse_orm')
 
 
 
@@ -28,6 +31,7 @@ class Database(object):
         self.readonly = readonly
         if not self.readonly:
             self.create_database()
+        self.server_timezone = self._get_server_timezone()
 
     def create_database(self):
         self._send('CREATE DATABASE IF NOT EXISTS `%s`' % self.db_name)
@@ -37,9 +41,13 @@ class Database(object):
 
     def create_table(self, model_class):
         # TODO check that model has an engine
+        if model_class.readonly:
+            raise DatabaseException("You can't create read only table")
         self._send(model_class.create_table_sql(self.db_name))
 
     def drop_table(self, model_class):
+        if model_class.readonly:
+            raise DatabaseException("You can't drop read only table")
         self._send(model_class.drop_table_sql(self.db_name))
 
     def insert(self, model_instances, batch_size=1000):
@@ -50,13 +58,19 @@ class Database(object):
         except StopIteration:
             return # model_instances is empty
         model_class = first_instance.__class__
+
+        if first_instance.readonly:
+            raise DatabaseException("You can't insert into read only table")
+
         def gen():
             yield self._substitute('INSERT INTO $table FORMAT TabSeparated\n', model_class).encode('utf-8')
-            yield (first_instance.to_tsv(insertable_only=True) + '\n').encode('utf-8')
+            first_instance.set_database(self)
+            yield (first_instance.to_tsv(include_readonly=False) + '\n').encode('utf-8')
             # Collect lines in batches of batch_size
             batch = []
             for instance in i:
-                batch.append(instance.to_tsv(insertable_only=True))
+                instance.set_database(self)
+                batch.append(instance.to_tsv(include_readonly=False))
                 if len(batch) >= batch_size:
                     # Return the current batch of lines
                     yield ('\n'.join(batch) + '\n').encode('utf-8')
@@ -134,7 +148,18 @@ class Database(object):
         field_types = parse_tsv(next(lines))
         model_class = model_class or ModelBase.create_ad_hoc_model(zip(field_names, field_types))
         for line in lines:
-            yield model_class.from_tsv(line, field_names)
+            yield model_class.from_tsv(line, field_names, self.server_timezone, self)
+
+    def raw(self, query, settings=None, stream=False):
+        """
+        Performs raw query to database. Returns its output
+        :param query: Query to execute
+        :param settings: Query settings to send as query GET parameters
+        :param stream: If flag is true, Http response from ClickHouse will be streamed.
+        :return: Query execution result
+        """
+        query = self._substitute(query, None)
+        return self._send(query, settings=settings, stream=stream).text
 
     def paginate(self, model_class, order_by, page_num=1, page_size=100, conditions=None, settings=None):
         count = self.count(model_class, conditions)
@@ -194,6 +219,8 @@ class Database(object):
             params['user'] = self.username
         if self.password:
             params['password'] = self.password
+        if self.readonly:
+            params['readonly'] = '1'
         return params
 
     def _substitute(self, query, model_class=None):
@@ -206,3 +233,11 @@ class Database(object):
                 mapping['table'] = "`%s`.`%s`" % (self.db_name, model_class.table_name())
             query = Template(query).substitute(mapping)
         return query
+
+    def _get_server_timezone(self):
+        try:
+            r = self._send('SELECT timezone()')
+            return pytz.timezone(r.text.strip())
+        except DatabaseException:
+            logger.exception('Cannot determine server timezone, assuming UTC')
+            return pytz.utc

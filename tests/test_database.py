@@ -2,8 +2,8 @@
 
 import unittest
 
-from infi.clickhouse_orm.database import Database
-from infi.clickhouse_orm.models import Model
+from infi.clickhouse_orm.database import Database, DatabaseException
+from infi.clickhouse_orm.models import Model, BufferModel
 from infi.clickhouse_orm.fields import *
 from infi.clickhouse_orm.engines import *
 
@@ -16,14 +16,22 @@ class DatabaseTestCase(unittest.TestCase):
     def setUp(self):
         self.database = Database('test-db')
         self.database.create_table(Person)
+        self.database.create_table(PersonBuffer)
 
     def tearDown(self):
+        self.database.drop_table(PersonBuffer)
         self.database.drop_table(Person)
         self.database.drop_database()
 
     def _insert_and_check(self, data, count):
         self.database.insert(data)
         self.assertEquals(count, self.database.count(Person))
+        for instance in data:
+            self.assertEquals(self.database, instance.get_database())
+
+    def _insert_and_check_buffer(self, data, count):
+        self.database.insert(data)
+        self.assertEquals(count, self.database.count(PersonBuffer))
 
     def test_insert__generator(self):
         self._insert_and_check(self._sample_data(), len(data))
@@ -53,6 +61,8 @@ class DatabaseTestCase(unittest.TestCase):
         self.assertEquals(results[0].height, 1.72)
         self.assertEquals(results[1].last_name, 'Scott')
         self.assertEquals(results[1].height, 1.70)
+        self.assertEqual(results[0].get_database(), self.database)
+        self.assertEqual(results[1].get_database(), self.database)
 
     def test_select_partial_fields(self):
         self._insert_and_check(self._sample_data(), len(data))
@@ -63,6 +73,8 @@ class DatabaseTestCase(unittest.TestCase):
         self.assertEquals(results[0].height, 0) # default value
         self.assertEquals(results[1].last_name, 'Scott')
         self.assertEquals(results[1].height, 0) # default value
+        self.assertEqual(results[0].get_database(), self.database)
+        self.assertEqual(results[1].get_database(), self.database)
 
     def test_select_ad_hoc_model(self):
         self._insert_and_check(self._sample_data(), len(data))
@@ -74,6 +86,8 @@ class DatabaseTestCase(unittest.TestCase):
         self.assertEquals(results[0].height, 1.72)
         self.assertEquals(results[1].last_name, 'Scott')
         self.assertEquals(results[1].height, 1.70)
+        self.assertEqual(results[0].get_database(), self.database)
+        self.assertEqual(results[1].get_database(), self.database)
 
     def test_pagination(self):
         self._insert_and_check(self._sample_data(), len(data))
@@ -117,9 +131,48 @@ class DatabaseTestCase(unittest.TestCase):
         p = list(self.database.select("SELECT * from $table", Person))[0]
         self.assertEquals(p.first_name, s)
 
+    def test_readonly(self):
+        orig_database = self.database
+        self.database = Database(orig_database.db_name, readonly=True)
+        with self.assertRaises(DatabaseException):
+            self._insert_and_check(self._sample_data(), len(data))
+        self.assertEquals(self.database.count(Person), 0)
+        with self.assertRaises(DatabaseException):
+            self.database.drop_table(Person)
+        with self.assertRaises(DatabaseException):
+            self.database.drop_database()
+        self.database = orig_database
+
+    def test_insert_buffer(self):
+        self._insert_and_check_buffer(self._sample_buffer_data(), len(data))
+
     def _sample_data(self):
         for entry in data:
             yield Person(**entry)
+
+    def test_raw(self):
+        self._insert_and_check(self._sample_data(), len(data))
+        query = "SELECT * FROM `test-db`.person WHERE first_name = 'Whitney' ORDER BY last_name"
+        results = self.database.raw(query)
+        self.assertEqual(results, "Whitney\tDurham\t1977-09-15\t1.72\nWhitney\tScott\t1971-07-04\t1.7\n")
+
+    def test_insert_readonly(self):
+        m = ReadOnlyModel(name='readonly')
+        with self.assertRaises(DatabaseException):
+            self.database.insert([m])
+
+    def test_create_readonly_table(self):
+        with self.assertRaises(DatabaseException):
+            self.database.create_table(ReadOnlyModel)
+
+    def test_drop_readonly_table(self):
+        with self.assertRaises(DatabaseException):
+            self.database.drop_table(ReadOnlyModel)
+
+    def _sample_buffer_data(self):
+        for entry in data:
+            yield PersonBuffer(**entry)
+
 
 
 class Person(Model):
@@ -130,6 +183,18 @@ class Person(Model):
     height = Float32Field()
 
     engine = MergeTree('birthday', ('first_name', 'last_name', 'birthday'))
+
+
+class ReadOnlyModel(Model):
+    readonly = True
+
+    name = StringField()
+
+
+class PersonBuffer(BufferModel, Person):
+    
+    engine = Buffer(Person)    
+
 
 
 data = [

@@ -2,6 +2,7 @@ from six import string_types, text_type, binary_type
 import datetime
 import pytz
 import time
+from calendar import timegm
 
 from .utils import escape, parse_array
 
@@ -15,8 +16,10 @@ class Field(object):
     def __init__(self, default=None, alias=None, materialized=None):
         assert (None, None) in {(default, alias), (alias, materialized), (default, materialized)}, \
             "Only one of default, alias and materialized parameters can be given"
-        assert alias is None or isinstance(alias, str), "Alias field must be string field name, if given"
-        assert materialized is None or isinstance(materialized, str), "Materialized field must be string, if given"
+        assert alias is None or isinstance(alias, str) and alias != "",\
+            "Alias field must be string field name, if given"
+        assert materialized is None or isinstance(materialized, str) and alias != "",\
+            "Materialized field must be string, if given"
 
         self.creation_counter = Field.creation_counter
         Field.creation_counter += 1
@@ -24,10 +27,11 @@ class Field(object):
         self.alias = alias
         self.materialized = materialized
 
-    def to_python(self, value):
+    def to_python(self, value, timezone_in_use):
         '''
         Converts the input value into the expected Python data type, raising ValueError if the
         data can't be converted. Returns the converted value. Subclasses should override this.
+        The timezone_in_use parameter should be consulted when parsing datetime fields.
         '''
         return value
 
@@ -68,8 +72,9 @@ class Field(object):
         else:
             return self.db_type
 
-    def is_insertable(self):
-        return self.alias is None and self.materialized is None
+    @property
+    def readonly(self):
+        return bool(self.alias or self.materialized)
 
 
 class StringField(Field):
@@ -77,7 +82,7 @@ class StringField(Field):
     class_default = ''
     db_type = 'String'
 
-    def to_python(self, value):
+    def to_python(self, value, timezone_in_use):
         if isinstance(value, text_type):
             return value
         if isinstance(value, binary_type):
@@ -92,11 +97,11 @@ class DateField(Field):
     class_default = min_value
     db_type = 'Date'
 
-    def to_python(self, value):
+    def to_python(self, value, timezone_in_use):
+        if isinstance(value, datetime.datetime):
+            return value.astimezone(pytz.utc).date() if value.tzinfo else value.date()
         if isinstance(value, datetime.date):
             return value
-        if isinstance(value, datetime.datetime):
-            return value.date()
         if isinstance(value, int):
             return DateField.class_default + datetime.timedelta(days=value)
         if isinstance(value, string_types):
@@ -117,26 +122,28 @@ class DateTimeField(Field):
     class_default = datetime.datetime.fromtimestamp(0, pytz.timezone('Asia/Shanghai'))
     db_type = 'DateTime'
 
-    def to_python(self, value):
+    def to_python(self, value, timezone_in_use):
         if isinstance(value, datetime.datetime):
-            return value
+            return value.astimezone(pytz.utc) if value.tzinfo else value.replace(tzinfo=pytz.utc)
         if isinstance(value, datetime.date):
-            return datetime.datetime(value.year, value.month, value.day)
+            return datetime.datetime(value.year, value.month, value.day, tzinfo=pytz.utc)
         if isinstance(value, int):
-            return datetime.datetime.fromtimestamp(value, pytz.timezone('Asia/Shanghai'))
+            # return datetime.datetime.fromtimestamp(value, pytz.timezone('Asia/Shanghai'))
+            return datetime.datetime.utcfromtimestamp(value).replace(tzinfo=pytz.utc)
         if isinstance(value, string_types):
             if value == '0000-00-00 00:00:00':
                 return self.class_default
-            return datetime.datetime.strptime(value, '%Y-%m-%d %H:%M:%S')
+            dt = datetime.datetime.strptime(value, '%Y-%m-%d %H:%M:%S')
+            return timezone_in_use.localize(dt).astimezone(pytz.utc)
         raise ValueError('Invalid value for %s - %r' % (self.__class__.__name__, value))
 
     def to_db_string(self, value, quote=True):
-        return escape(int(time.mktime(value.timetuple())), quote)
+        return escape(timegm(value.utctimetuple()), quote)
 
 
 class BaseIntField(Field):
 
-    def to_python(self, value):
+    def to_python(self, value, timezone_in_use):
         try:
             return int(value)
         except:
@@ -204,7 +211,7 @@ class Int64Field(BaseIntField):
 
 class BaseFloatField(Field):
 
-    def to_python(self, value):
+    def to_python(self, value, timezone_in_use):
         try:
             return float(value)
         except:
@@ -229,7 +236,7 @@ class BaseEnumField(Field):
             default = list(enum_cls)[0]
         super(BaseEnumField, self).__init__(default, alias, materialized)
 
-    def to_python(self, value):
+    def to_python(self, value, timezone_in_use):
         if isinstance(value, self.enum_cls):
             return value
         try:
@@ -291,14 +298,14 @@ class ArrayField(Field):
         self.inner_field = inner_field
         super(ArrayField, self).__init__(default, alias, materialized)
 
-    def to_python(self, value):
+    def to_python(self, value, timezone_in_use):
         if isinstance(value, text_type):
             value = parse_array(value)
         elif isinstance(value, binary_type):
             value = parse_array(value.decode('UTF-8'))
         elif not isinstance(value, (list, tuple)):
             raise ValueError('ArrayField expects list or tuple, not %s' % type(value))
-        return [self.inner_field.to_python(v) for v in value]
+        return [self.inner_field.to_python(v, timezone_in_use) for v in value]
 
     def validate(self, value):
         for v in value:
