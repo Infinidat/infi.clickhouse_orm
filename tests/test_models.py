@@ -55,6 +55,29 @@ class ModelTestCase(unittest.TestCase):
         instance.int_field = '99'
         self.assertEquals(instance.int_field, 99)
 
+    def test_to_dict(self):
+        instance = SimpleModel(date_field='1973-12-06', int_field='100', float_field='7')
+        self.assertDictEqual(instance.to_dict(), {
+            "date_field": datetime.date(1973, 12, 6),
+            "int_field": 100,
+            "float_field": 7.0,
+            "datetime_field": datetime.datetime(1970, 1, 1, 0, 0, 0, tzinfo=pytz.utc),
+            "alias_field": 0.0,
+            'str_field': 'dozo'
+        })
+        self.assertDictEqual(instance.to_dict(include_readonly=False), {
+            "date_field": datetime.date(1973, 12, 6),
+            "int_field": 100,
+            "float_field": 7.0,
+            "datetime_field": datetime.datetime(1970, 1, 1, 0, 0, 0, tzinfo=pytz.utc),
+            'str_field': 'dozo'
+        })
+        self.assertDictEqual(
+            instance.to_dict(include_readonly=False, field_names=('int_field', 'alias_field', 'datetime_field')), {
+                "int_field": 100,
+                "datetime_field": datetime.datetime(1970, 1, 1, 0, 0, 0, tzinfo=pytz.utc)
+            })
+
 
 class SimpleModel(Model):
 
@@ -63,6 +86,7 @@ class SimpleModel(Model):
     str_field = StringField(default='dozo')
     int_field = Int32Field(default=17)
     float_field = Float32Field()
+    alias_field = Float32Field(alias='float_field')
 
     engine = MergeTree('date_field', ('int_field', 'date_field'))
 
