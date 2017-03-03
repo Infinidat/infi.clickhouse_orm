@@ -9,8 +9,10 @@ from string import Template
 from six import PY3, string_types
 
 
+
 Page = namedtuple('Page', 'objects number_of_objects pages_total number page_size')
 
+logger = logging.getLogger(__name__)
 
 class DatabaseException(Exception):
     pass
@@ -64,6 +66,50 @@ class Database(object):
             if batch:
                 yield ('\n'.join(batch) + '\n').encode('utf-8')
         self._send(gen())
+
+    def insert_try_best(self, model_instances, batch_size = 1000, is_create = False, insert_count = 0, first_recu = True):
+        cache = []
+        table_name = None
+        for elem in model_instances:
+            if is_create == False:
+                self.create_table(elem)
+                is_create = True
+                table_name = elem.table_name()
+            cache.append(elem)
+            if len(cache) >= batch_size:
+                try:
+                    # Must ensure that batch_size > = bulksize
+                    self.insert(cache, batch_size=batch_size)
+                    insert_count += len(cache)
+                    cache = []
+                except:
+                    # binary insertion
+                    if len(cache) > 1:
+                        self.insert(self, cache[:(len(cache) / 2)], bulksize = min(len(cache[:(len(cache) / 2)]), batch_size), is_create=is_create, insert_count=insert_count, first_recu=False)
+                        self.insert(self, cache[(len(cache) / 2):], bulksize = min(len(cache[(len(cache) / 2):]), batch_size), is_create=is_create, insert_count=insert_count, first_recu=False)
+                    elif len(cache) == 1:
+                        import sys
+                        logger.error("%s" % (str(sys.exc_info()), ))
+                    cache = []
+        if cache:
+            try:
+                # Must ensure that batch_size > = bulksize
+                self.insert(cache, batch_size=batch_size)
+                insert_count += len(cache)
+            except:
+                # binary insertion
+                if len(cache) > 1:
+                    self.insert(self, cache[:(len(cache) / 2)], min(len(cache[:(len(cache) / 2)]) / 2, batch_size), is_create=is_create, insert_count=insert_count, first_recu=False)
+                    self.insert(self, cache[(len(cache) / 2):], min(len(cache[(len(cache) / 2):]) / 2, batch_size), is_create=is_create, insert_count=insert_count, first_recu=False)
+                elif len(cache) == 1:
+                    logger.error("%s; LOG: %s" % (str(sys.exc_info()), ))
+        if first_recu:
+            logger.info("%(db_name)s.%(table_name)s insert %(count)d records." % {
+                "db_name": self.db_name,
+                "table_name": table_name,
+                "count": insert_count,
+            })
+
 
     def count(self, model_class, conditions=None):
         query = 'SELECT count() FROM $table'
