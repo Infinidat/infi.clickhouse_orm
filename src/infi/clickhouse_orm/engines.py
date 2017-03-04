@@ -65,14 +65,15 @@ class SummingMergeTree(MergeTree):
 
 class ReplacingMergeTree(MergeTree):
 
-    def __init__(self, date_col, key_cols, ver_col, sampling_expr=None,
+    def __init__(self, date_col, key_cols, ver_col=None, sampling_expr=None,
                  index_granularity=8192, replica_table_path=None, replica_name=None):
         super(ReplacingMergeTree, self).__init__(date_col, key_cols, sampling_expr, index_granularity, replica_table_path, replica_name)
         self.ver_col = ver_col
 
     def _build_sql_params(self):
         params = super(ReplacingMergeTree, self)._build_sql_params()
-        params.append(self.ver_col)
+        if self.ver_col:
+            params.append(self.ver_col)
         return params
 
 
