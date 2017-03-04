@@ -63,6 +63,19 @@ class SummingMergeTree(MergeTree):
         return params
 
 
+class ReplacingMergeTree(MergeTree):
+
+    def __init__(self, date_col, key_cols, ver_col, sampling_expr=None,
+                 index_granularity=8192, replica_table_path=None, replica_name=None):
+        super(ReplacingMergeTree, self).__init__(date_col, key_cols, sampling_expr, index_granularity, replica_table_path, replica_name)
+        self.ver_col = ver_col
+
+    def _build_sql_params(self):
+        params = super(ReplacingMergeTree, self)._build_sql_params()
+        params.append(self.ver_col)
+        return params
+
+
 class Buffer(Engine):
     """Here we define Buffer engine
     Read more here https://clickhouse.yandex/reference_en.html#Buffer
