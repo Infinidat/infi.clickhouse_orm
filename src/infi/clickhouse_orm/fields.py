@@ -137,7 +137,7 @@ class DateTimeField(Field):
         raise ValueError('Invalid value for %s - %r' % (self.__class__.__name__, value))
 
     def to_db_string(self, value, quote=True):
-        return escape(('0000000000' + str(timegm(value.utctimetuple())))[-10:], quote)
+        return escape('%010d' % (timegm(value.utctimetuple())), quote)
 
 
 class BaseIntField(Field):
