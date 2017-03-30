@@ -131,6 +131,26 @@ class Database(object):
                 "count": insert_count,
             })
 
+    def outfile(self, query, out_path, mapfunc = None):
+        import os
+        import gzip
+        if not (os.path.exists(out_path) and os.path.exists(out_path)):
+            raise Exception("out_path is not exists.")
+
+        if out_path.endswith(".gz"):
+            _open = gzip.open
+        else:
+            _open = open
+
+        with _open(out_path, "w") as f:
+            for item in self.select(query):
+                line = item.to_tsv().encode("utf-8")
+                if mapfunc is None:
+                    f.write(line + os.linesep)
+                else:
+                    columns = line.split("\t")
+                    cols_sep = map(lambda argv: str(mapfunc(*argv)), enumerate(columns))
+                    f.write("\t".join(cols_sep) + os.linesep)
 
     def count(self, model_class, conditions=None):
         query = 'SELECT count() FROM $table'
