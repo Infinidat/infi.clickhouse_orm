@@ -38,7 +38,7 @@ def unescape(value):
 def parse_tsv(line):
     if PY3 and isinstance(line, binary_type):
         line = line.decode()
-    if line[-1] == '\n':
+    if line and line[-1] == '\n':
         line = line[:-1]
     return [unescape(value) for value in line.split('\t')]
 
