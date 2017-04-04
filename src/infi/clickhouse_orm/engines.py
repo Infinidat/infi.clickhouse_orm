@@ -9,6 +9,7 @@ class MergeTree(Engine):
 
     def __init__(self, date_col, key_cols, sampling_expr=None,
                  index_granularity=8192, replica_table_path=None, replica_name=None):
+        assert type(key_cols) in (list, tuple), 'key_cols must be a list or tuple'
         self.date_col = date_col
         self.key_cols = key_cols
         self.sampling_expr = sampling_expr
@@ -54,6 +55,7 @@ class SummingMergeTree(MergeTree):
     def __init__(self, date_col, key_cols, summing_cols=None, sampling_expr=None,
                  index_granularity=8192, replica_table_path=None, replica_name=None):
         super(SummingMergeTree, self).__init__(date_col, key_cols, sampling_expr, index_granularity, replica_table_path, replica_name)
+        assert type is None or type(summing_cols) in (list, tuple), 'summing_cols must be a list or tuple'
         self.summing_cols = summing_cols
 
     def _build_sql_params(self):
