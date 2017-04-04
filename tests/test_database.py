@@ -89,6 +89,15 @@ class DatabaseTestCase(unittest.TestCase):
         self.assertEqual(results[0].get_database(), self.database)
         self.assertEqual(results[1].get_database(), self.database)
 
+    def test_select_with_totals(self):
+        self._insert_and_check(self._sample_data(), len(data))
+        query = "SELECT last_name, sum(height) as height FROM `test-db`.person GROUP BY last_name WITH TOTALS"
+        results = list(self.database.select(query))
+        total = sum(r.height for r in results[:-1])
+        # Last line has an empty last name, and total of all heights
+        self.assertFalse(results[-1].last_name)
+        self.assertEquals(total, results[-1].height)
+
     def test_pagination(self):
         self._insert_and_check(self._sample_data(), len(data))
         # Try different page sizes

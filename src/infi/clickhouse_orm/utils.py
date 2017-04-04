@@ -38,14 +38,7 @@ def unescape(value):
 def parse_tsv(line):
     if PY3 and isinstance(line, binary_type):
         line = line.decode()
-    # GROUP BY WITH TOTALS modifier contains a blank line (second last row)
-    # separating normal result from the totals (last row)
-    # Let's skip the blank line
-    try:
-        last_element = line[-1]
-    except IndexError:
-        return
-    if last_element == '\n':
+    if line and line[-1] == '\n':
         line = line[:-1]
     return [unescape(value) for value in line.split('\t')]
 
