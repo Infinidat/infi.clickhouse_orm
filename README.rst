@@ -425,7 +425,6 @@ After cloning the project, run the following commands::
 To run the tests, ensure that the ClickHouse server is running on http://localhost:8123/ (this is the default), and run::
 
     bin/nosetests
-=======
 
 To see test coverage information run::
 
