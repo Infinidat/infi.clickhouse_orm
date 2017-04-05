@@ -380,6 +380,10 @@ For a ``SummingMergeTree`` you can optionally specify the summing columns::
     engine = engines.SummingMergeTree('EventDate', ('OrderID', 'EventDate', 'BannerID'),
                                       summing_cols=('Shows', 'Clicks', 'Cost'))
 
+For a ``ReplacingMergeTree`` you can optionally specify the version column::
+
+    engine = engines.ReplacingMergeTree('EventDate', ('OrderID', 'EventDate', 'BannerID'), ver_col='Version')
+
 A ``Buffer`` engine is available for BufferModels. (See below how to use BufferModel). You can specify following parameters::
 
     engine = engines.Buffer(Person) # you need to initialize engine with main Model. Other default parameters will be used
@@ -425,7 +429,6 @@ After cloning the project, run the following commands::
 To run the tests, ensure that the ClickHouse server is running on http://localhost:8123/ (this is the default), and run::
 
     bin/nosetests
-=======
 
 To see test coverage information run::
 
