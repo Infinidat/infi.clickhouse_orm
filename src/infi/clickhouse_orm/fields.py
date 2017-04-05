@@ -132,12 +132,18 @@ class DateTimeField(Field):
         if isinstance(value, string_types):
             if value == '0000-00-00 00:00:00':
                 return self.class_default
+            if len(value) == 10:
+                try:
+                    value = int(value)
+                    return datetime.datetime.utcfromtimestamp(value).replace(tzinfo=pytz.utc)
+                except ValueError:
+                    pass
             dt = datetime.datetime.strptime(value, '%Y-%m-%d %H:%M:%S')
             return timezone_in_use.localize(dt).astimezone(pytz.utc)
         raise ValueError('Invalid value for %s - %r' % (self.__class__.__name__, value))
 
     def to_db_string(self, value, quote=True):
-        return escape(timegm(value.utctimetuple()), quote)
+        return escape('%010d' % timegm(value.utctimetuple()), quote)
 
 
 class BaseIntField(Field):

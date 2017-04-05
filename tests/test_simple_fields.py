@@ -6,32 +6,17 @@ import pytz
 
 class SimpleFieldsTest(unittest.TestCase):
 
-    def test_date_field(self):
-        f = DateField()
-        # Valid values
-        for value in (date(1970, 1, 1), datetime(1970, 1, 1), '1970-01-01', '0000-00-00', 0):
-            self.assertEquals(f.to_python(value, pytz.utc), date(1970, 1, 1))
-        # Invalid values
-        for value in ('nope', '21/7/1999', 0.5):
-            with self.assertRaises(ValueError):
-                f.to_python(value, pytz.utc)
-        # Range check
-        for value in (date(1900, 1, 1), date(2900, 1, 1)):
-            with self.assertRaises(ValueError):
-                f.validate(value)
-
     def test_datetime_field(self):
         f = DateTimeField()
         epoch = datetime(1970, 1, 1, tzinfo=pytz.utc)
         # Valid values
         for value in (date(1970, 1, 1), datetime(1970, 1, 1), epoch, 
                       epoch.astimezone(pytz.timezone('US/Eastern')), epoch.astimezone(pytz.timezone('Asia/Jerusalem')),
-                      '1970-01-01 00:00:00', '0000-00-00 00:00:00', 0):
+                      '1970-01-01 00:00:00', '1970-01-17 00:00:17', '0000-00-00 00:00:00', 0):
             dt = f.to_python(value, pytz.utc)
             self.assertEquals(dt.tzinfo, pytz.utc)
-            self.assertEquals(dt, epoch)
             # Verify that conversion to and from db string does not change value
-            dt2 = f.to_python(int(f.to_db_string(dt)), pytz.utc)
+            dt2 = f.to_python(f.to_db_string(dt, quote=False), pytz.utc)
             self.assertEquals(dt, dt2)
         # Invalid values
         for value in ('nope', '21/7/1999', 0.5):
@@ -52,6 +37,10 @@ class SimpleFieldsTest(unittest.TestCase):
         for value in ('nope', '21/7/1999', 0.5):
             with self.assertRaises(ValueError):
                 f.to_python(value, pytz.utc)
+        # Range check
+        for value in (date(1900, 1, 1), date(2900, 1, 1)):
+            with self.assertRaises(ValueError):
+                f.validate(value)
 
     def test_date_field_timezone(self):
         # Verify that conversion of timezone-aware datetime is correct

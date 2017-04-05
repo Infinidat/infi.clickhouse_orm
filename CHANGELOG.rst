@@ -1,8 +1,14 @@
 Change Log
 ==========
 
-[Unreleased]
-------------
+Unreleased
+----------
+- Add support for ReplacingMergeTree (leenr)
+- Fix problem with SELECT WITH TOTALS (pilosus)
+- Update serialization format of DateTimeField to 10 digits, zero padded (nikepan)
+
+v0.8.0
+------
 - Always keep datetime fields in UTC internally, and convert server timezone to UTC when parsing query results
 - Support for ALIAS and MATERIALIZED fields (M1ha)
 - Pagination: passing -1 as the page number now returns the last page
