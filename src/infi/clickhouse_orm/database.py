@@ -55,7 +55,7 @@ class Database(object):
         try:
             first_instance = next(i)
         except StopIteration:
-            return # model_instances is empty
+            return  # model_instances is empty
         model_class = first_instance.__class__
 
         if first_instance.readonly:
@@ -66,13 +66,13 @@ class Database(object):
             buf.write(self._substitute('INSERT INTO $table FORMAT TabSeparated\n', model_class).encode('utf-8'))
             first_instance.set_database(self)
             buf.write(first_instance.to_tsv(include_readonly=False).encode('utf-8'))
-            buf.write('\n')
+            buf.write('\n'.encode('utf-8'))
             # Collect lines in batches of batch_size
             lines = 2
             for instance in i:
                 instance.set_database(self)
                 buf.write(instance.to_tsv(include_readonly=False).encode('utf-8'))
-                buf.write('\n')
+                buf.write('\n'.encode('utf-8'))
                 lines += 1
                 if lines >= batch_size:
                     # Return the current batch of lines
