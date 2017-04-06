@@ -1,6 +1,10 @@
 Change Log
 ==========
 
+v0.8.2
+------
+- Fix broken Python 3 support (M1hacka)
+
 v0.8.1
 ------
 - Add support for ReplacingMergeTree (leenr)
