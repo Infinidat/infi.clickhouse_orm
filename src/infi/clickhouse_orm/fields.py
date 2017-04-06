@@ -154,6 +154,11 @@ class BaseIntField(Field):
         except:
             raise ValueError('Invalid value for %s - %r' % (self.__class__.__name__, value))
 
+    def to_db_string(self, value, quote=True):
+        # There's no need to call escape since numbers do not contain 
+        # special characters, and never need quoting
+        return text_type(value)
+
     def validate(self, value):
         self._range_check(value, self.min_value, self.max_value)
 
@@ -221,6 +226,11 @@ class BaseFloatField(Field):
             return float(value)
         except:
             raise ValueError('Invalid value for %s - %r' % (self.__class__.__name__, value))
+
+    def to_db_string(self, value, quote=True):
+        # There's no need to call escape since numbers do not contain 
+        # special characters, and never need quoting
+        return text_type(value)
 
 
 class Float32Field(BaseFloatField):

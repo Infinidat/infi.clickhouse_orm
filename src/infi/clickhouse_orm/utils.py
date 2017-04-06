@@ -17,15 +17,18 @@ SPECIAL_CHARS = {
 SPECIAL_CHARS_REGEX = re.compile("[" + ''.join(SPECIAL_CHARS.values()) + "]")
 
 
+
 def escape(value, quote=True):
     '''
     If the value is a string, escapes any special characters and optionally
     surrounds it with single quotes. If the value is not a string (e.g. a number), 
     converts it to one.
     '''
+    def escape_one(match):
+        return SPECIAL_CHARS[match.group(0)]
+
     if isinstance(value, string_types):
-        if SPECIAL_CHARS_REGEX.search(value):
-            value = "".join(SPECIAL_CHARS.get(c, c) for c in value)
+        value = SPECIAL_CHARS_REGEX.sub(escape_one, value)
         if quote:
             value = "'" + value + "'"
     return text_type(value)
