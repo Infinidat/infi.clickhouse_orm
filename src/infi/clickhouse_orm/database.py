@@ -50,7 +50,7 @@ class Database(object):
 
     def insert(self, model_instances, batch_size=1000):
         from six import next
-        from cStringIO import StringIO
+        from io import BytesIO
         i = iter(model_instances)
         try:
             first_instance = next(i)
@@ -62,7 +62,7 @@ class Database(object):
             raise DatabaseException("You can't insert into read only table")
 
         def gen():
-            buf = StringIO()
+            buf = BytesIO()
             buf.write(self._substitute('INSERT INTO $table FORMAT TabSeparated\n', model_class).encode('utf-8'))
             first_instance.set_database(self)
             buf.write(first_instance.to_tsv(include_readonly=False).encode('utf-8'))
@@ -78,7 +78,7 @@ class Database(object):
                     # Return the current batch of lines
                     yield buf.getvalue()
                     # Start a new batch
-                    buf = StringIO()
+                    buf = BytesIO()
                     lines = 0
             # Return any remaining lines in partial batch
             if lines:
