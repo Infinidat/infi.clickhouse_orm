@@ -34,6 +34,11 @@ class Database(object):
             self.create_database()
         self.server_timezone = self._get_server_timezone()
 
+        self.result_format_support = [
+            "JSONEachRow",
+            "TabSeparatedWithNamesAndTypes"
+        ]
+
     def create_database(self):
         self._send('CREATE DATABASE IF NOT EXISTS `%s`' % self.db_name)
 
@@ -160,16 +165,22 @@ class Database(object):
         r = self._send(query)
         return int(r.text) if r.text else 0
 
-    def select(self, query, model_class=None, settings=None):
-        query += ' FORMAT TabSeparatedWithNamesAndTypes'
+    def select(self, query, result_format = "TabSeparatedWithNamesAndTypes", model_class=None, settings=None):
+        if result_format not in self.result_format_support:
+            raise NotImplementedError("not support format %r" % result_format)
+        query += ' FORMAT %s' % result_format
         query = self._substitute(query, model_class)
         r = self._send(query, settings, True)
         lines = r.iter_lines()
-        field_names = parse_tsv(next(lines))
-        field_types = parse_tsv(next(lines))
-        model_class = model_class or ModelBase.create_ad_hoc_model(zip(field_names, field_types))
-        for line in lines:
-            yield model_class.from_tsv(line, field_names, self.server_timezone, self)
+        if result_format == "TabSeparatedWithNamesAndTypes":
+            field_names = parse_tsv(next(lines))
+            field_types = parse_tsv(next(lines))
+            model_class = model_class or ModelBase.create_ad_hoc_model(zip(field_names, field_types))
+            for line in lines:
+                yield model_class.from_tsv(line, field_names, self.server_timezone, self)
+        elif result_format == "JSONEachRow":
+            for line in lines:
+                yield line
 
     def raw(self, query, settings=None, stream=False):
         """
