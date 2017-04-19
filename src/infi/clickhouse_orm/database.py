@@ -136,7 +136,7 @@ class Database(object):
                 "count": insert_count,
             })
 
-    def outfile(self, query, out_path, mapfunc = None):
+    def outfile(self, query, out_path, udfunc = None):
         import os
         import gzip
         if not (os.path.exists(out_path) and os.path.exists(out_path)):
@@ -150,11 +150,11 @@ class Database(object):
         with _open(out_path, "w") as f:
             for item in self.select(query):
                 line = item.to_tsv().encode("utf-8")
-                if mapfunc is None:
+                if udfunc is None:
                     f.write(line + os.linesep)
                 else:
                     columns = line.split("\t")
-                    cols_sep = map(lambda argv: str(mapfunc(*argv)), enumerate(columns))
+                    cols_sep = map(lambda argv: str(udfunc(*argv)), enumerate(columns))
                     f.write("\t".join(cols_sep) + os.linesep)
 
     def count(self, model_class, conditions=None):
@@ -181,6 +181,10 @@ class Database(object):
         elif result_format == "JSONEachRow":
             for line in lines:
                 yield line
+
+    def submit(self, cmd):
+        if bool(cmd) == True:
+            self._send(cmd)
 
     def raw(self, query, settings=None, stream=False):
         """

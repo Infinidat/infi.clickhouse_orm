@@ -6,6 +6,8 @@ import pytz
 from .fields import Field
 from .utils import parse_tsv
 
+import engines
+
 logger = getLogger('clickhouse_orm')
 
 
@@ -215,3 +217,39 @@ class BufferModel(Model):
         engine_str = cls.engine.create_table_sql(db_name)
         parts.append(engine_str)
         return ' '.join(parts)
+
+
+class CreateMergeMode(Model):
+
+    def __init__(self, tablename=None, **kwargs):
+        super(CreateMergeMode, self).__init__(**kwargs)
+        if not (tablename is None):
+            self.__class__.__name__ = tablename
+
+    # extend create_merge_table
+    @classmethod
+    def create_merge_table_sql(cls, db_name, merge_table_name=None):
+        '''
+        Returns the SQL command for creating a table for this model.
+        '''
+        tablePattern = "".join(["^", cls.merge_table_name(merge_table_name), "_"])
+
+        parts = ['CREATE TABLE IF NOT EXISTS `%s`.`%s` (' % (db_name, cls.merge_table_name(merge_table_name))]
+        cols = []
+        for name, field in cls._fields:
+            cols.append('    %s %s' % (name, field.get_sql()))
+        parts.append(',\n'.join(cols))
+        parts.append(')')
+        parts.append('ENGINE = ' + engines.Merge(db_name, tablePattern).create_table_sql())
+        return '\n'.join(parts)
+
+
+    @classmethod
+    def merge_table_name(cls, merge_table_name):
+        if merge_table_name is None:
+            if "_" in cls.__name__:
+                return "".join(cls.__name__.lower().split("_")[:-1])
+            else:
+                return cls.__name__.lower()
+        else:
+            return merge_table_name.lower()
