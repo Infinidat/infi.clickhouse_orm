@@ -15,12 +15,12 @@ __author__ = "sudz"
 __email__ = "670108918@qq.com"
 
 
-class DiskDick(object):
+class DiskDict(object):
 
     def __init__(*args, **kwargs):
 
         if not args:
-            raise TypeError("descriptor '__init__' of 'DiskDick' object "
+            raise TypeError("descriptor '__init__' of 'DiskDict' object "
                             "needs an argument")
         self = args[0]
         self._initcache()
@@ -53,7 +53,7 @@ class DiskDick(object):
         return json.dumps(dict(zip(self.keys(), self.values())))
 
     def __cmp__(self, dict):
-        if isinstance(dict, DiskDick):
+        if isinstance(dict, DiskDict):
             return cmp(self.data, dict.data)
         else:
             return cmp(self.data, dict)
@@ -129,7 +129,7 @@ class DiskDick(object):
 
     def update(*args, **kwargs):
         if not args:
-            raise TypeError("descriptor 'update' of 'DiskDick' object "
+            raise TypeError("descriptor 'update' of 'DiskDict' object "
                             "needs an argument")
         self = args[0]
         args = args[1:]
@@ -137,7 +137,7 @@ class DiskDick(object):
             raise TypeError('expected at most 1 arguments, got %d' % len(args))
 
         if args:
-            dict = args[0] # set DiskDick/dict/bsddb as dict
+            dict = args[0] # set DiskDict/dict/bsddb as dict
         elif 'dict' in kwargs:
             dict = kwargs.pop('dict')
             import warnings
@@ -148,7 +148,7 @@ class DiskDick(object):
 
         if dict is None:
             pass
-        elif isinstance(dict, DiskDick):
+        elif isinstance(dict, DiskDict):
             for k, v in dict.iteritems():
                 self.data[pickle.dumps(k)] = pickle.dumps(v)
         elif isinstance(dict, type({})):
@@ -206,9 +206,9 @@ class testclass(object):
 
 if __name__ == "__main__":
     ######### TEST #########
-    null_dict = DiskDick()
-    tester = DiskDick({"a": "b"})
-    tester_1 = DiskDick({"a": "d", "b": "f"})
+    null_dict = DiskDict()
+    tester = DiskDict({"a": "b"})
+    tester_1 = DiskDict({"a": "d", "b": "f"})
     # print("__str__", tester_1)
     # tester.update(tester_1)
     # print(tester.items())
@@ -250,9 +250,9 @@ if __name__ == "__main__":
     #
     #
     # # test cmp
-    # test_1 = DiskDick()
+    # test_1 = DiskDict()
     # test_1[1] = 2
-    # test_2 = DiskDick()
+    # test_2 = DiskDict()
     # test_2[1] = 2
     # print(test_1 == test_2)
     #

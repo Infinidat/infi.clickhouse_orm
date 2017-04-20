@@ -29,6 +29,7 @@ class ModelBase(type):
         fields = base_fields + [item for item in attrs.items() if isinstance(item[1], Field)]
         fields.sort(key=lambda item: item[1].creation_counter)
         setattr(new_cls, '_fields', fields)
+        setattr(new_cls, '_writable_fields', [f for f in fields if not f[1].readonly])
         return new_cls
 
     @classmethod
@@ -188,7 +189,7 @@ class Model(with_metaclass(ModelBase)):
         :param bool include_readonly: If False, returns only fields, that can be inserted into database
         '''
         data = self.__dict__
-        fields = self._fields if include_readonly else [f for f in self._fields if not f[1].readonly]
+        fields = self._fields if include_readonly else self._writable_fields
         return '\t'.join(field.to_db_string(data[name], quote=False) for name, field in fields)
 
     def to_dict(self, include_readonly=True, field_names=None):
@@ -197,7 +198,7 @@ class Model(with_metaclass(ModelBase)):
         :param bool include_readonly: If False, returns only fields, that can be inserted into database
         :param field_names: An iterable of field names to return
         '''
-        fields = self._fields if include_readonly else [f for f in self._fields if not f[1].readonly]
+        fields = self._fields if include_readonly else self._writable_fields
 
         if field_names is not None:
             fields = [f for f in fields if f[0] in field_names]
