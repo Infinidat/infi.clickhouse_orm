@@ -188,9 +188,9 @@ class Database(object):
             for line in lines:
                 yield line
 
-    def submit(self, cmd):
-        if bool(cmd) == True:
-            self._send(cmd)
+    def submit(self, query):
+        if bool(query) == True:
+            self._send(query)
 
     def raw(self, query, settings=None, stream=False):
         """
