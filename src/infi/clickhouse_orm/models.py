@@ -5,6 +5,7 @@ import pytz
 
 from .fields import Field
 from .utils import parse_tsv
+from .query import QuerySet
 
 logger = getLogger('clickhouse_orm')
 
@@ -203,6 +204,13 @@ class Model(with_metaclass(ModelBase)):
 
         data = self.__dict__
         return {name: data[name] for name, field in fields}
+
+    @classmethod
+    def objects_in(cls, database):
+        '''
+        Returns a queryset for selecting instances of this model class.
+        '''
+        return QuerySet(cls, database)
 
         
 class BufferModel(Model):
