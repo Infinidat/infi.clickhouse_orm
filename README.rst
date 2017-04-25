@@ -252,6 +252,7 @@ Currently the following field types are supported:
 Class                DB Type     Pythonic Type      Comments
 ===================  ========    =================  ===================================================
 StringField          String      unicode            Encoded as UTF-8 when written to ClickHouse
+FixedStringField     String      unicode            Encoded as UTF-8 when written to ClickHouse
 DateField            Date        datetime.date      Range 1970-01-01 to 2038-01-19
 DateTimeField        DateTime    datetime.datetime  Minimal value is 1970-01-01 00:00:00; Always in UTC
 Int8Field            Int8        int                Range -128 to 127

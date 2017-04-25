@@ -90,6 +90,24 @@ class StringField(Field):
         raise ValueError('Invalid value for %s: %r' % (self.__class__.__name__, value))
 
 
+class FixedStringField(StringField):
+
+    def __init__(self, length, default=None, alias=None, materialized=None):
+        self._length = length
+        self.db_type = 'FixedString(%d)' % length
+        super(FixedStringField, self).__init__(default, alias, materialized)
+
+    def to_python(self, value, timezone_in_use):
+        value = super(FixedStringField, self).to_python(value, timezone_in_use)
+        return value.rstrip('\0')
+
+    def validate(self, value):
+        if isinstance(value, text_type):
+            value = value.encode('UTF-8')
+        if len(value) > self._length:
+            raise ValueError('Value of %d bytes is too long for FixedStringField(%d)' % (len(value), self._length))
+
+
 class DateField(Field):
 
     min_value = datetime.date(1970, 1, 1)

@@ -58,6 +58,10 @@ class ModelBase(type):
         if db_type.startswith('Array'):
             inner_field = cls.create_ad_hoc_field(db_type[6 : -1])
             return orm_fields.ArrayField(inner_field)
+        # FixedString
+        if db_type.startswith('FixedString'):
+            length = int(db_type[12 : -1])
+            return orm_fields.FixedStringField(length)
         # Simple fields
         name = db_type + 'Field'
         if not hasattr(orm_fields, name):
