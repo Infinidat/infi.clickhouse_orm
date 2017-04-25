@@ -26,8 +26,11 @@ class Database(object):
         self.db_url = db_url
         self.username = username
         self.password = password
-        self.readonly = readonly
-        if not self.readonly:
+        self.readonly = False
+        if readonly:
+            self.connection_readonly = self._is_connection_readonly()
+            self.readonly = True
+        else:
             self.create_database()
         self.server_timezone = self._get_server_timezone()
 
@@ -175,7 +178,8 @@ class Database(object):
             params['user'] = self.username
         if self.password:
             params['password'] = self.password
-        if self.readonly:
+        # Send the readonly flag, unless the connection is already readonly (to prevent db error)
+        if self.readonly and not self.connection_readonly:
             params['readonly'] = '1'
         return params
 
@@ -197,3 +201,7 @@ class Database(object):
         except DatabaseException:
             logger.exception('Cannot determine server timezone, assuming UTC')
             return pytz.utc
+
+    def _is_connection_readonly(self):
+        r = self._send("SELECT value FROM system.settings WHERE name = 'readonly'")
+        return r.text.strip() != '0'
