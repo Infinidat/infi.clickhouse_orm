@@ -4,22 +4,28 @@ from copy import copy
 
 
 # TODO
-# - comments
-# - docs
-# - tests
 # - and/or between Q objects
 # - check that field names are valid
-# - add Model.using(db) method that returns a queryset
-# - support functions and expressions?
-
+# - qs slicing
+# - operators for arrays: length, has, empty
 
 class Operator(object):
+    """
+    Base class for filtering operators.
+    """
 
     def to_sql(self, model_cls, field_name, value):
+        """
+        Subclasses should implement this method. It returns an SQL string
+        that applies this operator on the given field and value.
+        """
         raise NotImplementedError
 
 
 class SimpleOperator(Operator):
+    """
+    A simple binary operator such as a=b, a<b, a>b etc.
+    """
 
     def __init__(self, sql_operator):
         self._sql_operator = sql_operator
@@ -31,6 +37,13 @@ class SimpleOperator(Operator):
 
 
 class InOperator(Operator):
+    """
+    An operator that implements IN.
+    Accepts 3 different types of values:
+    - a list or tuple of simple values
+    - a string (used verbatim as the contents of the parenthesis)
+    - a queryset (subquery)
+    """
 
     def to_sql(self, model_cls, field_name, value):
         field = getattr(model_cls, field_name)
@@ -44,6 +57,10 @@ class InOperator(Operator):
 
 
 class LikeOperator(Operator):
+    """
+    A LIKE operator that matches the field to a given pattern. Can be
+    case sensitive or insensitive. 
+    """
 
     def __init__(self, pattern, case_sensitive=True):
         self._pattern = pattern
@@ -61,6 +78,9 @@ class LikeOperator(Operator):
 
 
 class IExactOperator(Operator):
+    """
+    An operator for case insensitive string comparison.
+    """
 
     def to_sql(self, model_cls, field_name, value):
         field = getattr(model_cls, field_name)
@@ -68,27 +88,32 @@ class IExactOperator(Operator):
         return 'lowerUTF8(%s) = lowerUTF8(%s)' % (field_name, value)
 
 
+# Define the set of builtin operators
+
 _operators = {}
 
 def register_operator(name, sql):
     _operators[name] = sql
 
-register_operator('eq', SimpleOperator('='))
-register_operator('gt', SimpleOperator('>'))
-register_operator('gte', SimpleOperator('>='))
-register_operator('lt', SimpleOperator('<'))
-register_operator('lte', SimpleOperator('<='))
-register_operator('in', InOperator())
-register_operator('contains', LikeOperator('%{}%'))
-register_operator('startswith', LikeOperator('{}%'))
-register_operator('endswith', LikeOperator('%{}'))
-register_operator('icontains', LikeOperator('%{}%', False))
+register_operator('eq',          SimpleOperator('='))
+register_operator('gt',          SimpleOperator('>'))
+register_operator('gte',         SimpleOperator('>='))
+register_operator('lt',          SimpleOperator('<'))
+register_operator('lte',         SimpleOperator('<='))
+register_operator('in',          InOperator())
+register_operator('contains',    LikeOperator('%{}%'))
+register_operator('startswith',  LikeOperator('{}%'))
+register_operator('endswith',    LikeOperator('%{}'))
+register_operator('icontains',   LikeOperator('%{}%', False))
 register_operator('istartswith', LikeOperator('{}%', False))
-register_operator('iendswith', LikeOperator('%{}', False))
-register_operator('iexact', IExactOperator())
+register_operator('iendswith',   LikeOperator('%{}', False))
+register_operator('iexact',      IExactOperator())
 
 
 class FOV(object):
+    """
+    An object for storing Field + Operator + Value.
+    """
 
     def __init__(self, field_name, operator, value):
         self._field_name = field_name
@@ -140,6 +165,15 @@ class QuerySet(object):
         Iterates over the model instances matching this queryset 
         """
         return self._database.select(self.query(), self._model_cls)
+
+    def __bool__(self):
+        """
+        Return true if this queryset matches any rows.
+        """
+        return bool(self.count())
+
+    def __nonzero__(self):      # Python 2 compatibility
+        return type(self).__bool__(self)
 
     def query(self):
         """
