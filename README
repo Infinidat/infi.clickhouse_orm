@@ -54,4 +54,4 @@ for row in db.select('SELECT cpu_id, avg(cpu_percent) AS average FROM demo.cpust
     print 'CPU {row.cpu_id}: {row.average:.2f}%'.format(row=row)
 ```
 
-To learn more please visit the [documentation](docs/index.md).
+To learn more please visit the [documentation](docs/toc.md).
