@@ -121,7 +121,7 @@ class QuerySetTestCase(TestCaseWithData):
         self._test_qs(qs.filter(num__gt=1), 3)
         self._test_qs(qs.filter(num__gte=1), 4)
         self._test_qs(qs.filter(num__in=(1, 2, 3)), 3)
-        self._test_qs(qs.filter(num__in=xrange(1, 4)), 3)
+        self._test_qs(qs.filter(num__in=range(1, 4)), 3)
 
 
 Color = Enum('Color', u'red blue green yellow brown white black')

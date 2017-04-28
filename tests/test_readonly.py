@@ -24,7 +24,7 @@ class ReadonlyTestCase(TestCaseWithData):
                 self.database.drop_table(Person)
             with self.assertRaises(DatabaseException):
                 self.database.drop_database()
-        except DatabaseException, e:
+        except DatabaseException as e:
             if 'Unknown user' in unicode(e):
                 raise unittest.SkipTest('Database user "%s" is not defined' % username)
             else:
