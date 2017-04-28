@@ -170,3 +170,7 @@ You can optionally pass conditions to the query:
 
 Note that `order_by` must be chosen so that the ordering is unique, otherwise there might be inconsistencies in the pagination (such as an instance that appears on two different pages).
 
+
+---
+
+[<< Overview](index.md) | [Table of Contents](toc.md) | [Querysets >>](querysets.md)

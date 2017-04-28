@@ -1,4 +1,4 @@
-System models
+System Models
 =============
 
 [Clickhouse docs](https://clickhouse.yandex/reference_en.html#System%20tables).
@@ -11,7 +11,7 @@ Currently the following system models are supported:
 | ------------ | -------------- | ---------------------------------------------------
 | SystemPart   | system.parts   | Gives methods to work with partitions. See below.
 
-Partitions and parts
+Partitions and Parts
 --------------------
 
 [ClickHouse docs](https://clickhouse.yandex/reference_en.html#Manipulations%20with%20partitions%20and%20parts).
@@ -40,3 +40,8 @@ Usage example:
         partitions[0].drop()  # Dropped partition
 
 `Note`: system.parts stores information for all databases. To be correct, SystemPart model was designed to receive only parts belonging to the given database instance.
+
+
+---
+
+[<< Schema Migrations](schema_migrations.md) | [Table of Contents](toc.md) | [Contributing >>](contributing.md)

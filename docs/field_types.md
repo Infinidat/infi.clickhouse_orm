@@ -102,3 +102,8 @@ Usage:
     db.select('SELECT created, created_date, username, name FROM $db.event', model_class=Event)
     # created_date and username will contain a default value
     db.select('SELECT * FROM $db.event', model_class=Event)
+
+
+---
+
+[<< Querysets](querysets.md) | [Table of Contents](toc.md) | [Table Engines >>](table_engines.md)

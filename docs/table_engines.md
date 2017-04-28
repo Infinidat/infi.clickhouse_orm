@@ -56,3 +56,8 @@ Any of the above engines can be converted to a replicated engine (e.g. `Replicat
     engine = engines.MergeTree('EventDate', ('CounterID', 'EventDate'),
                                replica_table_path='/clickhouse/tables/{layer}-{shard}/hits',
                                replica_name='{replica}')
+
+
+---
+
+[<< Field Types](field_types.md) | [Table of Contents](toc.md) | [Schema Migrations >>](schema_migrations.md)

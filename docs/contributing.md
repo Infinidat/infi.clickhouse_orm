@@ -14,3 +14,8 @@ To run the tests, ensure that the ClickHouse server is running on <http://localh
 To see test coverage information run:
 
     bin/nosetests --with-coverage --cover-package=infi.clickhouse_orm
+
+
+---
+
+[<< System Models](system_models.md) | [Table of Contents](toc.md)

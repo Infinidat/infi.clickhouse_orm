@@ -9,3 +9,7 @@ Installation
 To install infi.clickhouse_orm:
 
     pip install infi.clickhouse_orm
+
+---
+
+[Table of Contents](toc.md) | [Models and Databases >>](models_and_databases.md)

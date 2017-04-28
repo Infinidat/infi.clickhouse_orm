@@ -18,7 +18,7 @@ The `filter` and `exclude` methods are used for filtering the matching instances
     >>> qs = Person.objects_in(database)
     >>> qs = qs.filter(first_name__startswith='V').exclude(birthday__lt='2000-01-01')
     >>> qs.conditions_as_sql()
-    u"first_name LIKE 'V%' AND NOT (birthday < '2000-01-01') "
+    u"first_name LIKE 'V%' AND NOT (birthday < '2000-01-01')"
     
 It is possible to specify several fields to filter or exclude by:
 
@@ -80,7 +80,7 @@ To check if there are any matches at all, you can use any of the following equiv
 Ordering
 --------
 
-To sorting order of the results can be controlled using the `order_by` method:
+The sorting order of the results can be controlled using the `order_by` method:
 
     qs = Person.objects_in(database).order_by('last_name', 'first_name')
     
@@ -91,6 +91,11 @@ The default order is ascending. To use descending order, add a minus sign before
 Omitting Fields
 ---------------
 
-When not all model fields are needed, it is more efficient to omit them from the query. This is especially true when there are large fields that may slow the query down. Use the `only` method to specify which fields to retrieve:
+When some of the model fields aren't needed, it is more efficient to omit them from the query. This is especially true when there are large fields that may slow the query down. Use the `only` method to specify which fields to retrieve:
 
     qs = Person.objects_in(database).only('first_name', 'birthday')
+
+
+---
+
+[<< Models and Databases](models_and_databases.md) | [Table of Contents](toc.md) | [Field Types >>](field_types.md)

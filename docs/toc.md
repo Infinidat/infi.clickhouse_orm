@@ -1,3 +1,5 @@
+Table of Contents
+=================
 
    * [Overview](index.md#overview)
       * [Installation](index.md#installation)
@@ -13,6 +15,13 @@
       * [Counting](models_and_databases.md#counting)
       * [Pagination](models_and_databases.md#pagination)
 
+   * [Querysets](querysets.md#querysets)
+      * [Filtering](querysets.md#filtering)
+         * [Using the in Operator](querysets.md#using-the-in-operator)
+      * [Counting and Checking Existence](querysets.md#counting-and-checking-existence)
+      * [Ordering](querysets.md#ordering)
+      * [Omitting Fields](querysets.md#omitting-fields)
+
    * [Field Types](field_types.md#field-types)
       * [DateTimeField and Time Zones](field_types.md#datetimefield-and-time-zones)
       * [Working with enum fields](field_types.md#working-with-enum-fields)
@@ -27,7 +36,7 @@
       * [Writing Migrations](schema_migrations.md#writing-migrations)
       * [Running Migrations](schema_migrations.md#running-migrations)
 
-   * [System models](system_models.md#system-models)
-      * [Partitions and parts](system_models.md#partitions-and-parts)
+   * [System Models](system_models.md#system-models)
+      * [Partitions and Parts](system_models.md#partitions-and-parts)
 
    * [Contributing](contributing.md#contributing)

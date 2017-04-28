@@ -58,3 +58,8 @@ To migrate a database, create a `Database` instance and call its `migrate` metho
     Database('analytics_db').migrate('analytics.analytics_migrations')
 
 Note that you may have more than one migrations package.
+
+
+---
+
+[<< Table Engines](table_engines.md) | [Table of Contents](toc.md) | [System Models >>](system_models.md)
