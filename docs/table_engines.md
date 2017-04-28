@@ -1,7 +1,36 @@
 Table Engines
 =============
 
+See: [ClickHouse Documentation](https://clickhouse.yandex/reference_en.html#Table+engines)
+
 Each model must have an engine instance, used when creating the table in ClickHouse.
+
+The following engines are supported by the ORM:
+
+- TinyLog
+- Log
+- Memory
+- MergeTree / ReplicatedMergeTree
+- CollapsingMergeTree / ReplicatedCollapsingMergeTree
+- SummingMergeTree / ReplicatedSummingMergeTree
+- ReplacingMergeTree / ReplicatedReplacingMergeTree
+- Buffer
+
+
+Simple Engines
+--------------
+
+`TinyLog`, `Log` and `Memory` engines do not require any parameters:
+
+    engine = engines.TinyLog()
+
+    engine = engines.Log()
+    
+    engine = engines.Memory()
+
+
+Engines in the MergeTree Family
+-------------------------------
 
 To define a `MergeTree` engine, supply the date column name and the names (or expressions) for the key columns:
 
@@ -24,22 +53,31 @@ For a `ReplacingMergeTree` you can optionally specify the version column:
 
     engine = engines.ReplacingMergeTree('EventDate', ('OrderID', 'EventDate', 'BannerID'), ver_col='Version')
 
-A `Buffer` engine is available for BufferModels. (See below how to use BufferModel). You can specify following parameters:
+### Data Replication
 
-    engine = engines.Buffer(Person) # you need to initialize engine with main Model. Other default parameters will be used
-    # or:
-    engine = engines.Buffer(Person, num_layers=16, min_time=10, 
-                            max_time=100, min_rows=10000, max_rows=1000000, 
-                            min_bytes=10000000, max_bytes=100000000)
+Any of the above engines can be converted to a replicated engine (e.g. `ReplicatedMergeTree`) by adding two parameters, `replica_table_path` and `replica_name`:
 
-Buffer Models
+    engine = engines.MergeTree('EventDate', ('CounterID', 'EventDate'),
+                               replica_table_path='/clickhouse/tables/{layer}-{shard}/hits',
+                               replica_name='{replica}')
+
+
+Buffer Engine
 -------------
 
-Here's how you can define Model for Buffer Engine. The Buffer Model should be inherited from models.BufferModel and main Model:
+A `Buffer` engine is only used in conjunction with a `BufferModel`.
+The model should be a subclass of both `models.BufferModel` and the main model. 
+The main model is also passed to the engine:
 
     class PersonBuffer(models.BufferModel, Person):
 
         engine = engines.Buffer(Person)
+
+Additional buffer parameters can optionally be specified:
+
+        engine = engines.Buffer(Person, num_layers=16, min_time=10, 
+                                max_time=100, min_rows=10000, max_rows=1000000, 
+                                min_bytes=10000000, max_bytes=100000000)
 
 Then you can insert objects into Buffer model and they will be handled by ClickHouse properly:
 
@@ -47,15 +85,6 @@ Then you can insert objects into Buffer model and they will be handled by ClickH
     suzy = PersonBuffer(first_name='Suzy', last_name='Jones')
     dan = PersonBuffer(first_name='Dan', last_name='Schwartz')
     db.insert([dan, suzy])
-
-Data Replication
-----------------
-
-Any of the above engines can be converted to a replicated engine (e.g. `ReplicatedMergeTree`) by adding two parameters, `replica_table_path` and `replica_name`:
-
-    engine = engines.MergeTree('EventDate', ('CounterID', 'EventDate'),
-                               replica_table_path='/clickhouse/tables/{layer}-{shard}/hits',
-                               replica_name='{replica}')
 
 
 ---

@@ -53,6 +53,21 @@ class EnginesTestCase(unittest.TestCase):
             engine = ReplacingMergeTree('date', ('date', 'event_id', 'event_group'), 'event_uversion')
         self._create_and_insert(TestModel)
 
+    def test_tiny_log(self):
+        class TestModel(SampleModel):
+            engine = TinyLog()
+        self._create_and_insert(TestModel)
+
+    def test_log(self):
+        class TestModel(SampleModel):
+            engine = Log()
+        self._create_and_insert(TestModel)
+
+    def test_memory(self):
+        class TestModel(SampleModel):
+            engine = Memory()
+        self._create_and_insert(TestModel)
+
 
 class SampleModel(Model):
 

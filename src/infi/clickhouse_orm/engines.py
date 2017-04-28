@@ -5,6 +5,24 @@ class Engine(object):
         raise NotImplementedError()
 
 
+class TinyLog(Engine):
+
+    def create_table_sql(self):
+        return 'TinyLog'
+
+
+class Log(Engine):
+
+    def create_table_sql(self):
+        return 'Log'
+
+
+class Memory(Engine):
+
+    def create_table_sql(self):
+        return 'Memory'
+
+
 class MergeTree(Engine):
 
     def __init__(self, date_col, key_cols, sampling_expr=None,
