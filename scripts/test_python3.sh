@@ -1,3 +1,4 @@
+#!/bin/bash
 cd /tmp
 rm -rf /tmp/orm_env*
 virtualenv -p python3 /tmp/orm_env
