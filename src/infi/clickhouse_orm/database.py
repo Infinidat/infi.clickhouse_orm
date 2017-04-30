@@ -12,7 +12,10 @@ import logging
 logger = logging.getLogger('clickhouse_orm')
 
 
+
 Page = namedtuple('Page', 'objects number_of_objects pages_total number page_size')
+
+logger = logging.getLogger(__name__)
 
 
 class DatabaseException(Exception):
@@ -33,6 +36,11 @@ class Database(object):
         else:
             self.create_database()
         self.server_timezone = self._get_server_timezone()
+
+        self.result_format_support = [
+            "JSONEachRow",
+            "TabSeparatedWithNamesAndTypes"
+        ]
 
     def create_database(self):
         self._send('CREATE DATABASE IF NOT EXISTS `%s`' % self.db_name)
@@ -88,6 +96,76 @@ class Database(object):
                 yield buf.getvalue()
         self._send(gen())
 
+    def insert_try_best(self, model_instances, batch_size = 1000, is_create = False, insert_count = 0, first_recu = True):
+        cache = []
+        table_name = None
+        for elem in model_instances:
+            if is_create == False:
+                self.create_table(elem)
+                is_create = True
+                table_name = elem.table_name()
+            cache.append(elem)
+            if len(cache) >= batch_size:
+                try:
+                    # Must ensure that batch_size > = bulksize
+                    self.insert(cache, batch_size=batch_size)
+                    insert_count += len(cache)
+                    cache = []
+                except:
+                    # binary insertion
+                    if len(cache) > 1:
+                        self.insert_try_best(self, cache[:(len(cache) / 2)],
+                                    bulksize=min(len(cache[:(len(cache) / 2)]), batch_size), is_create=is_create,
+                                    insert_count=insert_count, first_recu=False)
+                        self.insert_try_best(self, cache[(len(cache) / 2):],
+                                    bulksize=min(len(cache[(len(cache) / 2):]), batch_size), is_create=is_create,
+                                    insert_count=insert_count, first_recu=False)
+                    elif len(cache) == 1:
+                        import sys
+                        logger.error("%s" % (str(sys.exc_info()), ))
+                    cache = []
+        if cache:
+            try:
+                # Must ensure that batch_size > = bulksize
+                self.insert(cache, batch_size=batch_size)
+                insert_count += len(cache)
+            except:
+                # binary insertion
+                if len(cache) > 1:
+                    self.insert_try_best(self, cache[:(len(cache) / 2)], min(len(cache[:(len(cache) / 2)]) / 2, batch_size),
+                                is_create=is_create, insert_count=insert_count, first_recu=False)
+                    self.insert_try_best(self, cache[(len(cache) / 2):], min(len(cache[(len(cache) / 2):]) / 2, batch_size),
+                                is_create=is_create, insert_count=insert_count, first_recu=False)
+                elif len(cache) == 1:
+                    logger.error("%s; LOG: %s" % (str(sys.exc_info()), ))
+        if first_recu:
+            logger.info("%(db_name)s.%(table_name)s insert %(count)d records." % {
+                "db_name": self.db_name,
+                "table_name": table_name,
+                "count": insert_count,
+            })
+
+    def outfile(self, query, out_path, udfunc = None):
+        import os
+        import gzip
+        if not (os.path.exists(out_path) and os.path.exists(out_path)):
+            raise Exception("out_path is not exists.")
+
+        if out_path.endswith(".gz"):
+            _open = gzip.open
+        else:
+            _open = open
+
+        with _open(out_path, "w") as f:
+            for item in self.select(query):
+                line = item.to_tsv().encode("utf-8")
+                if udfunc is None:
+                    f.write(line + os.linesep)
+                else:
+                    columns = line.split("\t")
+                    cols_sep = map(lambda argv: str(udfunc(*argv)), enumerate(columns))
+                    f.write("\t".join(cols_sep) + os.linesep)
+
     def count(self, model_class, conditions=None):
         query = 'SELECT count() FROM $table'
         if conditions:
@@ -96,18 +174,26 @@ class Database(object):
         r = self._send(query)
         return int(r.text) if r.text else 0
 
-    def select(self, query, model_class=None, settings=None):
-        query += ' FORMAT TabSeparatedWithNamesAndTypes'
+    def select(self, query, result_format = "TabSeparatedWithNamesAndTypes", model_class=None, settings=None):
+        if result_format not in self.result_format_support:
+            raise NotImplementedError("not support format %r" % result_format)
+        query += ' FORMAT %s' % result_format
         query = self._substitute(query, model_class)
         r = self._send(query, settings, True)
         lines = r.iter_lines()
-        field_names = parse_tsv(next(lines))
-        field_types = parse_tsv(next(lines))
-        model_class = model_class or ModelBase.create_ad_hoc_model(zip(field_names, field_types))
-        for line in lines:
-            # skip blank line left by WITH TOTALS modifier
-            if line:
+        if result_format == "TabSeparatedWithNamesAndTypes":
+            field_names = parse_tsv(next(lines))
+            field_types = parse_tsv(next(lines))
+            model_class = model_class or ModelBase.create_ad_hoc_model(zip(field_names, field_types))
+            for line in lines:
                 yield model_class.from_tsv(line, field_names, self.server_timezone, self)
+        elif result_format == "JSONEachRow":
+            for line in lines:
+                yield line
+
+    def submit(self, query):
+        if bool(query) == True:
+            self._send(query)
 
     def raw(self, query, settings=None, stream=False):
         """
