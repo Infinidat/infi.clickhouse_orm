@@ -2,14 +2,14 @@ This directory contains various scripts for use while developing.
 
 generate_toc
 ------------
-Generates the table of contents (toc.md)
+Generates the table of contents (toc.md). Requires Pandoc.
 Usage:
     cd docs
     ../scripts/generate_toc.sh
 
 
-gh-md-toc
----------
+html_to_markdown_toc.py
+-----------------------
 Used by generate_toc.
 
 

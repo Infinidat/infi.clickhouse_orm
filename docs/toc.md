@@ -1,5 +1,4 @@
-Table of Contents
-=================
+# Table of Contents
 
    * [Overview](index.md#overview)
       * [Installation](index.md#installation)
@@ -29,8 +28,10 @@ Table of Contents
       * [Working with materialized and alias fields](field_types.md#working-with-materialized-and-alias-fields)
 
    * [Table Engines](table_engines.md#table-engines)
-      * [Buffer Models](table_engines.md#buffer-models)
-      * [Data Replication](table_engines.md#data-replication)
+      * [Simple Engines](table_engines.md#simple-engines)
+      * [Engines in the MergeTree Family](table_engines.md#engines-in-the-mergetree-family)
+         * [Data Replication](table_engines.md#data-replication)
+      * [Buffer Engine](table_engines.md#buffer-engine)
 
    * [Schema Migrations](schema_migrations.md#schema-migrations)
       * [Writing Migrations](schema_migrations.md#writing-migrations)
@@ -40,3 +41,4 @@ Table of Contents
       * [Partitions and Parts](system_models.md#partitions-and-parts)
 
    * [Contributing](contributing.md#contributing)
+

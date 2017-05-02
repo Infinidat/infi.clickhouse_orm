@@ -1,13 +1,16 @@
-echo "Table of Contents" > toc.md
-echo "=================" >> toc.md
 
-../scripts/gh-md-toc \
-    index.md \
-    models_and_databases.md \
-    querysets.md \
-    field_types.md \
-    table_engines.md \
-    schema_migrations.md \
-    system_models.md \
-    contributing.md \
-    >> toc.md
+generate_one() {
+    # Converts Markdown to HTML using Pandoc, and then extracts the header tags
+    pandoc "$1" | python "../scripts/html_to_markdown_toc.py" "$1" >> toc.md
+}
+
+printf "# Table of Contents\n\n" > toc.md
+
+generate_one "index.md"
+generate_one "models_and_databases.md"
+generate_one "querysets.md"
+generate_one "field_types.md"
+generate_one "table_engines.md"
+generate_one "schema_migrations.md"
+generate_one "system_models.md"
+generate_one "contributing.md"
