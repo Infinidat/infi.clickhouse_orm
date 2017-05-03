@@ -27,5 +27,5 @@ class HeadersToMarkdownParser(HTMLParser):
             self.text += data
 
 
-HeadersToMarkdownParser.feed(sys.stdin.read())
+HeadersToMarkdownParser().feed(sys.stdin.read())
 print

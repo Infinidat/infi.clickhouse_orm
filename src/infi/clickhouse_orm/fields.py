@@ -8,7 +8,9 @@ from .utils import escape, parse_array
 
 
 class Field(object):
-
+    '''
+    Abstract base class for all field types.
+    '''
     creation_counter = 0
     class_default = 0
     db_type = None
@@ -165,7 +167,9 @@ class DateTimeField(Field):
 
 
 class BaseIntField(Field):
-
+    '''
+    Abstract base class for all integer-type fields.
+    '''
     def to_python(self, value, timezone_in_use):
         try:
             return int(value)
@@ -238,6 +242,9 @@ class Int64Field(BaseIntField):
 
 
 class BaseFloatField(Field):
+    '''
+    Abstract base class for all float-type fields.
+    '''
 
     def to_python(self, value, timezone_in_use):
         try:
@@ -262,6 +269,9 @@ class Float64Field(BaseFloatField):
 
 
 class BaseEnumField(Field):
+    '''
+    Abstract base class for all enum-type fields.
+    '''
 
     def __init__(self, enum_cls, default=None, alias=None, materialized=None):
         self.enum_cls = enum_cls
