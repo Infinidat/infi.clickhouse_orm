@@ -234,7 +234,7 @@ class Database(object):
         return set(obj.module_name for obj in self.select(query))
 
     def _send(self, data, settings=None, stream=False):
-        if PY3 and isinstance(data, string_types):
+        if isinstance(data, string_types):
             data = data.encode('utf-8')
         params = self._build_params(settings)
         r = requests.post(self.db_url, params=params, data=data, stream=stream)

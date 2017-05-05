@@ -55,6 +55,13 @@ class QuerySetTestCase(TestCaseWithData):
         self._test_qs(qs.filter(first_name__iendswith='ia'), 3) # case insensitive
         self._test_qs(qs.filter(first_name__iendswith=''), 100) # empty suffix
 
+    def test_filter_unicode_string(self):
+        self.database.insert([
+            Person(first_name=u'דונלד', last_name=u'דאק')
+        ])
+        qs = Person.objects_in(self.database)
+        self._test_qs(qs.filter(first_name=u'דונלד'), 1)
+
     def test_filter_float_field(self):
         qs = Person.objects_in(self.database)
         self._test_qs(qs.filter(height__gt=2), 0)

@@ -195,13 +195,13 @@ class QuerySet(object):
         if self._fields:
             fields = ', '.join('`%s`' % field for field in self._fields)
         params = (fields, self._database.db_name, self._model_cls.table_name(), self.conditions_as_sql(), self.order_by_as_sql())
-        return 'SELECT %s\nFROM `%s`.`%s`\nWHERE %s\nORDER BY %s' % params
+        return u'SELECT %s\nFROM `%s`.`%s`\nWHERE %s\nORDER BY %s' % params
 
     def order_by_as_sql(self):
         """
         Returns the contents of the query's `ORDER BY` clause as a string.
         """
-        return ', '.join([
+        return u', '.join([
             '%s DESC' % field[1:] if field[0] == '-' else field
             for field in self._order_by
         ])
@@ -211,9 +211,9 @@ class QuerySet(object):
         Returns the contents of the query's `WHERE` clause as a string.
         """
         if self._q:
-            return ' AND '.join([q.to_sql(self._model_cls) for q in self._q])
+            return u' AND '.join([q.to_sql(self._model_cls) for q in self._q])
         else:
-            return '1'
+            return u'1'
 
     def count(self):
         """
