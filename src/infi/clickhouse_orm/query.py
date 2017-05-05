@@ -48,7 +48,7 @@ class InOperator(Operator):
     def to_sql(self, model_cls, field_name, value):
         field = getattr(model_cls, field_name)
         if isinstance(value, QuerySet):
-            value = value.query()
+            value = value.as_sql()
         elif isinstance(value, six.string_types):
             pass
         else:
@@ -164,7 +164,7 @@ class QuerySet(object):
         """
         Iterates over the model instances matching this queryset 
         """
-        return self._database.select(self.query(), self._model_cls)
+        return self._database.select(self.as_sql(), self._model_cls)
 
     def __bool__(self):
         """
@@ -175,9 +175,12 @@ class QuerySet(object):
     def __nonzero__(self):      # Python 2 compatibility
         return type(self).__bool__(self)
 
-    def query(self):
+    def __unicode__(self):
+        return self.as_sql()
+        
+    def as_sql(self):
         """
-        Return the the queryset as SQL.
+        Return the whole queryset as SQL.
         """
         fields = '*'
         if self._fields:

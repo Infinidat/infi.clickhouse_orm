@@ -20,7 +20,7 @@ class QuerySetTestCase(TestCaseWithData):
         self.database.insert(self._sample_data())
         
     def _test_qs(self, qs, expected_count):
-        logging.info(qs.query())
+        logging.info(qs.as_sql())
         for instance in qs:
             logging.info('\t%s' % instance.to_dict()) 
         self.assertEquals(qs.count(), expected_count)
