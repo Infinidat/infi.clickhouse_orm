@@ -152,8 +152,17 @@ class Q(object):
 
 
 class QuerySet(object):
+    """
+    A queryset is an object that represents a database query using a specific `Model`. 
+    It is lazy, meaning that it does not hit the database until you iterate over its 
+    matching rows (model instances).
+    """
 
     def __init__(self, model_cls, database):
+        """
+        Initializer. It is possible to create a queryset like this, but the standard
+        way is to use `MyModel.objects_in(database)`.
+        """
         self._model_cls = model_cls
         self._database = database
         self._order_by = [f[0] for f in model_cls._fields]
@@ -168,7 +177,7 @@ class QuerySet(object):
 
     def __bool__(self):
         """
-        Return true if this queryset matches any rows.
+        Returns true if this queryset matches any rows.
         """
         return bool(self.count())
 
@@ -180,7 +189,7 @@ class QuerySet(object):
         
     def as_sql(self):
         """
-        Return the whole queryset as SQL.
+        Returns the whole query as a SQL string.
         """
         fields = '*'
         if self._fields:
@@ -190,7 +199,7 @@ class QuerySet(object):
 
     def order_by_as_sql(self):
         """
-        Return the contents of the queryset's ORDER BY clause.
+        Returns the contents of the query's `ORDER BY` clause as a string.
         """
         return ', '.join([
             '%s DESC' % field[1:] if field[0] == '-' else field
@@ -199,7 +208,7 @@ class QuerySet(object):
 
     def conditions_as_sql(self):
         """
-        Return the contents of the queryset's WHERE clause.
+        Returns the contents of the query's `WHERE` clause as a string.
         """
         if self._q:
             return ' AND '.join([q.to_sql(self._model_cls) for q in self._q])
@@ -214,7 +223,7 @@ class QuerySet(object):
         
     def order_by(self, *field_names):
         """
-        Returns a new QuerySet instance with the ordering changed.
+        Returns a new `QuerySet` instance with the ordering changed.
         """
         qs = copy(self)
         qs._order_by = field_names
@@ -222,7 +231,7 @@ class QuerySet(object):
 
     def only(self, *field_names):
         """
-        Limit the query to return only the specified field names.
+        Returns a new `QuerySet` instance limited to the specified field names.
         Useful when there are large fields that are not needed,
         or for creating a subquery to use with an IN operator.
         """
@@ -232,7 +241,7 @@ class QuerySet(object):
 
     def filter(self, **kwargs):
         """
-        Returns a new QuerySet instance that includes only rows matching the conditions.
+        Returns a new `QuerySet` instance that includes only rows matching the conditions.
         """
         qs = copy(self)
         qs._q = list(self._q) + [Q(**kwargs)]
@@ -240,7 +249,7 @@ class QuerySet(object):
 
     def exclude(self, **kwargs):
         """
-        Returns a new QuerySet instance that excludes all rows matching the conditions.
+        Returns a new `QuerySet` instance that excludes all rows matching the conditions.
         """
         qs = copy(self)
         qs._q = list(self._q) + [~Q(**kwargs)]

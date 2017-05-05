@@ -71,7 +71,13 @@ class ModelBase(type):
 
 class Model(with_metaclass(ModelBase)):
     '''
-    A base class for ORM models.
+    A base class for ORM models. Each model class represent a ClickHouse table. For example:
+        
+        class CPUStats(Model):
+            timestamp = DateTimeField()
+            cpu_id = UInt16Field()
+            cpu_percent = Float32Field()
+            engine = Memory()
     '''
 
     engine = None

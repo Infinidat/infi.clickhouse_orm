@@ -63,10 +63,14 @@ def get_method_sig(method):
 
 
 def docstring(obj):
-    doc = (obj.__doc__ or '').strip()
+    doc = (obj.__doc__ or '').rstrip()
     if doc:
-        for line in doc.split('\n'):
-            print line.strip()
+        lines = doc.split('\n')
+        # Find the length of the whitespace prefix common to all non-empty lines
+        indentation = min(len(line) - len(line.lstrip()) for line in lines if line.strip())
+        # Output the lines without the indentation
+        for line in lines:
+            print line[indentation:]
         print
 
 

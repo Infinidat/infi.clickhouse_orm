@@ -23,6 +23,10 @@ class DatabaseException(Exception):
 
 
 class Database(object):
+    '''
+    Database instances connect to a specific ClickHouse database for running queries, 
+    inserting data and other operations.
+    '''
 
     def __init__(self, db_name, db_url='http://localhost:8123/', username=None, password=None, readonly=False):
         '''
