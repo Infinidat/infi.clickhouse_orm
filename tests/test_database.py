@@ -2,7 +2,7 @@
 
 import unittest
 
-from infi.clickhouse_orm.database import Database
+from infi.clickhouse_orm.database import Database, DatabaseException
 from .base_test_with_data import *
 
 
@@ -108,6 +108,11 @@ class DatabaseTestCase(TestCaseWithData):
             with self.assertRaises(ValueError):
                 self.database.paginate(Person, 'first_name, last_name', page_num, 100)
 
+    def test_pagination_with_conditions(self):
+        self._insert_and_check(self._sample_data(), len(data))
+        page = self.database.paginate(Person, 'first_name, last_name', 1, 100, conditions="first_name < 'Ava'")
+        self.assertEquals(page.number_of_objects, 10)
+
     def test_special_chars(self):
         s = u'אבגד \\\'"`,.;éåäöšž\n\t\0\b\r'
         p = Person(first_name=s)
@@ -121,3 +126,6 @@ class DatabaseTestCase(TestCaseWithData):
         results = self.database.raw(query)
         self.assertEqual(results, "Whitney\tDurham\t1977-09-15\t1.72\nWhitney\tScott\t1971-07-04\t1.7\n")
 
+    def test_invalid_user(self):
+        with self.assertRaises(DatabaseException):
+            Database(self.database.db_name, username='default', password='wrong')
