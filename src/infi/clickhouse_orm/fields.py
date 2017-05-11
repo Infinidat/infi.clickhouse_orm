@@ -8,7 +8,9 @@ from .utils import escape, parse_array
 
 
 class Field(object):
-
+    '''
+    Abstract base class for all field types.
+    '''
     creation_counter = 0
     class_default = 0
     db_type = None
@@ -90,6 +92,24 @@ class StringField(Field):
         raise ValueError('Invalid value for %s: %r' % (self.__class__.__name__, value))
 
 
+class FixedStringField(StringField):
+
+    def __init__(self, length, default=None, alias=None, materialized=None):
+        self._length = length
+        self.db_type = 'FixedString(%d)' % length
+        super(FixedStringField, self).__init__(default, alias, materialized)
+
+    def to_python(self, value, timezone_in_use):
+        value = super(FixedStringField, self).to_python(value, timezone_in_use)
+        return value.rstrip('\0')
+
+    def validate(self, value):
+        if isinstance(value, text_type):
+            value = value.encode('UTF-8')
+        if len(value) > self._length:
+            raise ValueError('Value of %d bytes is too long for FixedStringField(%d)' % (len(value), self._length))
+
+
 class DateField(Field):
 
     min_value = datetime.date(1970, 1, 1)
@@ -147,7 +167,9 @@ class DateTimeField(Field):
 
 
 class BaseIntField(Field):
-
+    '''
+    Abstract base class for all integer-type fields.
+    '''
     def to_python(self, value, timezone_in_use):
         try:
             return int(value)
@@ -220,6 +242,9 @@ class Int64Field(BaseIntField):
 
 
 class BaseFloatField(Field):
+    '''
+    Abstract base class for all float-type fields.
+    '''
 
     def to_python(self, value, timezone_in_use):
         try:
@@ -244,6 +269,9 @@ class Float64Field(BaseFloatField):
 
 
 class BaseEnumField(Field):
+    '''
+    Abstract base class for all enum-type fields.
+    '''
 
     def __init__(self, enum_cls, default=None, alias=None, materialized=None):
         self.enum_cls = enum_cls

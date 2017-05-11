@@ -5,6 +5,24 @@ class Engine(object):
         raise NotImplementedError()
 
 
+class TinyLog(Engine):
+
+    def create_table_sql(self):
+        return 'TinyLog'
+
+
+class Log(Engine):
+
+    def create_table_sql(self):
+        return 'Log'
+
+
+class Memory(Engine):
+
+    def create_table_sql(self):
+        return 'Memory'
+
+
 class MergeTree(Engine):
 
     def __init__(self, date_col, key_cols, sampling_expr=None,
@@ -80,8 +98,10 @@ class ReplacingMergeTree(MergeTree):
 
 
 class Buffer(Engine):
-    """Here we define Buffer engine
-    Read more here https://clickhouse.yandex/reference_en.html#Buffer
+    """
+    Buffers the data to write in RAM, periodically flushing it to another table.
+    Must be used in conjuction with a `BufferModel`.
+    Read more [here](https://clickhouse.yandex/reference_en.html#Buffer).
     """
     
     #Buffer(database, table, num_layers, min_time, max_time, min_rows, max_rows, min_bytes, max_bytes)

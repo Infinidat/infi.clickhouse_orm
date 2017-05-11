@@ -1,6 +1,14 @@
 Change Log
 ==========
 
+v0.9.0
+------
+- Major new feature: building model queries using QuerySets
+- Refactor and expand the documentation
+- Add support for FixedString fields
+- Add support for more engine types: TinyLog, Log, Memory
+- Bug fix: Do not send readonly=1 when connection is already in readonly mode
+
 v0.8.2
 ------
 - Fix broken Python 3 support (M1hacka)

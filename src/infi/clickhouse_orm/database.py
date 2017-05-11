@@ -16,39 +16,77 @@ Page = namedtuple('Page', 'objects number_of_objects pages_total number page_siz
 
 
 class DatabaseException(Exception):
+    '''
+    Raised when a database operation fails.
+    '''
     pass
 
 
 class Database(object):
+    '''
+    Database instances connect to a specific ClickHouse database for running queries, 
+    inserting data and other operations.
+    '''
 
     def __init__(self, db_name, db_url='http://localhost:8123/', username=None, password=None, readonly=False):
+        '''
+        Initializes a database instance. Unless it's readonly, the database will be
+        created on the ClickHouse server if it does not already exist.
+
+        - `db_name`: name of the database to connect to.
+        - `db_url`: URL of the ClickHouse server.
+        - `username`: optional connection credentials.
+        - `password`: optional connection credentials.
+        - `readonly`: use a read-only connection.
+        '''
         self.db_name = db_name
         self.db_url = db_url
         self.username = username
         self.password = password
-        self.readonly = readonly
-        if not self.readonly:
+        self.readonly = False
+        if readonly:
+            self.connection_readonly = self._is_connection_readonly()
+            self.readonly = True
+        else:
             self.create_database()
         self.server_timezone = self._get_server_timezone()
 
     def create_database(self):
+        '''
+        Creates the database on the ClickHouse server if it does not already exist.
+        '''
         self._send('CREATE DATABASE IF NOT EXISTS `%s`' % self.db_name)
 
     def drop_database(self):
+        '''
+        Deletes the database on the ClickHouse server.
+        '''
         self._send('DROP DATABASE `%s`' % self.db_name)
 
     def create_table(self, model_class):
+        '''
+        Creates a table for the given model class, if it does not exist already.
+        '''
         # TODO check that model has an engine
         if model_class.readonly:
             raise DatabaseException("You can't create read only table")
         self._send(model_class.create_table_sql(self.db_name))
 
     def drop_table(self, model_class):
+        '''
+        Drops the database table of the given model class, if it exists.
+        '''
         if model_class.readonly:
             raise DatabaseException("You can't drop read only table")
         self._send(model_class.drop_table_sql(self.db_name))
 
     def insert(self, model_instances, batch_size=1000):
+        '''
+        Insert records into the database.
+
+        - `model_instances`: any iterable containing instances of a single model class.
+        - `batch_size`: number of records to send per chunk (use a lower number if your records are very large).
+        '''
         from six import next
         from io import BytesIO
         i = iter(model_instances)
@@ -86,6 +124,12 @@ class Database(object):
         self._send(gen())
 
     def count(self, model_class, conditions=None):
+        '''
+        Counts the number of records in the model's table.
+
+        - `model_class`: the model to count.
+        - `conditions`: optional SQL conditions (contents of the WHERE clause).
+        '''
         query = 'SELECT count() FROM $table'
         if conditions:
             query += ' WHERE ' + conditions
@@ -94,6 +138,14 @@ class Database(object):
         return int(r.text) if r.text else 0
 
     def select(self, query, model_class=None, settings=None):
+        '''
+        Performs a query and returns a generator of model instances.
+
+        - `query`: the SQL query to execute.
+        - `model_class`: the model class matching the query's table,
+          or `None` for getting back instances of an ad-hoc model.
+        - `settings`: query settings to send as HTTP GET parameters
+        '''
         query += ' FORMAT TabSeparatedWithNamesAndTypes'
         query = self._substitute(query, model_class)
         r = self._send(query, settings, True)
@@ -107,17 +159,31 @@ class Database(object):
                 yield model_class.from_tsv(line, field_names, self.server_timezone, self)
 
     def raw(self, query, settings=None, stream=False):
-        """
-        Performs raw query to database. Returns its output
-        :param query: Query to execute
-        :param settings: Query settings to send as query GET parameters
-        :param stream: If flag is true, Http response from ClickHouse will be streamed.
-        :return: Query execution result
-        """
+        '''
+        Performs a query and returns its output as text.
+
+        - `query`: the SQL query to execute.
+        - `settings`: query settings to send as HTTP GET parameters
+        - `stream`: if true, the HTTP response from ClickHouse will be streamed.
+        '''
         query = self._substitute(query, None)
         return self._send(query, settings=settings, stream=stream).text
 
     def paginate(self, model_class, order_by, page_num=1, page_size=100, conditions=None, settings=None):
+        '''
+        Selects records and returns a single page of model instances.
+
+        - `model_class`: the model class matching the query's table,
+          or `None` for getting back instances of an ad-hoc model.
+        - `order_by`: columns to use for sorting the query (contents of the ORDER BY clause).
+        - `page_num`: the page number (1-based), or -1 to get the last page.
+        - `page_size`: number of records to return per page.
+        - `conditions`: optional SQL conditions (contents of the WHERE clause).
+        - `settings`: query settings to send as HTTP GET parameters
+
+        The result is a namedtuple containing `objects` (list), `number_of_objects`, 
+        `pages_total`, `number` (of the current page), and `page_size`.
+        '''
         count = self.count(model_class, conditions)
         pages_total = int(ceil(count / float(page_size)))
         if page_num == -1:
@@ -140,6 +206,13 @@ class Database(object):
         )
 
     def migrate(self, migrations_package_name, up_to=9999):
+        '''
+        Executes schema migrations.
+
+        - `migrations_package_name` - fully qualified name of the Python package 
+          containing the migrations.
+        - `up_to` - number of the last migration to apply.
+        '''
         from .migrations import MigrationHistory
         logger = logging.getLogger('migrations')
         applied_migrations = self._get_applied_migrations(migrations_package_name)
@@ -161,7 +234,7 @@ class Database(object):
         return set(obj.module_name for obj in self.select(query))
 
     def _send(self, data, settings=None, stream=False):
-        if PY3 and isinstance(data, string_types):
+        if isinstance(data, string_types):
             data = data.encode('utf-8')
         params = self._build_params(settings)
         r = requests.post(self.db_url, params=params, data=data, stream=stream)
@@ -175,7 +248,8 @@ class Database(object):
             params['user'] = self.username
         if self.password:
             params['password'] = self.password
-        if self.readonly:
+        # Send the readonly flag, unless the connection is already readonly (to prevent db error)
+        if self.readonly and not self.connection_readonly:
             params['readonly'] = '1'
         return params
 
@@ -197,3 +271,7 @@ class Database(object):
         except DatabaseException:
             logger.exception('Cannot determine server timezone, assuming UTC')
             return pytz.utc
+
+    def _is_connection_readonly(self):
+        r = self._send("SELECT value FROM system.settings WHERE name = 'readonly'")
+        return r.text.strip() != '0'

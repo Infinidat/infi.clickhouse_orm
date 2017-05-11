@@ -5,6 +5,7 @@ import pytz
 
 from .fields import Field
 from .utils import parse_tsv
+from .query import QuerySet
 
 logger = getLogger('clickhouse_orm')
 
@@ -57,6 +58,10 @@ class ModelBase(type):
         if db_type.startswith('Array'):
             inner_field = cls.create_ad_hoc_field(db_type[6 : -1])
             return orm_fields.ArrayField(inner_field)
+        # FixedString
+        if db_type.startswith('FixedString'):
+            length = int(db_type[12 : -1])
+            return orm_fields.FixedStringField(length)
         # Simple fields
         name = db_type + 'Field'
         if not hasattr(orm_fields, name):
@@ -66,7 +71,13 @@ class ModelBase(type):
 
 class Model(with_metaclass(ModelBase)):
     '''
-    A base class for ORM models.
+    A base class for ORM models. Each model class represent a ClickHouse table. For example:
+        
+        class CPUStats(Model):
+            timestamp = DateTimeField()
+            cpu_id = UInt16Field()
+            cpu_percent = Float32Field()
+            engine = Memory()
     '''
 
     engine = None
@@ -76,8 +87,8 @@ class Model(with_metaclass(ModelBase)):
         '''
         Creates a model instance, using keyword arguments as field values.
         Since values are immediately converted to their Pythonic type,
-        invalid values will cause a ValueError to be raised.
-        Unrecognized field names will cause an AttributeError.
+        invalid values will cause a `ValueError` to be raised.
+        Unrecognized field names will cause an `AttributeError`.
         '''
         super(Model, self).__init__()
 
@@ -98,7 +109,7 @@ class Model(with_metaclass(ModelBase)):
     def __setattr__(self, name, value):
         '''
         When setting a field value, converts the value to its Pythonic type and validates it.
-        This may raise a ValueError.
+        This may raise a `ValueError`.
         '''
         field = self.get_field(name)
         if field:
@@ -107,26 +118,25 @@ class Model(with_metaclass(ModelBase)):
         super(Model, self).__setattr__(name, value)
 
     def set_database(self, db):
-        """
-        Sets _database attribute for current model instance
-        :param db: Database instance
-        :return: None
-        """
+        '''
+        Sets the `Database` that this model instance belongs to. 
+        This is done automatically when the instance is read from the database or written to it.
+        '''
         # This can not be imported globally due to circular import
         from .database import Database
         assert isinstance(db, Database), "database must be database.Database instance"
         self._database = db
 
     def get_database(self):
-        """
-        Gets _database attribute for current model instance
-        :return: database.Database instance, model was inserted or selected from or None
-        """
+        '''
+        Gets the `Database` that this model instance belongs to. 
+        Returns `None` unless the instance was read from the database or written to it.
+        '''
         return self._database
 
     def get_field(self, name):
         '''
-        Get a Field instance given its name, or None if not found.
+        Gets a `Field` instance given its name, or `None` if not found.
         '''
         field = getattr(self.__class__, name, None)
         return field if isinstance(field, Field) else None
@@ -134,7 +144,9 @@ class Model(with_metaclass(ModelBase)):
     @classmethod
     def table_name(cls):
         '''
-        Returns the model's database table name.
+        Returns the model's database table name. By default this is the
+        class name converted to lowercase. Override this if you want to use
+        a different table name.
         '''
         return cls.__name__.lower()
 
@@ -163,9 +175,13 @@ class Model(with_metaclass(ModelBase)):
     def from_tsv(cls, line, field_names=None, timezone_in_use=pytz.utc, database=None):
         '''
         Create a model instance from a tab-separated line. The line may or may not include a newline.
-        The field_names list must match the fields defined in the model, but does not have to include all of them.
+        The `field_names` list must match the fields defined in the model, but does not have to include all of them.
         If omitted, it is assumed to be the names of all fields in the model, in order of definition.
-        :param database: if given, model receives database
+
+        - `line`: the TSV-formatted data.
+        - `field_names`: names of the model fields in the data.
+        - `timezone_in_use`: the timezone to use when parsing dates and datetimes.
+        - `database`: if given, sets the database that this instance belongs to.
         '''
         from six import next
         field_names = field_names or [name for name, field in cls._fields]
@@ -184,7 +200,8 @@ class Model(with_metaclass(ModelBase)):
     def to_tsv(self, include_readonly=True):
         '''
         Returns the instance's column values as a tab-separated line. A newline is not included.
-        :param bool include_readonly: If False, returns only fields, that can be inserted into database
+
+        - `include_readonly`: if false, returns only fields that can be inserted into database.
         '''
         data = self.__dict__
         fields = self._fields if include_readonly else self._writable_fields
@@ -193,8 +210,9 @@ class Model(with_metaclass(ModelBase)):
     def to_dict(self, include_readonly=True, field_names=None):
         '''
         Returns the instance's column values as a dict.
-        :param bool include_readonly: If False, returns only fields, that can be inserted into database
-        :param field_names: An iterable of field names to return
+        
+        - `include_readonly`: if false, returns only fields that can be inserted into database.
+        - `field_names`: an iterable of field names to return (optional)
         '''
         fields = self._fields if include_readonly else self._writable_fields
 
@@ -203,6 +221,13 @@ class Model(with_metaclass(ModelBase)):
 
         data = self.__dict__
         return {name: data[name] for name, field in fields}
+
+    @classmethod
+    def objects_in(cls, database):
+        '''
+        Returns a `QuerySet` for selecting instances of this model class.
+        '''
+        return QuerySet(cls, database)
 
         
 class BufferModel(Model):
