@@ -8,7 +8,7 @@ The migrations that were applied to the database are recorded in the `infi_click
 Writing Migrations
 ------------------
 
-To write migrations, create a Python package. Then create a python file for the initial migration. The migration files must begin with a four-digit number, and will be applied in sequence. For example::
+To write migrations, create a Python package. Then create a python file for the initial migration. The migration files must begin with a four-digit number, and will be applied in sequence. For example:
 
     analytics
        |
@@ -20,7 +20,7 @@ To write migrations, create a Python package. Then create a python file for the 
               |
               +-- 0002_add_user_agents_table.py
 
-Each migration file is expected to contain a list of `operations`, for example::
+Each migration file is expected to contain a list of `operations`, for example:
 
     from infi.clickhouse_orm import migrations
     from analytics import models
@@ -53,7 +53,7 @@ Default values are not altered by this operation.
 Running Migrations
 ------------------
 
-To migrate a database, create a `Database` instance and call its `migrate` method with the package name containing your migrations::
+To migrate a database, create a `Database` instance and call its `migrate` method with the package name containing your migrations:
 
     Database('analytics_db').migrate('analytics.analytics_migrations')
 

@@ -41,6 +41,8 @@
       * [Partitions and Parts](system_models.md#partitions-and-parts)
 
    * [Contributing](contributing.md#contributing)
+      * [Building](contributing.md#building)
+      * [Tests](contributing.md#tests)
 
    * [Class Reference](class_reference.md#class-reference)
       * [infi.clickhouse_orm.database](class_reference.md#infi.clickhouse_orm.database)
