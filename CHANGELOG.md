@@ -1,8 +1,8 @@
 Change Log
 ==========
 
-Unreleased
-----------
+v0.9.0
+------
 - Major new feature: building model queries using QuerySets
 - Refactor and expand the documentation
 - Add support for FixedString fields
