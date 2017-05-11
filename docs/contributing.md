@@ -15,7 +15,7 @@ After cloning the project, run the following commands:
     cd infi.clickhouse_orm
     projector devenv build
 
-A `setup.py` file will be generate, which you can use to install the development version of the package:
+A `setup.py` file will be generated, which you can use to install the development version of the package:
 
     python setup.py install
 
