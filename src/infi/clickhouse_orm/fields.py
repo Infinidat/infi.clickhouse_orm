@@ -122,6 +122,8 @@ class DateField(Field):
             return value.astimezone(pytz.utc).date() if value.tzinfo else value.date()
         if isinstance(value, datetime.date):
             return value
+        if isinstance(value, datetime.datetime):
+            return value.date()
         if isinstance(value, int):
             return DateField.class_default + datetime.timedelta(days=value)
         if isinstance(value, string_types):
