@@ -2,6 +2,8 @@
 This file contains system readonly models that can be got from database
 https://clickhouse.yandex/reference_en.html#System tables
 """
+from six import string_types
+
 from .database import Database
 from .fields import *
 from .models import Model
@@ -115,7 +117,7 @@ class SystemPart(Model):
         :return: A list of SystemPart objects
         """
         assert isinstance(database, Database), "database must be database.Database class instance"
-        assert isinstance(conditions, str), "conditions must be a string"
+        assert isinstance(conditions, string_types), "conditions must be a string"
         if conditions:
             conditions += " AND"
         field_names = ','.join([f[0] for f in cls._fields])
