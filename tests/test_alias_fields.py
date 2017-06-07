@@ -60,7 +60,7 @@ class ModelWithAliasFields(Model):
     date_field = DateField()
     str_field = StringField()
 
-    alias_str = StringField(alias='str_field')
+    alias_str = StringField(alias=u'str_field')
     alias_int = Int32Field(alias='int_field')
     alias_date = DateField(alias='date_field')
 

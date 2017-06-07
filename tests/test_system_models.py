@@ -40,7 +40,7 @@ class SystemPartTest(unittest.TestCase):
     def test_get_conditions(self):
         parts = list(SystemPart.get(self.database, conditions="table='testtable'"))
         self.assertEqual(len(parts), 1)
-        parts = list(SystemPart.get(self.database, conditions="table='othertable'"))
+        parts = list(SystemPart.get(self.database, conditions=u"table='othertable'"))
         self.assertEqual(len(parts), 0)
 
     def test_attach_detach(self):

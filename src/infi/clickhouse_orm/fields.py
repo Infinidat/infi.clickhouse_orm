@@ -18,9 +18,9 @@ class Field(object):
     def __init__(self, default=None, alias=None, materialized=None):
         assert (None, None) in {(default, alias), (alias, materialized), (default, materialized)}, \
             "Only one of default, alias and materialized parameters can be given"
-        assert alias is None or isinstance(alias, str) and alias != "",\
+        assert alias is None or isinstance(alias, string_types) and alias != "",\
             "Alias field must be string field name, if given"
-        assert materialized is None or isinstance(materialized, str) and alias != "",\
+        assert materialized is None or isinstance(materialized, string_types) and alias != "",\
             "Materialized field must be string, if given"
 
         self.creation_counter = Field.creation_counter
