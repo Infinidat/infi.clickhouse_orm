@@ -1,6 +1,15 @@
 Change Log
 ==========
 
+Unreleased
+----------
+- Added `ne` and `not_in` queryset operators
+- Querysets no longer have a default order unless `order_by` is called
+- Added `autocreate` flag to database initializer
+- Fix some Python 2/3 incompatibilities (TvoroG, tsionyx)
+- To work around a JOIN bug in ClickHouse, `$table` now inserts only the table name,
+  and the database name is sent in the query params instead
+
 v0.9.0
 ------
 - Major new feature: building model queries using QuerySets

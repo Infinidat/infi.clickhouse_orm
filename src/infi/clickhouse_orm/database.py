@@ -28,7 +28,8 @@ class Database(object):
     inserting data and other operations.
     '''
 
-    def __init__(self, db_name, db_url='http://localhost:8123/', username=None, password=None, readonly=False):
+    def __init__(self, db_name, db_url='http://localhost:8123/', 
+                 username=None, password=None, readonly=False, autocreate=True):
         '''
         Initializes a database instance. Unless it's readonly, the database will be
         created on the ClickHouse server if it does not already exist.
@@ -38,16 +39,19 @@ class Database(object):
         - `username`: optional connection credentials.
         - `password`: optional connection credentials.
         - `readonly`: use a read-only connection.
+        - `autocreate`: automatically create the database if does not exist (unless in readonly mode).
         '''
         self.db_name = db_name
         self.db_url = db_url
         self.username = username
         self.password = password
         self.readonly = False
+        self.db_exists = True
         if readonly:
             self.connection_readonly = self._is_connection_readonly()
             self.readonly = True
-        else:
+        elif autocreate:
+            self.db_exists = False
             self.create_database()
         self.server_timezone = self._get_server_timezone()
 
@@ -56,6 +60,7 @@ class Database(object):
         Creates the database on the ClickHouse server if it does not already exist.
         '''
         self._send('CREATE DATABASE IF NOT EXISTS `%s`' % self.db_name)
+        self.db_exists = True
 
     def drop_database(self):
         '''
@@ -244,6 +249,8 @@ class Database(object):
 
     def _build_params(self, settings):
         params = dict(settings or {})
+        if self.db_exists:
+            params['database'] = self.db_name
         if self.username:
             params['user'] = self.username
         if self.password:
