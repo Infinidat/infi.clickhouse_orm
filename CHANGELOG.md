@@ -1,7 +1,7 @@
 Change Log
 ==========
 
-v0.9.1
+v0.9.2
 ------
 - Added `ne` and `not_in` queryset operators
 - Querysets no longer have a default order unless `order_by` is called
