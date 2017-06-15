@@ -10,7 +10,7 @@ infi.clickhouse_orm.database
 Database instances connect to a specific ClickHouse database for running queries, 
 inserting data and other operations.
 
-#### Database(db_name, db_url="http://localhost:8123/", username=None, password=None, readonly=False)
+#### Database(db_name, db_url="http://localhost:8123/", username=None, password=None, readonly=False, autocreate=True)
 
 
 Initializes a database instance. Unless it's readonly, the database will be
@@ -21,6 +21,7 @@ created on the ClickHouse server if it does not already exist.
 - `username`: optional connection credentials.
 - `password`: optional connection credentials.
 - `readonly`: use a read-only connection.
+- `autocreate`: automatically create the database if does not exist (unless in readonly mode).
 
 
 #### count(model_class, conditions=None)

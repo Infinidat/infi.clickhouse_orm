@@ -117,7 +117,7 @@ This is a very convenient feature that saves you the need to define a model for 
 SQL Placeholders
 ----------------
 
-There are a couple of special placeholders that you can use inside the SQL to make it easier to write: `$db` and `$table`. The first one is replaced by the database name, and the second is replaced by the database name plus table name (but is available only when the model is specified).
+There are a couple of special placeholders that you can use inside the SQL to make it easier to write: `$db` and `$table`. The first one is replaced by the database name, and the second is replaced by the table name (but is available only when the model is specified).
 
 So instead of this:
 
@@ -125,11 +125,9 @@ So instead of this:
 
 you can use:
 
-    db.select("SELECT * FROM $db.person", model_class=Person)
+    db.select("SELECT * FROM $db.$table", model_class=Person)
 
-or even:
-
-    db.select("SELECT * FROM $table", model_class=Person)
+Note: normally it is not necessary to specify the database name, since it's already sent in the query parameters to ClickHouse. It is enough to specify the table name.
 
 Counting
 --------

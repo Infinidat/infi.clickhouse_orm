@@ -2,6 +2,7 @@
 
 import unittest
 
+import six
 from infi.clickhouse_orm.database import Database, DatabaseException
 from infi.clickhouse_orm.models import Model
 from infi.clickhouse_orm.fields import *
@@ -25,7 +26,7 @@ class ReadonlyTestCase(TestCaseWithData):
             with self.assertRaises(DatabaseException):
                 self.database.drop_database()
         except DatabaseException as e:
-            if 'Unknown user' in unicode(e):
+            if 'Unknown user' in six.text_type(e):
                 raise unittest.SkipTest('Database user "%s" is not defined' % username)
             else:
                 raise
@@ -56,4 +57,3 @@ class ReadOnlyModel(Model):
     readonly = True
 
     name = StringField()
-

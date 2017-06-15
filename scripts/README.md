@@ -35,10 +35,9 @@ Usage:
 generate_all
 ------------
 Does everything:
-
-    - Generates the class reference using generate_ref
-    - Generates the table of contents using generate_toc
-    - Converts to HTML for visual inspection using docs2html
+- Generates the class reference using generate_ref
+- Generates the table of contents using generate_toc
+- Converts to HTML for visual inspection using docs2html
 
 Usage:
 

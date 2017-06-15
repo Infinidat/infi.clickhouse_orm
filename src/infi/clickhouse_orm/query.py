@@ -88,6 +88,19 @@ class IExactOperator(Operator):
         return 'lowerUTF8(%s) = lowerUTF8(%s)' % (field_name, value)
 
 
+class NotOperator(Operator):
+    """
+    A wrapper around another operator, which negates it.
+    """
+
+    def __init__(self, base_operator):
+        self._base_operator = base_operator
+
+    def to_sql(self, model_cls, field_name, value):
+        # Negate the base operator
+        return 'NOT (%s)' % self._base_operator.to_sql(model_cls, field_name, value)
+
+
 # Define the set of builtin operators
 
 _operators = {}
@@ -96,11 +109,13 @@ def register_operator(name, sql):
     _operators[name] = sql
 
 register_operator('eq',          SimpleOperator('='))
+register_operator('ne',          SimpleOperator('!='))
 register_operator('gt',          SimpleOperator('>'))
 register_operator('gte',         SimpleOperator('>='))
 register_operator('lt',          SimpleOperator('<'))
 register_operator('lte',         SimpleOperator('<='))
 register_operator('in',          InOperator())
+register_operator('not_in',      NotOperator(InOperator()))
 register_operator('contains',    LikeOperator('%{}%'))
 register_operator('startswith',  LikeOperator('{}%'))
 register_operator('endswith',    LikeOperator('%{}'))
@@ -165,7 +180,7 @@ class QuerySet(object):
         """
         self._model_cls = model_cls
         self._database = database
-        self._order_by = [f[0] for f in model_cls._fields]
+        self._order_by = []
         self._q = []
         self._fields = []
 
@@ -194,8 +209,9 @@ class QuerySet(object):
         fields = '*'
         if self._fields:
             fields = ', '.join('`%s`' % field for field in self._fields)
-        params = (fields, self._database.db_name, self._model_cls.table_name(), self.conditions_as_sql(), self.order_by_as_sql())
-        return u'SELECT %s\nFROM `%s`.`%s`\nWHERE %s\nORDER BY %s' % params
+        ordering = '\nORDER BY ' + self.order_by_as_sql() if self._order_by else ''
+        params = (fields, self._database.db_name, self._model_cls.table_name(), self.conditions_as_sql(), ordering)
+        return u'SELECT %s\nFROM `%s`.`%s`\nWHERE %s%s' % params
 
     def order_by_as_sql(self):
         """

@@ -46,6 +46,7 @@ class QuerySetTestCase(TestCaseWithData):
         self._test_qs(qs.filter(first_name__in=('Connor', 'Courtney')), 3) # in tuple
         self._test_qs(qs.filter(first_name__in=['Connor', 'Courtney']), 3) # in list
         self._test_qs(qs.filter(first_name__in="'Connor', 'Courtney'"), 3) # in string
+        self._test_qs(qs.filter(first_name__not_in="'Connor', 'Courtney'"), 97)
         self._test_qs(qs.filter(first_name__contains='sh'), 3) # case sensitive
         self._test_qs(qs.filter(first_name__icontains='sh'), 6) # case insensitive
         self._test_qs(qs.filter(first_name__startswith='le'), 0) # case sensitive
@@ -74,6 +75,8 @@ class QuerySetTestCase(TestCaseWithData):
     def test_filter_date_field(self):
         qs = Person.objects_in(self.database)
         self._test_qs(qs.filter(birthday='1970-12-02'), 1)
+        self._test_qs(qs.filter(birthday__eq='1970-12-02'), 1)
+        self._test_qs(qs.filter(birthday__ne='1970-12-02'), 99)
         self._test_qs(qs.filter(birthday=date(1970, 12, 2)), 1)
         self._test_qs(qs.filter(birthday__lte=date(1970, 12, 2)), 3)
 
@@ -87,6 +90,8 @@ class QuerySetTestCase(TestCaseWithData):
 
     def test_order_by(self):
         qs = Person.objects_in(self.database)
+        self.assertFalse('ORDER BY' in qs.as_sql())
+        self.assertFalse(qs.order_by_as_sql())
         person = list(qs.order_by('first_name', 'last_name'))[0]
         self.assertEquals(person.first_name, 'Abdul')
         person = list(qs.order_by('-first_name', '-last_name'))[0]
@@ -100,6 +105,7 @@ class QuerySetTestCase(TestCaseWithData):
         qs = Person.objects_in(self.database)
         self._test_qs(qs.filter(height__in='SELECT max(height) FROM $table'), 2)
         self._test_qs(qs.filter(first_name__in=qs.only('last_name')), 2)
+        self._test_qs(qs.filter(first_name__not_in=qs.only('last_name')), 98)
 
     def _insert_sample_model(self):
         self.database.create_table(SampleModel)
@@ -125,6 +131,8 @@ class QuerySetTestCase(TestCaseWithData):
         self._insert_sample_model()
         qs = SampleModel.objects_in(self.database)
         self._test_qs(qs.filter(num=1), 1)
+        self._test_qs(qs.filter(num__eq=1), 1)
+        self._test_qs(qs.filter(num__ne=1), 3)
         self._test_qs(qs.filter(num__gt=1), 3)
         self._test_qs(qs.filter(num__gte=1), 4)
         self._test_qs(qs.filter(num__in=(1, 2, 3)), 3)

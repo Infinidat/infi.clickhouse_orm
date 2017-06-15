@@ -31,11 +31,13 @@ There are different operators that can be used, by passing `<fieldname>__<operat
 | Operator       | Equivalent SQL                               | Comments                           |
 | --------       | -------------------------------------------- | ---------------------------------- |
 | `eq`           | `field = value`                              |                                    |
+| `ne`           | `field != value`                             |                                    |
 | `gt`           | `field > value`                              |                                    |
 | `gte`          | `field >= value`                             |                                    |
 | `lt`           | `field < value`                              |                                    |
 | `lte`          | `field <= value`                             |                                    |
 | `in`           | `field IN (values)`                          | See below                          |
+| `not_in`       | `field NOT IN (values)`                      | See below                          |
 | `contains`     | `field LIKE '%value%'`                       | For string fields only             |
 | `startswith`   | `field LIKE 'value%'`                        | For string fields only             |
 | `endswith`     | `field LIKE '%value'`                        | For string fields only             |
@@ -46,7 +48,7 @@ There are different operators that can be used, by passing `<fieldname>__<operat
 
 ### Using the `in` Operator
 
-The `in` operator expects one of three types of values:
+The `in` and `not_in` operators expect one of three types of values:
 * A list or tuple of simple values
 * A string, which is used verbatim as the contents of the parentheses
 * Another queryset (subquery)
@@ -87,6 +89,8 @@ The sorting order of the results can be controlled using the `order_by` method:
 The default order is ascending. To use descending order, add a minus sign before the field name:
 
     qs = Person.objects_in(database).order_by('-height')
+
+If you do not use `order_by`, the rows are returned in arbitrary order.
 
 Omitting Fields
 ---------------

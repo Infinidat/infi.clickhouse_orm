@@ -32,7 +32,7 @@ class ModelBase(type):
         return new_cls
 
     @classmethod
-    def create_ad_hoc_model(cls, fields):
+    def create_ad_hoc_model(cls, fields, model_name='AdHocModel'):
         # fields is a list of tuples (name, db_type)
         # Check if model exists in cache
         fields = list(fields)
@@ -43,7 +43,7 @@ class ModelBase(type):
         attrs = {}
         for name, db_type in fields:
             attrs[name] = cls.create_ad_hoc_field(db_type)
-        model_class = cls.__new__(cls, 'AdHocModel', (Model,), attrs)
+        model_class = cls.__new__(cls, model_name, (Model,), attrs)
         # Add the model class to the cache
         cls.ad_hoc_model_cache[cache_key] = model_class
         return model_class
