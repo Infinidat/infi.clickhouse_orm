@@ -368,9 +368,12 @@ class NullableField(Field):
     class_default = None
 
     def __init__(self, inner_field, default=None, alias=None, materialized=None,
-                 extra_null_values=set()):
+                 extra_null_values=None):
         self.inner_field = inner_field
-        self._extra_null_values = extra_null_values
+        if extra_null_values is None:
+            self._extra_null_values = list()
+        else:
+            self._extra_null_values = extra_null_values
         super(NullableField, self).__init__(default, alias, materialized)
 
     def to_python(self, value, timezone_in_use):
