@@ -362,3 +362,30 @@ class ArrayField(Field):
         from .utils import escape
         return 'Array(%s)' % self.inner_field.get_sql(with_default=False)
 
+
+class NullableField(Field):
+
+    class_default = None
+
+    def __init__(self, inner_field, default=None, alias=None, materialized=None,
+                 extra_null_values=set()):
+        self.inner_field = inner_field
+        self._extra_null_values = extra_null_values
+        super(NullableField, self).__init__(default, alias, materialized)
+
+    def to_python(self, value, timezone_in_use):
+        if value == '\\N' or value is None:
+            return None
+        return self.inner_field.to_python(value, timezone_in_use)
+
+    def validate(self, value):
+        value is None or self.inner_field.validate(value)
+
+    def to_db_string(self, value, quote=True):
+        if value is None or value in self._extra_null_values:
+            return '\\N'
+        return self.inner_field.to_db_string(value, quote=quote)
+
+    def get_sql(self, with_default=True):
+        from .utils import escape
+        return 'Nullable(%s)' % self.inner_field.get_sql(with_default=False)
