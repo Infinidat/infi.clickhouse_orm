@@ -6,14 +6,14 @@ SETUP_INFO = dict(
     author_email = '${infi.recipe.template.version:author_email}',
 
     url = ${infi.recipe.template.version:homepage},
-    license = 'PSF',
+    license = 'BSD',
     description = """${project:description}""",
 
     # http://pypi.python.org/pypi?%3Aaction=list_classifiers
     classifiers = [
         "Intended Audience :: Developers",
         "Intended Audience :: System Administrators",
-        "License :: OSI Approved :: Python Software Foundation License",
+        "License :: OSI Approved :: BSD License",
         "Operating System :: OS Independent",
         "Programming Language :: Python",
         "Programming Language :: Python :: 2.7",
