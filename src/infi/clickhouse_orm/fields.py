@@ -177,7 +177,7 @@ class BaseIntField(Field):
             raise ValueError('Invalid value for %s - %r' % (self.__class__.__name__, value))
 
     def to_db_string(self, value, quote=True):
-        # There's no need to call escape since numbers do not contain 
+        # There's no need to call escape since numbers do not contain
         # special characters, and never need quoting
         return text_type(value)
 
@@ -253,7 +253,7 @@ class BaseFloatField(Field):
             raise ValueError('Invalid value for %s - %r' % (self.__class__.__name__, value))
 
     def to_db_string(self, value, quote=True):
-        # There's no need to call escape since numbers do not contain 
+        # There's no need to call escape since numbers do not contain
         # special characters, and never need quoting
         return text_type(value)
 
@@ -370,10 +370,9 @@ class NullableField(Field):
     def __init__(self, inner_field, default=None, alias=None, materialized=None,
                  extra_null_values=None):
         self.inner_field = inner_field
-        if extra_null_values is None:
-            self._extra_null_values = list()
-        else:
-            self._extra_null_values = extra_null_values
+        self._null_values = [None]
+        if extra_null_values:
+            self._null_values.extend(extra_null_values)
         super(NullableField, self).__init__(default, alias, materialized)
 
     def to_python(self, value, timezone_in_use):
@@ -385,7 +384,7 @@ class NullableField(Field):
         value is None or self.inner_field.validate(value)
 
     def to_db_string(self, value, quote=True):
-        if value is None or value in self._extra_null_values:
+        if value in self._null_values:
             return '\\N'
         return self.inner_field.to_db_string(value, quote=quote)
 
