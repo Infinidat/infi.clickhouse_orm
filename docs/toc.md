@@ -26,6 +26,7 @@
       * [Working with enum fields](field_types.md#working-with-enum-fields)
       * [Working with array fields](field_types.md#working-with-array-fields)
       * [Working with materialized and alias fields](field_types.md#working-with-materialized-and-alias-fields)
+      * [Working with nullable fields](field_types.md#working-with-nullable-fields)
 
    * [Table Engines](table_engines.md#table-engines)
       * [Simple Engines](table_engines.md#simple-engines)
@@ -60,6 +61,7 @@
          * [BaseFloatField](class_reference.md#basefloatfield)
          * [BaseEnumField](class_reference.md#baseenumfield)
          * [ArrayField](class_reference.md#arrayfield)
+         * [NullableField](class_reference.md#nullablefield)
          * [FixedStringField](class_reference.md#fixedstringfield)
          * [UInt8Field](class_reference.md#uint8field)
          * [UInt16Field](class_reference.md#uint16field)

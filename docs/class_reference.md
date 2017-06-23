@@ -378,6 +378,13 @@ Extends Field
 #### ArrayField(inner_field, default=None, alias=None, materialized=None)
 
 
+### NullableField
+
+Extends Field
+
+#### NullableField(inner_field, default=None, alias=None, materialized=None, extra_null_values=None)
+
+
 ### FixedStringField
 
 Extends StringField
