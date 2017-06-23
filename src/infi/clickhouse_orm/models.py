@@ -62,6 +62,10 @@ class ModelBase(type):
         if db_type.startswith('FixedString'):
             length = int(db_type[12 : -1])
             return orm_fields.FixedStringField(length)
+        # Nullable
+        if db_type.startswith('Nullable'):
+            inner_field = cls.create_ad_hoc_field(db_type[9 : -1])
+            return orm_fields.NullableField(inner_field)
         # Simple fields
         name = db_type + 'Field'
         if not hasattr(orm_fields, name):
