@@ -177,7 +177,7 @@ class BaseIntField(Field):
             raise ValueError('Invalid value for %s - %r' % (self.__class__.__name__, value))
 
     def to_db_string(self, value, quote=True):
-        # There's no need to call escape since numbers do not contain 
+        # There's no need to call escape since numbers do not contain
         # special characters, and never need quoting
         return text_type(value)
 
@@ -253,7 +253,7 @@ class BaseFloatField(Field):
             raise ValueError('Invalid value for %s - %r' % (self.__class__.__name__, value))
 
     def to_db_string(self, value, quote=True):
-        # There's no need to call escape since numbers do not contain 
+        # There's no need to call escape since numbers do not contain
         # special characters, and never need quoting
         return text_type(value)
 
@@ -362,3 +362,32 @@ class ArrayField(Field):
         from .utils import escape
         return 'Array(%s)' % self.inner_field.get_sql(with_default=False)
 
+
+class NullableField(Field):
+
+    class_default = None
+
+    def __init__(self, inner_field, default=None, alias=None, materialized=None,
+                 extra_null_values=None):
+        self.inner_field = inner_field
+        self._null_values = [None]
+        if extra_null_values:
+            self._null_values.extend(extra_null_values)
+        super(NullableField, self).__init__(default, alias, materialized)
+
+    def to_python(self, value, timezone_in_use):
+        if value == '\\N' or value is None:
+            return None
+        return self.inner_field.to_python(value, timezone_in_use)
+
+    def validate(self, value):
+        value is None or self.inner_field.validate(value)
+
+    def to_db_string(self, value, quote=True):
+        if value in self._null_values:
+            return '\\N'
+        return self.inner_field.to_db_string(value, quote=quote)
+
+    def get_sql(self, with_default=True):
+        from .utils import escape
+        return 'Nullable(%s)' % self.inner_field.get_sql(with_default=False)

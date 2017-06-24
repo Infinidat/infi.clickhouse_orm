@@ -17,11 +17,12 @@ Currently the following field types are supported:
 | UInt16Field        | UInt16     | int                 | Range 0 to 65535
 | UInt32Field        | UInt32     | int                 | Range 0 to 4294967295
 | UInt64Field        | UInt64     | int/long            | Range 0 to 18446744073709551615
-| Float32Field       | Float32    | float               | 
-| Float64Field       | Float64    | float               | 
+| Float32Field       | Float32    | float               |
+| Float64Field       | Float64    | float               |
 | Enum8Field         | Enum8      | Enum                | See below
 | Enum16Field        | Enum16     | Enum                | See below
 | ArrayField         | Array      | list                | See below
+| NullableField      | Nullable   | See below           | See below
 
 DateTimeField and Time Zones
 ----------------------------
@@ -103,6 +104,32 @@ Usage:
     # created_date and username will contain a default value
     db.select('SELECT * FROM $db.event', model_class=Event)
 
+Working with nullable fields
+----------------------------
+From [some time](https://github.com/yandex/ClickHouse/pull/70) ClickHouse provides a NULL value support.
+Also see some information [here](https://github.com/yandex/ClickHouse/blob/master/dbms/tests/queries/0_stateless/00395_nullable.sql).
+
+Wrapping another field in a `NullableField` makes it possible to assign `None` to that field. For example:
+
+    class EventData(models.Model):
+
+        date = fields.DateField()
+        comment = fields.NullableField(fields.StringField(), extra_null_values={''})
+        score = fields.NullableField(fields.UInt8Field())
+        serie = fields.NullableField(fields.ArrayField(fields.UInt8Field()))
+
+        engine = engines.MergeTree('date', ('date',))
+
+
+    score_event = EventData(date=date.today(), comment=None, score=5, serie=None)
+    comment_event = EventData(date=date.today(), comment='Excellent!', score=None, serie=None)
+    another_event = EventData(date=date.today(), comment='', score=None, serie=None)
+    action_event = EventData(date=date.today(), comment='', score=None, serie=[1, 2, 3])
+
+The `extra_null_values` parameter is an iterable of additional values that should be converted
+to `None`.
+
+NOTE: `ArrayField` of `NullableField` is not supported. Also `EnumField` cannot be nullable.
 
 ---
 

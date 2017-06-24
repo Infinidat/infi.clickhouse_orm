@@ -18,11 +18,11 @@ class QuerySetTestCase(TestCaseWithData):
     def setUp(self):
         super(QuerySetTestCase, self).setUp()
         self.database.insert(self._sample_data())
-        
+
     def _test_qs(self, qs, expected_count):
         logging.info(qs.as_sql())
         for instance in qs:
-            logging.info('\t%s' % instance.to_dict()) 
+            logging.info('\t%s' % instance.to_dict())
         self.assertEquals(qs.count(), expected_count)
 
     def test_no_filtering(self):
@@ -138,6 +138,30 @@ class QuerySetTestCase(TestCaseWithData):
         self._test_qs(qs.filter(num__in=(1, 2, 3)), 3)
         self._test_qs(qs.filter(num__in=range(1, 4)), 3)
 
+    def test_slicing(self):
+        db = Database('system')
+        numbers = range(100)
+        qs = Numbers.objects_in(db)
+        self.assertEquals(qs[0].number, numbers[0])
+        self.assertEquals(qs[5].number, numbers[5])
+        self.assertEquals([row.number for row in qs[:1]], numbers[:1])
+        self.assertEquals([row.number for row in qs[:10]], numbers[:10])
+        self.assertEquals([row.number for row in qs[3:10]], numbers[3:10])
+        self.assertEquals([row.number for row in qs[9:10]], numbers[9:10])
+        self.assertEquals([row.number for row in qs[10:10]], numbers[10:10])
+
+    def test_invalid_slicing(self):
+        db = Database('system')
+        qs = Numbers.objects_in(db)
+        with self.assertRaises(AssertionError):
+            qs[3:10:2]
+        with self.assertRaises(AssertionError):
+            qs[-5]
+        with self.assertRaises(AssertionError):
+            qs[:-5]
+        with self.assertRaises(AssertionError):
+            qs[50:1]
+
 
 Color = Enum('Color', u'red blue green yellow brown white black')
 
@@ -150,3 +174,8 @@ class SampleModel(Model):
     color = Enum8Field(Color)
 
     engine = MergeTree('materialized_date', ('materialized_date',))
+
+
+class Numbers(Model):
+
+    number = UInt64Field()

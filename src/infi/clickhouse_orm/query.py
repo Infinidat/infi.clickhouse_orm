@@ -59,7 +59,7 @@ class InOperator(Operator):
 class LikeOperator(Operator):
     """
     A LIKE operator that matches the field to a given pattern. Can be
-    case sensitive or insensitive. 
+    case sensitive or insensitive.
     """
 
     def __init__(self, pattern, case_sensitive=True):
@@ -168,8 +168,8 @@ class Q(object):
 
 class QuerySet(object):
     """
-    A queryset is an object that represents a database query using a specific `Model`. 
-    It is lazy, meaning that it does not hit the database until you iterate over its 
+    A queryset is an object that represents a database query using a specific `Model`.
+    It is lazy, meaning that it does not hit the database until you iterate over its
     matching rows (model instances).
     """
 
@@ -183,10 +183,11 @@ class QuerySet(object):
         self._order_by = []
         self._q = []
         self._fields = []
+        self._limits = None
 
     def __iter__(self):
         """
-        Iterates over the model instances matching this queryset 
+        Iterates over the model instances matching this queryset
         """
         return self._database.select(self.as_sql(), self._model_cls)
 
@@ -201,7 +202,25 @@ class QuerySet(object):
 
     def __unicode__(self):
         return self.as_sql()
-        
+
+    def __getitem__(self, s):
+        if isinstance(s, six.integer_types):
+            # Single index
+            assert s >= 0, 'negative indexes are not supported'
+            qs = copy(self)
+            qs._limits = (s, 1)
+            return iter(qs).next()
+        else:
+            # Slice
+            assert s.step in (None, 1), 'step is not supported in slices'
+            start = s.start or 0
+            stop = s.stop or 2**63 - 1
+            assert start >= 0 and stop >= 0, 'negative indexes are not supported'
+            assert start <= stop, 'start of slice cannot be smaller than its end'
+            qs = copy(self)
+            qs._limits = (start, stop - start)
+            return qs
+
     def as_sql(self):
         """
         Returns the whole query as a SQL string.
@@ -210,8 +229,10 @@ class QuerySet(object):
         if self._fields:
             fields = ', '.join('`%s`' % field for field in self._fields)
         ordering = '\nORDER BY ' + self.order_by_as_sql() if self._order_by else ''
-        params = (fields, self._database.db_name, self._model_cls.table_name(), self.conditions_as_sql(), ordering)
-        return u'SELECT %s\nFROM `%s`.`%s`\nWHERE %s%s' % params
+        limit = '\nLIMIT %d, %d' % self._limits if self._limits else ''
+        params = (fields, self._model_cls.table_name(),
+                  self.conditions_as_sql(), ordering, limit)
+        return u'SELECT %s\nFROM `%s`\nWHERE %s%s%s' % params
 
     def order_by_as_sql(self):
         """
@@ -236,7 +257,7 @@ class QuerySet(object):
         Returns the number of matching model instances.
         """
         return self._database.count(self._model_cls, self.conditions_as_sql())
-        
+
     def order_by(self, *field_names):
         """
         Returns a new `QuerySet` instance with the ordering changed.

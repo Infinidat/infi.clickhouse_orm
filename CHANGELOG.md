@@ -1,6 +1,12 @@
 Change Log
 ==========
 
+v0.9.3
+------
+- Changed license from PSF to BSD
+- Nullable fields support (yamiou)
+- Support for queryset slicing
+
 v0.9.2
 ------
 - Added `ne` and `not_in` queryset operators
