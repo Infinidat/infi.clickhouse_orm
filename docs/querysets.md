@@ -4,7 +4,7 @@ Querysets
 A queryset is an object that represents a database query using a specific Model. It is lazy, meaning that it does not hit the database until you iterate over its matching rows (model instances). To create a base queryset for a model class, use:
 
     qs = Person.objects_in(database)
-    
+
 This queryset matches all Person instances in the database. You can get these instances using iteration:
 
     for person in qs:
@@ -19,7 +19,7 @@ The `filter` and `exclude` methods are used for filtering the matching instances
     >>> qs = qs.filter(first_name__startswith='V').exclude(birthday__lt='2000-01-01')
     >>> qs.conditions_as_sql()
     u"first_name LIKE 'V%' AND NOT (birthday < '2000-01-01')"
-    
+
 It is possible to specify several fields to filter or exclude by:
 
     >>> qs = Person.objects_in(database).filter(last_name='Smith', height__gt=1.75)
@@ -57,7 +57,7 @@ For example if we want to select only people with Irish last names:
 
     # A list of simple values
     qs = Person.objects_in(database).filter(last_name__in=["Murphy", "O'Sullivan"])
-    
+
     # A string
     subquery = "SELECT name from $db.irishlastname"
     qs = Person.objects_in(database).filter(last_name__in=subquery)
@@ -72,7 +72,7 @@ Counting and Checking Existence
 Use the `count` method to get the number of matches:
 
     Person.objects_in(database).count()
-    
+
 To check if there are any matches at all, you can use any of the following equivalent options:
 
     if qs.count(): ...
@@ -85,7 +85,7 @@ Ordering
 The sorting order of the results can be controlled using the `order_by` method:
 
     qs = Person.objects_in(database).order_by('last_name', 'first_name')
-    
+
 The default order is ascending. To use descending order, add a minus sign before the field name:
 
     qs = Person.objects_in(database).order_by('-height')
@@ -99,6 +99,25 @@ When some of the model fields aren't needed, it is more efficient to omit them f
 
     qs = Person.objects_in(database).only('first_name', 'birthday')
 
+
+Slicing
+-------
+
+It is possible to get a specific item from the queryset by index.
+
+      qs = Person.objects_in(database).order_by('last_name', 'first_name')
+      first = qs[0]
+
+It is also possible to get a range a instances using a slice. This returns a queryset,
+that you can either iterate over or convert to a list.
+
+      qs = Person.objects_in(database).order_by('last_name', 'first_name')
+      first_ten_people = list(qs[:10])
+      next_ten_people  = list(qs[10:20])
+
+You should use `order_by` to ensure a consistent ordering of the results.
+
+Trying to use negative indexes or a slice with a step (e.g. [0:100:2]) is not supported and will raise an `AssertionError`.
 
 ---
 

@@ -5,6 +5,7 @@ Unreleased
 ----------
 - Changed license from PSF to BSD
 - Nullable fields support (yamiou)
+- Support for queryset slicing
 
 v0.9.2
 ------

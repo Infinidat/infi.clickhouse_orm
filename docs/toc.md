@@ -20,6 +20,7 @@
       * [Counting and Checking Existence](querysets.md#counting-and-checking-existence)
       * [Ordering](querysets.md#ordering)
       * [Omitting Fields](querysets.md#omitting-fields)
+      * [Slicing](querysets.md#slicing)
 
    * [Field Types](field_types.md#field-types)
       * [DateTimeField and Time Zones](field_types.md#datetimefield-and-time-zones)

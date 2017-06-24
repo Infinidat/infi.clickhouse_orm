@@ -539,8 +539,8 @@ infi.clickhouse_orm.query
 ### QuerySet
 
 
-A queryset is an object that represents a database query using a specific `Model`. 
-It is lazy, meaning that it does not hit the database until you iterate over its 
+A queryset is an object that represents a database query using a specific `Model`.
+It is lazy, meaning that it does not hit the database until you iterate over its
 matching rows (model instances).
 
 #### QuerySet(model_cls, database)
