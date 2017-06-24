@@ -1,8 +1,8 @@
 Change Log
 ==========
 
-Unreleased
-----------
+v0.9.3
+------
 - Changed license from PSF to BSD
 - Nullable fields support (yamiou)
 - Support for queryset slicing
