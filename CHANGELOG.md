@@ -1,8 +1,8 @@
 Change Log
 ==========
 
-Unreleased
-----------
+v0.9.4
+------
 - Migrations: when creating a table for a `BufferModel`, create the underlying table too if necessary
 
 v0.9.3
