@@ -1,6 +1,10 @@
 Change Log
 ==========
 
+Unreleased
+----------
+- Migrations: when creating a table for a `BufferModel`, create the underlying table too if necessary
+
 v0.9.3
 ------
 - Changed license from PSF to BSD

@@ -1,4 +1,4 @@
-from .models import Model
+from .models import Model, BufferModel
 from .fields import DateField, StringField
 from .engines import MergeTree
 from .utils import escape
@@ -28,6 +28,8 @@ class CreateTable(Operation):
 
     def apply(self, database):
         logger.info('    Create table %s', self.model_class.table_name())
+        if issubclass(self.model_class, BufferModel):
+            database.create_table(self.model_class.engine.main_model)
         database.create_table(self.model_class)
 
 
