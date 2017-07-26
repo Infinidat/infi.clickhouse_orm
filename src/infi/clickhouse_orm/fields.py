@@ -1,6 +1,7 @@
 from __future__ import unicode_literals
 from six import string_types, text_type, binary_type
 import datetime
+import iso8601
 import pytz
 import time
 from calendar import timegm
@@ -157,8 +158,16 @@ class DateTimeField(Field):
                     return datetime.datetime.utcfromtimestamp(value).replace(tzinfo=pytz.utc)
                 except ValueError:
                     pass
-            dt = datetime.datetime.strptime(value, '%Y-%m-%d %H:%M:%S')
-            return timezone_in_use.localize(dt).astimezone(pytz.utc)
+            try:
+                # left the date naive in case of no tzinfo set
+                dt = iso8601.parse_date(value, default_timezone=None)
+            except iso8601.ParseError as e:
+                raise ValueError(text_type(e))
+
+            # convert naive to aware
+            if dt.tzinfo is None or dt.tzinfo.utcoffset(dt) is None:
+                dt = timezone_in_use.localize(dt)
+            return dt.astimezone(pytz.utc)
         raise ValueError('Invalid value for %s - %r' % (self.__class__.__name__, value))
 
     def to_db_string(self, value, quote=True):
