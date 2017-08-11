@@ -158,8 +158,7 @@ The `paginate` method returns a `namedtuple` containing the following fields:
 -   `objects` - the list of objects in this page
 -   `number_of_objects` - total number of objects in all pages
 -   `pages_total` - total number of pages
--   `number` - the page number, starting from 1; the special value -1
-    may be used to retrieve the last page
+-   `number` - the page number, starting from 1; the special value -1 may be used to retrieve the last page
 -   `page_size` - the number of objects per page
 
 You can optionally pass conditions to the query:

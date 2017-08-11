@@ -4,7 +4,7 @@ import pytz
 import time
 from calendar import timegm
 
-from .utils import escape, parse_array
+from .utils import escape, parse_array, comma_join
 
 
 class Field(object):
@@ -356,7 +356,7 @@ class ArrayField(Field):
 
     def to_db_string(self, value, quote=True):
         array = [self.inner_field.to_db_string(v, quote=True) for v in value]
-        return '[' + ', '.join(array) + ']'
+        return '[' + comma_join(array) + ']'
 
     def get_sql(self, with_default=True):
         from .utils import escape

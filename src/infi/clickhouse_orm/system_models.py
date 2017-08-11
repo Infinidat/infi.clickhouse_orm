@@ -7,6 +7,7 @@ from six import string_types
 from .database import Database
 from .fields import *
 from .models import Model
+from .utils import comma_join
 
 
 class SystemPart(Model):
@@ -61,7 +62,7 @@ class SystemPart(Model):
         :return: Operation execution result
         """
         operation = operation.upper()
-        assert operation in self.OPERATIONS, "operation must be in [%s]" % ', '.join(self.OPERATIONS)
+        assert operation in self.OPERATIONS, "operation must be in [%s]" % comma_join(self.OPERATIONS)
         sql = "ALTER TABLE `%s`.`%s` %s PARTITION '%s'" % (self._database.db_name, self.table, operation, self.partition)
         if from_part is not None:
             sql += " FROM %s" % from_part

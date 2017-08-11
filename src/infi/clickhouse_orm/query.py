@@ -1,12 +1,13 @@
 import six
 import pytz
 from copy import copy
+from math import ceil
+from .utils import comma_join
 
 
 # TODO
 # - and/or between Q objects
 # - check that field names are valid
-# - qs slicing
 # - operators for arrays: length, has, empty
 
 class Operator(object):
@@ -19,7 +20,7 @@ class Operator(object):
         Subclasses should implement this method. It returns an SQL string
         that applies this operator on the given field and value.
         """
-        raise NotImplementedError
+        raise NotImplementedError   # pragma: no cover
 
 
 class SimpleOperator(Operator):
@@ -52,7 +53,7 @@ class InOperator(Operator):
         elif isinstance(value, six.string_types):
             pass
         else:
-            value = ', '.join([field.to_db_string(field.to_python(v, pytz.utc)) for v in value])
+            value = comma_join([field.to_db_string(field.to_python(v, pytz.utc)) for v in value])
         return '%s IN (%s)' % (field_name, value)
 
 
@@ -189,6 +190,7 @@ class QuerySet(object):
         """
         Iterates over the model instances matching this queryset
         """
+        print self.as_sql()
         return self._database.select(self.as_sql(), self._model_cls)
 
     def __bool__(self):
@@ -227,7 +229,7 @@ class QuerySet(object):
         """
         fields = '*'
         if self._fields:
-            fields = ', '.join('`%s`' % field for field in self._fields)
+            fields = comma_join('`%s`' % field for field in self._fields)
         ordering = '\nORDER BY ' + self.order_by_as_sql() if self._order_by else ''
         limit = '\nLIMIT %d, %d' % self._limits if self._limits else ''
         params = (fields, self._model_cls.table_name(),
@@ -238,7 +240,7 @@ class QuerySet(object):
         """
         Returns the contents of the query's `ORDER BY` clause as a string.
         """
-        return u', '.join([
+        return comma_join([
             '%s DESC' % field[1:] if field[0] == '-' else field
             for field in self._order_by
         ])
@@ -260,7 +262,7 @@ class QuerySet(object):
 
     def order_by(self, *field_names):
         """
-        Returns a new `QuerySet` instance with the ordering changed.
+        Returns a copy of this queryset with the ordering changed.
         """
         qs = copy(self)
         qs._order_by = field_names
@@ -268,7 +270,7 @@ class QuerySet(object):
 
     def only(self, *field_names):
         """
-        Returns a new `QuerySet` instance limited to the specified field names.
+        Returns a copy of this queryset limited to the specified field names.
         Useful when there are large fields that are not needed,
         or for creating a subquery to use with an IN operator.
         """
@@ -278,7 +280,7 @@ class QuerySet(object):
 
     def filter(self, **kwargs):
         """
-        Returns a new `QuerySet` instance that includes only rows matching the conditions.
+        Returns a copy of this queryset that includes only rows matching the conditions.
         """
         qs = copy(self)
         qs._q = list(self._q) + [Q(**kwargs)]
@@ -286,8 +288,137 @@ class QuerySet(object):
 
     def exclude(self, **kwargs):
         """
-        Returns a new `QuerySet` instance that excludes all rows matching the conditions.
+        Returns a copy of this queryset that excludes all rows matching the conditions.
         """
         qs = copy(self)
         qs._q = list(self._q) + [~Q(**kwargs)]
         return qs
+
+    def paginate(self, page_num=1, page_size=100):
+        '''
+        Returns a single page of model instances that match the queryset.
+        Note that `order_by` should be used first, to ensure a correct
+        partitioning of records into pages.
+
+        - `page_num`: the page number (1-based), or -1 to get the last page.
+        - `page_size`: number of records to return per page.
+
+        The result is a namedtuple containing `objects` (list), `number_of_objects`,
+        `pages_total`, `number` (of the current page), and `page_size`.
+        '''
+        from .database import Page
+        count = self.count()
+        pages_total = int(ceil(count / float(page_size)))
+        if page_num == -1:
+            page_num = pages_total
+        elif page_num < 1:
+            raise ValueError('Invalid page number: %d' % page_num)
+        offset = (page_num - 1) * page_size
+        return Page(
+            objects=list(self[offset : offset + page_size]),
+            number_of_objects=count,
+            pages_total=pages_total,
+            number=page_num,
+            page_size=page_size
+        )
+
+    def aggregate(self, *args, **kwargs):
+        '''
+        Returns an `AggregateQuerySet` over this query, with `args` serving as
+        grouping fields and `kwargs` serving as calculated fields. At least one
+        calculated field is required. For example:
+        ```
+            Event.objects_in(database).filter(date__gt='2017-08-01').aggregate('event_type', count='count()')
+        ```
+        is equivalent to:
+        ```
+            SELECT event_type, count() AS count FROM event
+            WHERE data > '2017-08-01'
+            GROUP BY event_type
+        ```
+        '''
+        return AggregateQuerySet(self, args, kwargs)
+
+
+class AggregateQuerySet(QuerySet):
+    """
+    A queryset used for aggregation.
+    """
+
+    def __init__(self, base_qs, grouping_fields, calculated_fields):
+        """
+        Initializer. Normally you should not call this but rather use `QuerySet.aggregate()`.
+
+        The grouping fields should be a list/tuple of field names from the model. For example:
+        ```
+            ('event_type', 'event_subtype')
+        ```
+        The calculated fields should be a mapping from name to a ClickHouse aggregation function. For example:
+        ```
+            {'weekday': 'toDayOfWeek(event_date)', 'number_of_events': 'count()'}
+        ```
+        At least one calculated field is required.
+        """
+        super(AggregateQuerySet, self).__init__(base_qs._model_cls, base_qs._database)
+        assert calculated_fields, 'No calculated fields specified for aggregation'
+        self._fields = grouping_fields
+        self._grouping_fields = grouping_fields
+        self._calculated_fields = calculated_fields
+        self._order_by = list(base_qs._order_by)
+        self._q = list(base_qs._q)
+        self._limits = base_qs._limits
+
+    def group_by(self, *args):
+        """
+        This method lets you specify the grouping fields explicitly. The `args` must
+        be names of grouping fields or calculated fields that this queryset was
+        created with.
+        """
+        for name in args:
+            assert name in self._fields or name in self._calculated_fields, \
+                   'Cannot group by `%s` since it is not included in the query' % name
+        qs = copy(self)
+        qs._grouping_fields = args
+        return qs
+
+    def only(self, *field_names):
+        """
+        This method is not supported on `AggregateQuerySet`.
+        """
+        raise NotImplementedError('Cannot use "only" with AggregateQuerySet')
+
+    def aggregate(self, *args, **kwargs):
+        """
+        This method is not supported on `AggregateQuerySet`.
+        """
+        raise NotImplementedError('Cannot re-aggregate an AggregateQuerySet')
+
+    def as_sql(self):
+        """
+        Returns the whole query as a SQL string.
+        """
+        grouping = comma_join('`%s`' % field for field in self._grouping_fields)
+        fields = comma_join(list(self._fields) + ['%s AS %s' % (v, k) for k, v in self._calculated_fields.items()])
+        params = dict(
+            grouping=grouping or "''",
+            fields=fields,
+            table=self._model_cls.table_name(),
+            conds=self.conditions_as_sql()
+        )
+        sql = u'SELECT %(fields)s\nFROM `%(table)s`\nWHERE %(conds)s\nGROUP BY %(grouping)s' % params
+        if self._order_by:
+            sql += '\nORDER BY ' + self.order_by_as_sql()
+        if self._limits:
+            sql += '\nLIMIT %d, %d' % self._limits
+        return sql
+
+    def __iter__(self):
+        return self._database.select(self.as_sql()) # using an ad-hoc model
+
+    def count(self):
+        """
+        Returns the number of rows after aggregation.
+        """
+        sql = u'SELECT count() FROM (%s)' % self.as_sql()
+        raw = self._database.raw(sql)
+        return int(raw) if raw else 0

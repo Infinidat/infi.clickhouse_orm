@@ -162,6 +162,154 @@ class QuerySetTestCase(TestCaseWithData):
         with self.assertRaises(AssertionError):
             qs[50:1]
 
+    def test_pagination(self):
+        qs = Person.objects_in(self.database).order_by('first_name', 'last_name')
+        # Try different page sizes
+        for page_size in (1, 2, 7, 10, 30, 100, 150):
+            # Iterate over pages and collect all intances
+            page_num = 1
+            instances = set()
+            while True:
+                page = qs.paginate(page_num, page_size)
+                self.assertEquals(page.number_of_objects, len(data))
+                self.assertGreater(page.pages_total, 0)
+                [instances.add(obj.to_tsv()) for obj in page.objects]
+                if page.pages_total == page_num:
+                    break
+                page_num += 1
+            # Verify that all instances were returned
+            self.assertEquals(len(instances), len(data))
+
+    def test_pagination_last_page(self):
+        qs = Person.objects_in(self.database).order_by('first_name', 'last_name')
+        # Try different page sizes
+        for page_size in (1, 2, 7, 10, 30, 100, 150):
+            # Ask for the last page in two different ways and verify equality
+            page_a = qs.paginate(-1, page_size)
+            page_b = qs.paginate(page_a.pages_total, page_size)
+            self.assertEquals(page_a[1:], page_b[1:])
+            self.assertEquals([obj.to_tsv() for obj in page_a.objects],
+                              [obj.to_tsv() for obj in page_b.objects])
+
+    def test_pagination_invalid_page(self):
+        qs = Person.objects_in(self.database).order_by('first_name', 'last_name')
+        for page_num in (0, -2, -100):
+            with self.assertRaises(ValueError):
+                qs.paginate(page_num, 100)
+
+    def test_pagination_with_conditions(self):
+        qs = Person.objects_in(self.database).order_by('first_name', 'last_name').filter(first_name__lt='Ava')
+        page = qs.paginate(1, 100)
+        self.assertEquals(page.number_of_objects, 10)
+
+
+class AggregateTestCase(TestCaseWithData):
+
+    def setUp(self):
+        super(AggregateTestCase, self).setUp()
+        self.database.insert(self._sample_data())
+
+    def test_aggregate_no_grouping(self):
+        qs = Person.objects_in(self.database).aggregate(average_height='avg(height)', count='count()')
+        print qs.as_sql()
+        self.assertEquals(qs.count(), 1)
+        for row in qs:
+            self.assertAlmostEqual(row.average_height, 1.6923, places=4)
+            self.assertEquals(row.count, 100)
+
+    def test_aggregate_with_filter(self):
+        # When filter comes before aggregate
+        qs = Person.objects_in(self.database).filter(first_name='Warren').aggregate(average_height='avg(height)', count='count()')
+        print qs.as_sql()
+        self.assertEquals(qs.count(), 1)
+        for row in qs:
+            self.assertAlmostEqual(row.average_height, 1.675, places=4)
+            self.assertEquals(row.count, 2)
+        # When filter comes after aggregate
+        qs = Person.objects_in(self.database).aggregate(average_height='avg(height)', count='count()').filter(first_name='Warren')
+        print qs.as_sql()
+        self.assertEquals(qs.count(), 1)
+        for row in qs:
+            self.assertAlmostEqual(row.average_height, 1.675, places=4)
+            self.assertEquals(row.count, 2)
+
+    def test_aggregate_with_implicit_grouping(self):
+        qs = Person.objects_in(self.database).aggregate('first_name', average_height='avg(height)', count='count()')
+        print qs.as_sql()
+        self.assertEquals(qs.count(), 94)
+        total = 0
+        for row in qs:
+            self.assertTrue(1.5 < row.average_height < 2)
+            self.assertTrue(0 < row.count < 3)
+            total += row.count
+        self.assertEquals(total, 100)
+
+    def test_aggregate_with_explicit_grouping(self):
+        qs = Person.objects_in(self.database).aggregate(weekday='toDayOfWeek(birthday)', count='count()').group_by('weekday')
+        print qs.as_sql()
+        self.assertEquals(qs.count(), 7)
+        total = 0
+        for row in qs:
+            total += row.count
+        self.assertEquals(total, 100)
+
+    def test_aggregate_with_order_by(self):
+        qs = Person.objects_in(self.database).aggregate(weekday='toDayOfWeek(birthday)', count='count()').group_by('weekday')
+        days = [row.weekday for row in qs.order_by('weekday')]
+        self.assertEquals(days, range(1, 8))
+
+    def test_aggregate_with_indexing(self):
+        qs = Person.objects_in(self.database).aggregate(weekday='toDayOfWeek(birthday)', count='count()').group_by('weekday')
+        total = 0
+        for i in range(7):
+            total += qs[i].count
+        self.assertEquals(total, 100)
+
+    def test_aggregate_with_slicing(self):
+        qs = Person.objects_in(self.database).aggregate(weekday='toDayOfWeek(birthday)', count='count()').group_by('weekday')
+        total = sum(row.count for row in qs[:3]) + sum(row.count for row in qs[3:])
+        self.assertEquals(total, 100)
+
+    def test_aggregate_with_pagination(self):
+        qs = Person.objects_in(self.database).aggregate(weekday='toDayOfWeek(birthday)', count='count()').group_by('weekday')
+        total = 0
+        page_num = 1
+        while True:
+            page = qs.paginate(page_num, page_size=3)
+            self.assertEquals(page.number_of_objects, 7)
+            total += sum(row.count for row in page.objects)
+            if page.pages_total == page_num:
+                break
+            page_num += 1
+        self.assertEquals(total, 100)
+
+    def test_aggregate_with_wrong_grouping(self):
+        with self.assertRaises(AssertionError):
+            Person.objects_in(self.database).aggregate(weekday='toDayOfWeek(birthday)', count='count()').group_by('first_name')
+
+    def test_aggregate_with_no_calculated_fields(self):
+        with self.assertRaises(AssertionError):
+            Person.objects_in(self.database).aggregate()
+
+    def test_aggregate_with_only(self):
+        # Cannot put only() after aggregate()
+        with self.assertRaises(NotImplementedError):
+            Person.objects_in(self.database).aggregate(weekday='toDayOfWeek(birthday)', count='count()').only('weekday')
+        # When only() comes before aggregate(), it gets overridden
+        qs = Person.objects_in(self.database).only('last_name').aggregate(average_height='avg(height)', count='count()')
+        self.assertTrue('last_name' not in qs.as_sql())
+
+    def test_aggregate_on_aggregate(self):
+        with self.assertRaises(NotImplementedError):
+            Person.objects_in(self.database).aggregate(weekday='toDayOfWeek(birthday)', count='count()').aggregate(s='sum(height)')
+
+    def test_filter_on_calculated_field(self):
+        # This is currently not supported, so we expect it to fail
+        with self.assertRaises(AttributeError):
+            qs = Person.objects_in(self.database).aggregate(weekday='toDayOfWeek(birthday)', count='count()').group_by('weekday')
+            qs = qs.filter(weekday=1)
+            self.assertEquals(qs.count(), 1)
+
 
 Color = Enum('Color', u'red blue green yellow brown white black')
 
