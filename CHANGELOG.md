@@ -1,8 +1,8 @@
 Change Log
 ==========
 
-Unreleased
-----------
+v0.9.5
+------
 - Added `QuerySet.paginate()`
 - Support for basic aggregation in querysets
 
