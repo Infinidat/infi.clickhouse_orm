@@ -550,6 +550,23 @@ Initializer. It is possible to create a queryset like this, but the standard
 way is to use `MyModel.objects_in(database)`.
 
 
+#### aggregate(*args, **kwargs)
+
+
+Returns an `AggregateQuerySet` over this query, with `args` serving as
+grouping fields and `kwargs` serving as calculated fields. At least one
+calculated field is required. For example:
+```
+    Event.objects_in(database).filter(date__gt='2017-08-01').aggregate('event_type', count='count()')
+```
+is equivalent to:
+```
+    SELECT event_type, count() AS count FROM event
+    WHERE data > '2017-08-01'
+    GROUP BY event_type
+```
+
+
 #### as_sql()
 
 
@@ -571,19 +588,19 @@ Returns the number of matching model instances.
 #### exclude(**kwargs)
 
 
-Returns a new `QuerySet` instance that excludes all rows matching the conditions.
+Returns a copy of this queryset that excludes all rows matching the conditions.
 
 
 #### filter(**kwargs)
 
 
-Returns a new `QuerySet` instance that includes only rows matching the conditions.
+Returns a copy of this queryset that includes only rows matching the conditions.
 
 
 #### only(*field_names)
 
 
-Returns a new `QuerySet` instance limited to the specified field names.
+Returns a copy of this queryset limited to the specified field names.
 Useful when there are large fields that are not needed,
 or for creating a subquery to use with an IN operator.
 
@@ -591,12 +608,125 @@ or for creating a subquery to use with an IN operator.
 #### order_by(*field_names)
 
 
-Returns a new `QuerySet` instance with the ordering changed.
+Returns a copy of this queryset with the ordering changed.
 
 
 #### order_by_as_sql()
 
 
 Returns the contents of the query's `ORDER BY` clause as a string.
+
+
+#### paginate(page_num=1, page_size=100)
+
+
+Returns a single page of model instances that match the queryset.
+Note that `order_by` should be used first, to ensure a correct
+partitioning of records into pages.
+
+- `page_num`: the page number (1-based), or -1 to get the last page.
+- `page_size`: number of records to return per page.
+
+The result is a namedtuple containing `objects` (list), `number_of_objects`,
+`pages_total`, `number` (of the current page), and `page_size`.
+
+
+### AggregateQuerySet
+
+Extends QuerySet
+
+
+A queryset used for aggregation.
+
+#### AggregateQuerySet(base_qs, grouping_fields, calculated_fields)
+
+
+Initializer. Normally you should not call this but rather use `QuerySet.aggregate()`.
+
+The grouping fields should be a list/tuple of field names from the model. For example:
+```
+    ('event_type', 'event_subtype')
+```
+The calculated fields should be a mapping from name to a ClickHouse aggregation function. For example:
+```
+    {'weekday': 'toDayOfWeek(event_date)', 'number_of_events': 'count()'}
+```
+At least one calculated field is required.
+
+
+#### aggregate(*args, **kwargs)
+
+
+This method is not supported on `AggregateQuerySet`.
+
+
+#### as_sql()
+
+
+Returns the whole query as a SQL string.
+
+
+#### conditions_as_sql()
+
+
+Returns the contents of the query's `WHERE` clause as a string.
+
+
+#### count()
+
+
+Returns the number of rows after aggregation.
+
+
+#### exclude(**kwargs)
+
+
+Returns a copy of this queryset that excludes all rows matching the conditions.
+
+
+#### filter(**kwargs)
+
+
+Returns a copy of this queryset that includes only rows matching the conditions.
+
+
+#### group_by(*args)
+
+
+This method lets you specify the grouping fields explicitly. The `args` must
+be names of grouping fields or calculated fields that this queryset was
+created with.
+
+
+#### only(*field_names)
+
+
+This method is not supported on `AggregateQuerySet`.
+
+
+#### order_by(*field_names)
+
+
+Returns a copy of this queryset with the ordering changed.
+
+
+#### order_by_as_sql()
+
+
+Returns the contents of the query's `ORDER BY` clause as a string.
+
+
+#### paginate(page_num=1, page_size=100)
+
+
+Returns a single page of model instances that match the queryset.
+Note that `order_by` should be used first, to ensure a correct
+partitioning of records into pages.
+
+- `page_num`: the page number (1-based), or -1 to get the last page.
+- `page_size`: number of records to return per page.
+
+The result is a namedtuple containing `objects` (list), `number_of_objects`,
+`pages_total`, `number` (of the current page), and `page_size`.
 
 

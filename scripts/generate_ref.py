@@ -110,7 +110,7 @@ def module_doc(classes, list_methods=True):
     print '-' * len(mdl)
     print
     for cls in classes:
-        class_doc(cls, list_methods)  
+        class_doc(cls, list_methods)
 
 
 def all_subclasses(cls):
@@ -132,4 +132,4 @@ if __name__ == '__main__':
     module_doc([models.Model, models.BufferModel])
     module_doc([fields.Field] + all_subclasses(fields.Field), False)
     module_doc([engines.Engine] + all_subclasses(engines.Engine), False)
-    module_doc([query.QuerySet])
+    module_doc([query.QuerySet, query.AggregateQuerySet])

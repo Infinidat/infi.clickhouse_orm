@@ -21,6 +21,8 @@
       * [Ordering](querysets.md#ordering)
       * [Omitting Fields](querysets.md#omitting-fields)
       * [Slicing](querysets.md#slicing)
+      * [Pagination](querysets.md#pagination)
+      * [Aggregation](querysets.md#aggregation)
 
    * [Field Types](field_types.md#field-types)
       * [DateTimeField and Time Zones](field_types.md#datetimefield-and-time-zones)
@@ -88,4 +90,5 @@
          * [ReplacingMergeTree](class_reference.md#replacingmergetree)
       * [infi.clickhouse_orm.query](class_reference.md#infi.clickhouse_orm.query)
          * [QuerySet](class_reference.md#queryset)
+         * [AggregateQuerySet](class_reference.md#aggregatequeryset)
 

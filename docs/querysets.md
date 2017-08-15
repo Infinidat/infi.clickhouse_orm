@@ -99,11 +99,10 @@ When some of the model fields aren't needed, it is more efficient to omit them f
 
     qs = Person.objects_in(database).only('first_name', 'birthday')
 
-
 Slicing
 -------
 
-It is possible to get a specific item from the queryset by index.
+It is possible to get a specific item from the queryset by index:
 
       qs = Person.objects_in(database).order_by('last_name', 'first_name')
       first = qs[0]
@@ -118,6 +117,61 @@ that you can either iterate over or convert to a list.
 You should use `order_by` to ensure a consistent ordering of the results.
 
 Trying to use negative indexes or a slice with a step (e.g. [0:100:2]) is not supported and will raise an `AssertionError`.
+
+Pagination
+----------
+
+Similar to `Database.paginate`, you can go over the queryset results one page at a time:
+
+    >>> qs = Person.objects_in(database).order_by('last_name', 'first_name')
+    >>> page = qs.paginate(page_num=1, page_size=10)
+    >>> print page.number_of_objects
+    2507
+    >>> print page.pages_total
+    251
+    >>> for person in page.objects:
+    >>>     # do something
+
+The `paginate` method returns a `namedtuple` containing the following fields:
+
+-   `objects` - the list of objects in this page
+-   `number_of_objects` - total number of objects in all pages
+-   `pages_total` - total number of pages
+-   `number` - the page number, starting from 1; the special value -1 may be used to retrieve the last page
+-   `page_size` - the number of objects per page
+
+Note that you should use `QuerySet.order_by` so that the ordering is unique, otherwise there might be inconsistencies in the pagination (such as an instance that appears on two different pages).
+
+Aggregation
+-----------
+
+It is possible to use aggregation functions over querysets using the `aggregate` method. The simplest form of aggregation works over all rows in the queryset:
+
+    >>> qs = Person.objects_in(database).aggregate(average_height='avg(height)')
+    >>> print qs.count()
+    1
+    >>> for row in qs: print row.average_height
+    1.71
+
+The returned row or rows are no longer instances of the base model (`Person` in this example), but rather instances of an ad-hoc model that includes only the fields specified in the call to `aggregate`.
+
+You can pass names of fields from the model that will be included in the query. By default, they will be also used in the GROUP BY clause. For example to count the number of people per last name you could do this:
+
+    qs = Person.objects_in(database).aggregate('last_name', num='count()')
+
+The underlying SQL query would be something like this:
+
+    SELECT last_name, count() AS num FROM person GROUP BY last_name
+
+If you would like to control the GROUP BY explicitly, use the `group_by` method. This is useful when you need to group by a calculated field, instead of a field that exists in the model. For example, to count the number of people born on each weekday:
+
+    qs = Person.objects_in(database).aggregate(weekday='toDayOfWeek(birthday)', num='count()').group_by('weekday')
+
+This queryset is translated to:
+
+    SELECT toDayOfWeek(birthday) AS weekday, count() AS num FROM person GROUP BY weekday
+
+After calling `aggregate` you can still use most of the regular queryset methods, such as `count`, `order_by` and `paginate`. It is not possible, however, to call `only` or `aggregate`. It is also not possible to filter the queryset on calculated fields, only on fields that exist in the model.
 
 ---
 

@@ -50,7 +50,7 @@ busy = CPUStats.objects_in(db).filter(cpu_id=1, cpu_percent__gt=95).count()
 print 'CPU 1 was busy {:.2f}% of the time'.format(busy * 100.0 / total)
 
 # Calculate the average usage per CPU
-for row in db.select('SELECT cpu_id, avg(cpu_percent) AS average FROM demo.cpustats GROUP BY cpu_id'):
+for row in CPUStats.objects_in(db).aggregate('cpu_id', average='avg(cpu_percent)'):
     print 'CPU {row.cpu_id}: {row.average:.2f}%'.format(row=row)
 ```
 

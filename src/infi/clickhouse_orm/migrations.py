@@ -15,7 +15,7 @@ class Operation(object):
     '''
 
     def apply(self, database):
-        raise NotImplementedError()
+        raise NotImplementedError()   # pragma: no cover
 
 
 class CreateTable(Operation):

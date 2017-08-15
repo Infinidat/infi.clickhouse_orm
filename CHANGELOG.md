@@ -1,6 +1,11 @@
 Change Log
 ==========
 
+v0.9.5
+------
+- Added `QuerySet.paginate()`
+- Support for basic aggregation in querysets
+
 v0.9.4
 ------
 - Migrations: when creating a table for a `BufferModel`, create the underlying table too if necessary
