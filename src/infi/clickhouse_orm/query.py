@@ -190,7 +190,6 @@ class QuerySet(object):
         """
         Iterates over the model instances matching this queryset
         """
-        print self.as_sql()
         return self._database.select(self.as_sql(), self._model_cls)
 
     def __bool__(self):
@@ -211,7 +210,7 @@ class QuerySet(object):
             assert s >= 0, 'negative indexes are not supported'
             qs = copy(self)
             qs._limits = (s, 1)
-            return iter(qs).next()
+            return next(iter(qs))
         else:
             # Slice
             assert s.step in (None, 1), 'step is not supported in slices'
