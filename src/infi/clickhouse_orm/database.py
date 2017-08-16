@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 import requests
 from collections import namedtuple
 from .models import ModelBase
@@ -24,11 +26,11 @@ class DatabaseException(Exception):
 
 class Database(object):
     '''
-    Database instances connect to a specific ClickHouse database for running queries, 
+    Database instances connect to a specific ClickHouse database for running queries,
     inserting data and other operations.
     '''
 
-    def __init__(self, db_name, db_url='http://localhost:8123/', 
+    def __init__(self, db_name, db_url='http://localhost:8123/',
                  username=None, password=None, readonly=False, autocreate=True):
         '''
         Initializes a database instance. Unless it's readonly, the database will be
@@ -186,7 +188,7 @@ class Database(object):
         - `conditions`: optional SQL conditions (contents of the WHERE clause).
         - `settings`: query settings to send as HTTP GET parameters
 
-        The result is a namedtuple containing `objects` (list), `number_of_objects`, 
+        The result is a namedtuple containing `objects` (list), `number_of_objects`,
         `pages_total`, `number` (of the current page), and `page_size`.
         '''
         count = self.count(model_class, conditions)
@@ -214,7 +216,7 @@ class Database(object):
         '''
         Executes schema migrations.
 
-        - `migrations_package_name` - fully qualified name of the Python package 
+        - `migrations_package_name` - fully qualified name of the Python package
           containing the migrations.
         - `up_to` - number of the last migration to apply.
         '''

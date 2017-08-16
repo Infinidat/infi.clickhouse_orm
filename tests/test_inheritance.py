@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 import unittest
 import datetime
 import pytz
@@ -49,4 +50,3 @@ class Model1(ParentModel):
 class Model2(ParentModel):
 
     float_field = Float32Field()
-

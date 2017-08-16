@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 from logging import getLogger
 
 from six import with_metaclass
@@ -18,7 +19,7 @@ class ModelBase(type):
     ad_hoc_model_cache = {}
 
     def __new__(cls, name, bases, attrs):
-        new_cls = super(ModelBase, cls).__new__(cls, name, bases, attrs)
+        new_cls = super(ModelBase, cls).__new__(cls, str(name), bases, attrs)
         # Collect fields from parent classes
         base_fields = []
         for base in bases:
@@ -76,7 +77,7 @@ class ModelBase(type):
 class Model(with_metaclass(ModelBase)):
     '''
     A base class for ORM models. Each model class represent a ClickHouse table. For example:
-        
+
         class CPUStats(Model):
             timestamp = DateTimeField()
             cpu_id = UInt16Field()
@@ -123,7 +124,7 @@ class Model(with_metaclass(ModelBase)):
 
     def set_database(self, db):
         '''
-        Sets the `Database` that this model instance belongs to. 
+        Sets the `Database` that this model instance belongs to.
         This is done automatically when the instance is read from the database or written to it.
         '''
         # This can not be imported globally due to circular import
@@ -133,7 +134,7 @@ class Model(with_metaclass(ModelBase)):
 
     def get_database(self):
         '''
-        Gets the `Database` that this model instance belongs to. 
+        Gets the `Database` that this model instance belongs to.
         Returns `None` unless the instance was read from the database or written to it.
         '''
         return self._database
@@ -214,7 +215,7 @@ class Model(with_metaclass(ModelBase)):
     def to_dict(self, include_readonly=True, field_names=None):
         '''
         Returns the instance's column values as a dict.
-        
+
         - `include_readonly`: if false, returns only fields that can be inserted into database.
         - `field_names`: an iterable of field names to return (optional)
         '''
@@ -233,7 +234,7 @@ class Model(with_metaclass(ModelBase)):
         '''
         return QuerySet(cls, database)
 
-        
+
 class BufferModel(Model):
 
     @classmethod

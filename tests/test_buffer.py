@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-
+from __future__ import unicode_literals
 import unittest
 
 from infi.clickhouse_orm.models import BufferModel
@@ -23,7 +23,5 @@ class BufferTestCase(TestCaseWithData):
 
 
 class PersonBuffer(BufferModel, Person):
-    
-    engine = Buffer(Person)    
 
-
+    engine = Buffer(Person)

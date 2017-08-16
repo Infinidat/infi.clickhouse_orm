@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 import unittest
 from datetime import date
 
@@ -65,5 +66,3 @@ class ModelWithMaterializedFields(Model):
     mat_date = DateField(materialized=u'toDate(date_time_field)')
 
     engine = MergeTree('mat_date', ('mat_date',))
-
-

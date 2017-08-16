@@ -2,6 +2,7 @@
 This file contains system readonly models that can be got from database
 https://clickhouse.yandex/reference_en.html#System tables
 """
+from __future__ import unicode_literals
 from six import string_types
 
 from .database import Database

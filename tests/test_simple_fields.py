@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 import unittest
 from infi.clickhouse_orm.fields import *
 from datetime import date, datetime
@@ -10,7 +11,7 @@ class SimpleFieldsTest(unittest.TestCase):
         f = DateTimeField()
         epoch = datetime(1970, 1, 1, tzinfo=pytz.utc)
         # Valid values
-        for value in (date(1970, 1, 1), datetime(1970, 1, 1), epoch, 
+        for value in (date(1970, 1, 1), datetime(1970, 1, 1), epoch,
                       epoch.astimezone(pytz.timezone('US/Eastern')), epoch.astimezone(pytz.timezone('Asia/Jerusalem')),
                       '1970-01-01 00:00:00', '1970-01-17 00:00:17', '0000-00-00 00:00:00', 0):
             dt = f.to_python(value, pytz.utc)
