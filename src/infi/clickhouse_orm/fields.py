@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 from six import string_types, text_type, binary_type
 import datetime
 import pytz

@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 from six import string_types, binary_type, text_type, PY3
 import codecs
 import re
@@ -43,7 +44,7 @@ def parse_tsv(line):
         line = line.decode()
     if line and line[-1] == '\n':
         line = line[:-1]
-    return [unescape(value) for value in line.split('\t')]
+    return [unescape(value) for value in line.split(b'\t')]
 
 
 def parse_array(array_string):

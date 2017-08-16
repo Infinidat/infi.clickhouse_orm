@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 import unittest
 from datetime import date
 
@@ -18,8 +19,8 @@ class ArrayFieldsTest(unittest.TestCase):
 
     def test_insert_and_select(self):
         instance = ModelWithArrays(
-            date_field='2016-08-30', 
-            arr_str=['goodbye,', 'cruel', 'world', 'special chars: ,"\\\'` \n\t\\[]'], 
+            date_field='2016-08-30',
+            arr_str=['goodbye,', 'cruel', 'world', 'special chars: ,"\\\'` \n\t\\[]'],
             arr_date=['2010-01-01']
         )
         self.database.insert([instance])
@@ -52,11 +53,11 @@ class ArrayFieldsTest(unittest.TestCase):
         self.assertEquals(parse_array("[1, 2, 395, -44]"), ["1", "2", "395", "-44"])
         self.assertEquals(parse_array("['big','mouse','','!']"), ["big", "mouse", "", "!"])
         self.assertEquals(parse_array(unescape("['\\r\\n\\0\\t\\b']")), ["\r\n\0\t\b"])
-        for s in ("", 
-                  "[", 
-                  "]", 
-                  "[1, 2", 
-                  "3, 4]", 
+        for s in ("",
+                  "[",
+                  "]",
+                  "[1, 2",
+                  "3, 4]",
                   "['aaa', 'aaa]"):
             with self.assertRaises(ValueError):
                 parse_array(s)
@@ -70,4 +71,3 @@ class ModelWithArrays(Model):
     arr_date = ArrayField(DateField())
 
     engine = MergeTree('date_field', ('date_field',))
-

@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 import unittest
 
 from infi.clickhouse_orm.database import Database
@@ -54,11 +55,11 @@ class MigrationsTestCase(unittest.TestCase):
         # Altering enum fields
         self.database.migrate('tests.sample_migrations', 6)
         self.assertTrue(self.tableExists(EnumModel1))
-        self.assertEquals(self.getTableFields(EnumModel1), 
+        self.assertEquals(self.getTableFields(EnumModel1),
                           [('date', 'Date'), ('f1', "Enum8('dog' = 1, 'cat' = 2, 'cow' = 3)")])
         self.database.migrate('tests.sample_migrations', 7)
         self.assertTrue(self.tableExists(EnumModel1))
-        self.assertEquals(self.getTableFields(EnumModel2), 
+        self.assertEquals(self.getTableFields(EnumModel2),
                           [('date', 'Date'), ('f1', "Enum16('dog' = 1, 'cat' = 2, 'horse' = 3, 'pig' = 4)")])
         self.database.migrate('tests.sample_migrations', 8)
         self.assertTrue(self.tableExists(MaterializedModel))

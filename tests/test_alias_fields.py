@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 import unittest
 from datetime import date
 
@@ -65,5 +66,3 @@ class ModelWithAliasFields(Model):
     alias_date = DateField(alias='date_field')
 
     engine = MergeTree('date_field', ('date_field',))
-
-
