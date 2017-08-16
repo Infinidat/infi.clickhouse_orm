@@ -140,7 +140,7 @@ class QuerySetTestCase(TestCaseWithData):
 
     def test_slicing(self):
         db = Database('system')
-        numbers = range(100)
+        numbers = list(range(100))
         qs = Numbers.objects_in(db)
         self.assertEquals(qs[0].number, numbers[0])
         self.assertEquals(qs[5].number, numbers[5])
@@ -211,7 +211,7 @@ class AggregateTestCase(TestCaseWithData):
 
     def test_aggregate_no_grouping(self):
         qs = Person.objects_in(self.database).aggregate(average_height='avg(height)', count='count()')
-        print qs.as_sql()
+        print(qs.as_sql())
         self.assertEquals(qs.count(), 1)
         for row in qs:
             self.assertAlmostEqual(row.average_height, 1.6923, places=4)
@@ -220,14 +220,14 @@ class AggregateTestCase(TestCaseWithData):
     def test_aggregate_with_filter(self):
         # When filter comes before aggregate
         qs = Person.objects_in(self.database).filter(first_name='Warren').aggregate(average_height='avg(height)', count='count()')
-        print qs.as_sql()
+        print(qs.as_sql())
         self.assertEquals(qs.count(), 1)
         for row in qs:
             self.assertAlmostEqual(row.average_height, 1.675, places=4)
             self.assertEquals(row.count, 2)
         # When filter comes after aggregate
         qs = Person.objects_in(self.database).aggregate(average_height='avg(height)', count='count()').filter(first_name='Warren')
-        print qs.as_sql()
+        print(qs.as_sql())
         self.assertEquals(qs.count(), 1)
         for row in qs:
             self.assertAlmostEqual(row.average_height, 1.675, places=4)
@@ -235,7 +235,7 @@ class AggregateTestCase(TestCaseWithData):
 
     def test_aggregate_with_implicit_grouping(self):
         qs = Person.objects_in(self.database).aggregate('first_name', average_height='avg(height)', count='count()')
-        print qs.as_sql()
+        print(qs.as_sql())
         self.assertEquals(qs.count(), 94)
         total = 0
         for row in qs:
@@ -246,7 +246,7 @@ class AggregateTestCase(TestCaseWithData):
 
     def test_aggregate_with_explicit_grouping(self):
         qs = Person.objects_in(self.database).aggregate(weekday='toDayOfWeek(birthday)', count='count()').group_by('weekday')
-        print qs.as_sql()
+        print(qs.as_sql())
         self.assertEquals(qs.count(), 7)
         total = 0
         for row in qs:
@@ -256,7 +256,7 @@ class AggregateTestCase(TestCaseWithData):
     def test_aggregate_with_order_by(self):
         qs = Person.objects_in(self.database).aggregate(weekday='toDayOfWeek(birthday)', count='count()').group_by('weekday')
         days = [row.weekday for row in qs.order_by('weekday')]
-        self.assertEquals(days, range(1, 8))
+        self.assertEquals(days, list(range(1, 8)))
 
     def test_aggregate_with_indexing(self):
         qs = Person.objects_in(self.database).aggregate(weekday='toDayOfWeek(birthday)', count='count()').group_by('weekday')
