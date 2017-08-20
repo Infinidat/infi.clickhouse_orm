@@ -1,6 +1,11 @@
 Change Log
 ==========
 
+Unreleased
+----------
+- Nullable arrays not supported in latest ClickHouse version
+- system.parts table no longer includes "replicated" column in latest ClickHouse version
+
 v0.9.5
 ------
 - Added `QuerySet.paginate()`

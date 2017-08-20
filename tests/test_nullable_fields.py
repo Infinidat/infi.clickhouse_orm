@@ -75,18 +75,10 @@ class NullableFieldsTest(unittest.TestCase):
     def _insert_sample_data(self):
         dt = date(1970, 1, 1)
         self.database.insert([
-            ModelWithNullable(date_field='2016-08-30',
-                              null_str='', null_int=42, null_date=dt,
-                              null_array=None),
-            ModelWithNullable(date_field='2016-08-30',
-                              null_str='nothing', null_int=None, null_date=None,
-                              null_array=[1, 2, 3]),
-            ModelWithNullable(date_field='2016-08-31',
-                              null_str=None, null_int=42, null_date=dt,
-                              null_array=[]),
-            ModelWithNullable(date_field='2016-08-31',
-                              null_str=None, null_int=None, null_date=None,
-                              null_array=[3, 2, 1])
+            ModelWithNullable(date_field='2016-08-30', null_str='', null_int=42, null_date=dt),
+            ModelWithNullable(date_field='2016-08-30', null_str='nothing', null_int=None, null_date=None),
+            ModelWithNullable(date_field='2016-08-31', null_str=None, null_int=42, null_date=dt),
+            ModelWithNullable(date_field='2016-08-31', null_str=None, null_int=None, null_date=None)
         ])
 
     def _assert_sample_data(self, results):
@@ -104,11 +96,6 @@ class NullableFieldsTest(unittest.TestCase):
         self.assertIsNone(results[3].null_int)
         self.assertIsNone(results[3].null_str)
         self.assertIsNone(results[3].null_date)
-
-        self.assertIsNone(results[0].null_array)
-        self.assertEquals(results[1].null_array, [1, 2, 3])
-        self.assertEquals(results[2].null_array, [])
-        self.assertEquals(results[3].null_array, [3, 2, 1])
 
     def test_insert_and_select(self):
         self._insert_sample_data()
@@ -129,6 +116,5 @@ class ModelWithNullable(Model):
     null_str = NullableField(StringField(), extra_null_values={''})
     null_int = NullableField(Int32Field())
     null_date = NullableField(DateField())
-    null_array = NullableField(ArrayField(Int32Field()))
 
     engine = MergeTree('date_field', ('date_field',))
