@@ -3,6 +3,7 @@ Change Log
 
 Unreleased
 ----------
+- Fix python3 compatibility (TvoroG)
 - Nullable arrays not supported in latest ClickHouse version
 - system.parts table no longer includes "replicated" column in latest ClickHouse version
 
