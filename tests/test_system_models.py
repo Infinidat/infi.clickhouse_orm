@@ -63,7 +63,6 @@ class SystemPartTest(unittest.TestCase):
         # There can be other backups in the folder
         prev_backups = set(self._get_backups())
         parts[0].freeze()
-        sleep(1)
         backups = set(self._get_backups())
         self.assertEqual(len(backups), len(prev_backups) + 1)
 
