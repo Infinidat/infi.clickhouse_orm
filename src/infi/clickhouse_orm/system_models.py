@@ -22,7 +22,10 @@ class SystemPart(Model):
     engine = StringField()  # Name of the table engine, without parameters.
     partition = StringField()  # Name of the partition, in the format YYYYMM.
     name = StringField()  # Name of the part.
-    replicated = UInt8Field()  # Whether the part belongs to replicated data.
+
+    # This field is present in the docs (https://clickhouse.yandex/docs/en/single/index.html#system-parts),
+    # but is absent in ClickHouse (in version 1.1.54245)
+    # replicated = UInt8Field()  # Whether the part belongs to replicated data.
 
     # Whether the part is used in a table, or is no longer needed and will be deleted soon.
     # Inactive parts remain after merging.
