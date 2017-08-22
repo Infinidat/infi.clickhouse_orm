@@ -1,14 +1,17 @@
+from __future__ import unicode_literals
 from six import string_types, text_type, binary_type
 import datetime
 import pytz
 import time
 from calendar import timegm
 
-from .utils import escape, parse_array
+from .utils import escape, parse_array, comma_join
 
 
 class Field(object):
-
+    '''
+    Abstract base class for all field types.
+    '''
     creation_counter = 0
     class_default = 0
     db_type = None
@@ -16,9 +19,9 @@ class Field(object):
     def __init__(self, default=None, alias=None, materialized=None):
         assert (None, None) in {(default, alias), (alias, materialized), (default, materialized)}, \
             "Only one of default, alias and materialized parameters can be given"
-        assert alias is None or isinstance(alias, str) and alias != "",\
+        assert alias is None or isinstance(alias, string_types) and alias != "",\
             "Alias field must be string field name, if given"
-        assert materialized is None or isinstance(materialized, str) and alias != "",\
+        assert materialized is None or isinstance(materialized, string_types) and alias != "",\
             "Materialized field must be string, if given"
 
         self.creation_counter = Field.creation_counter
@@ -90,6 +93,24 @@ class StringField(Field):
         raise ValueError('Invalid value for %s: %r' % (self.__class__.__name__, value))
 
 
+class FixedStringField(StringField):
+
+    def __init__(self, length, default=None, alias=None, materialized=None):
+        self._length = length
+        self.db_type = 'FixedString(%d)' % length
+        super(FixedStringField, self).__init__(default, alias, materialized)
+
+    def to_python(self, value, timezone_in_use):
+        value = super(FixedStringField, self).to_python(value, timezone_in_use)
+        return value.rstrip('\0')
+
+    def validate(self, value):
+        if isinstance(value, text_type):
+            value = value.encode('UTF-8')
+        if len(value) > self._length:
+            raise ValueError('Value of %d bytes is too long for FixedStringField(%d)' % (len(value), self._length))
+
+
 class DateField(Field):
 
     min_value = datetime.date(1970, 1, 1)
@@ -147,7 +168,9 @@ class DateTimeField(Field):
 
 
 class BaseIntField(Field):
-
+    '''
+    Abstract base class for all integer-type fields.
+    '''
     def to_python(self, value, timezone_in_use):
         try:
             return int(value)
@@ -155,7 +178,7 @@ class BaseIntField(Field):
             raise ValueError('Invalid value for %s - %r' % (self.__class__.__name__, value))
 
     def to_db_string(self, value, quote=True):
-        # There's no need to call escape since numbers do not contain 
+        # There's no need to call escape since numbers do not contain
         # special characters, and never need quoting
         return text_type(value)
 
@@ -220,6 +243,9 @@ class Int64Field(BaseIntField):
 
 
 class BaseFloatField(Field):
+    '''
+    Abstract base class for all float-type fields.
+    '''
 
     def to_python(self, value, timezone_in_use):
         try:
@@ -228,7 +254,7 @@ class BaseFloatField(Field):
             raise ValueError('Invalid value for %s - %r' % (self.__class__.__name__, value))
 
     def to_db_string(self, value, quote=True):
-        # There's no need to call escape since numbers do not contain 
+        # There's no need to call escape since numbers do not contain
         # special characters, and never need quoting
         return text_type(value)
 
@@ -244,6 +270,9 @@ class Float64Field(BaseFloatField):
 
 
 class BaseEnumField(Field):
+    '''
+    Abstract base class for all enum-type fields.
+    '''
 
     def __init__(self, enum_cls, default=None, alias=None, materialized=None):
         self.enum_cls = enum_cls
@@ -328,9 +357,38 @@ class ArrayField(Field):
 
     def to_db_string(self, value, quote=True):
         array = [self.inner_field.to_db_string(v, quote=True) for v in value]
-        return '[' + ', '.join(array) + ']'
+        return '[' + comma_join(array) + ']'
 
     def get_sql(self, with_default=True):
         from .utils import escape
         return 'Array(%s)' % self.inner_field.get_sql(with_default=False)
 
+
+class NullableField(Field):
+
+    class_default = None
+
+    def __init__(self, inner_field, default=None, alias=None, materialized=None,
+                 extra_null_values=None):
+        self.inner_field = inner_field
+        self._null_values = [None]
+        if extra_null_values:
+            self._null_values.extend(extra_null_values)
+        super(NullableField, self).__init__(default, alias, materialized)
+
+    def to_python(self, value, timezone_in_use):
+        if value == '\\N' or value is None:
+            return None
+        return self.inner_field.to_python(value, timezone_in_use)
+
+    def validate(self, value):
+        value is None or self.inner_field.validate(value)
+
+    def to_db_string(self, value, quote=True):
+        if value in self._null_values:
+            return '\\N'
+        return self.inner_field.to_db_string(value, quote=quote)
+
+    def get_sql(self, with_default=True):
+        from .utils import escape
+        return 'Nullable(%s)' % self.inner_field.get_sql(with_default=False)

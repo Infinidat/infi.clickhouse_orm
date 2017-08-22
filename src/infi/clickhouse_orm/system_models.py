@@ -2,9 +2,13 @@
 This file contains system readonly models that can be got from database
 https://clickhouse.yandex/reference_en.html#System tables
 """
+from __future__ import unicode_literals
+from six import string_types
+
 from .database import Database
 from .fields import *
 from .models import Model
+from .utils import comma_join
 
 
 class SystemPart(Model):
@@ -62,7 +66,7 @@ class SystemPart(Model):
         :return: Operation execution result
         """
         operation = operation.upper()
-        assert operation in self.OPERATIONS, "operation must be in [%s]" % ', '.join(self.OPERATIONS)
+        assert operation in self.OPERATIONS, "operation must be in [%s]" % comma_join(self.OPERATIONS)
         sql = "ALTER TABLE `%s`.`%s` %s PARTITION '%s'" % (self._database.db_name, self.table, operation, self.partition)
         if from_part is not None:
             sql += " FROM %s" % from_part
@@ -118,7 +122,7 @@ class SystemPart(Model):
         :return: A list of SystemPart objects
         """
         assert isinstance(database, Database), "database must be database.Database class instance"
-        assert isinstance(conditions, str), "conditions must be a string"
+        assert isinstance(conditions, string_types), "conditions must be a string"
         if conditions:
             conditions += " AND"
         field_names = ','.join([f[0] for f in cls._fields])

@@ -1,6 +1,44 @@
 Change Log
 ==========
 
+Unreleased
+----------
+- Fix python3 compatibility (TvoroG)
+- Nullable arrays not supported in latest ClickHouse version
+- system.parts table no longer includes "replicated" column in latest ClickHouse version
+
+v0.9.5
+------
+- Added `QuerySet.paginate()`
+- Support for basic aggregation in querysets
+
+v0.9.4
+------
+- Migrations: when creating a table for a `BufferModel`, create the underlying table too if necessary
+
+v0.9.3
+------
+- Changed license from PSF to BSD
+- Nullable fields support (yamiou)
+- Support for queryset slicing
+
+v0.9.2
+------
+- Added `ne` and `not_in` queryset operators
+- Querysets no longer have a default order unless `order_by` is called
+- Added `autocreate` flag to database initializer
+- Fix some Python 2/3 incompatibilities (TvoroG, tsionyx)
+- To work around a JOIN bug in ClickHouse, `$table` now inserts only the table name,
+  and the database name is sent in the query params instead
+
+v0.9.0
+------
+- Major new feature: building model queries using QuerySets
+- Refactor and expand the documentation
+- Add support for FixedString fields
+- Add support for more engine types: TinyLog, Log, Memory
+- Bug fix: Do not send readonly=1 when connection is already in readonly mode
+
 v0.8.2
 ------
 - Fix broken Python 3 support (M1hacka)

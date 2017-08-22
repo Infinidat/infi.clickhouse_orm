@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 from six import string_types, binary_type, text_type, PY3
 import codecs
 import re
@@ -21,7 +22,7 @@ SPECIAL_CHARS_REGEX = re.compile("[" + ''.join(SPECIAL_CHARS.values()) + "]")
 def escape(value, quote=True):
     '''
     If the value is a string, escapes any special characters and optionally
-    surrounds it with single quotes. If the value is not a string (e.g. a number), 
+    surrounds it with single quotes. If the value is not a string (e.g. a number),
     converts it to one.
     '''
     def escape_one(match):
@@ -43,7 +44,7 @@ def parse_tsv(line):
         line = line.decode()
     if line and line[-1] == '\n':
         line = line[:-1]
-    return [unescape(value) for value in line.split('\t')]
+    return [unescape(value) for value in line.split(str('\t'))]
 
 
 def parse_array(array_string):
@@ -56,7 +57,7 @@ def parse_array(array_string):
     if len(array_string) < 2 or array_string[0] != '[' or array_string[-1] != ']':
         raise ValueError('Invalid array string: "%s"' % array_string)
     # Drop opening brace
-    array_string = array_string[1:] 
+    array_string = array_string[1:]
     # Go over the string, lopping off each value at the beginning until nothing is left
     values = []
     while True:
@@ -65,7 +66,7 @@ def parse_array(array_string):
             return values
         elif array_string[0] in ', ':
             # In between values
-            array_string = array_string[1:] 
+            array_string = array_string[1:]
         elif array_string[0] == "'":
             # Start of quoted value, find its end
             match = re.search(r"[^\\]'", array_string)
@@ -90,3 +91,10 @@ def import_submodules(package_name):
         name: importlib.import_module(package_name + '.' + name)
         for _, name, _ in pkgutil.iter_modules(package.__path__)
     }
+
+
+def comma_join(items):
+    """
+    Joins an iterable of strings with commas.
+    """
+    return ', '.join(items)

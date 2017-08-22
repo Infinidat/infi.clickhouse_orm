@@ -1,8 +1,29 @@
+from __future__ import unicode_literals
+from .utils import comma_join
+
 
 class Engine(object):
 
     def create_table_sql(self):
-        raise NotImplementedError()
+        raise NotImplementedError()   # pragma: no cover
+
+
+class TinyLog(Engine):
+
+    def create_table_sql(self):
+        return 'TinyLog'
+
+
+class Log(Engine):
+
+    def create_table_sql(self):
+        return 'Log'
+
+
+class Memory(Engine):
+
+    def create_table_sql(self):
+        return 'Memory'
 
 
 class MergeTree(Engine):
@@ -23,7 +44,7 @@ class MergeTree(Engine):
         if self.replica_name:
             name = 'Replicated' + name
         params = self._build_sql_params()
-        return '%s(%s)' % (name, ', '.join(params))
+        return '%s(%s)' % (name, comma_join(params))
 
     def _build_sql_params(self):
         params = []
@@ -32,7 +53,7 @@ class MergeTree(Engine):
         params.append(self.date_col)
         if self.sampling_expr:
             params.append(self.sampling_expr)
-        params.append('(%s)' % ', '.join(self.key_cols))
+        params.append('(%s)' % comma_join(self.key_cols))
         params.append(str(self.index_granularity))
         return params
 
@@ -61,7 +82,7 @@ class SummingMergeTree(MergeTree):
     def _build_sql_params(self):
         params = super(SummingMergeTree, self)._build_sql_params()
         if self.summing_cols:
-            params.append('(%s)' % ', '.join(self.summing_cols))
+            params.append('(%s)' % comma_join(self.summing_cols))
         return params
 
 
@@ -80,10 +101,12 @@ class ReplacingMergeTree(MergeTree):
 
 
 class Buffer(Engine):
-    """Here we define Buffer engine
-    Read more here https://clickhouse.yandex/reference_en.html#Buffer
     """
-    
+    Buffers the data to write in RAM, periodically flushing it to another table.
+    Must be used in conjuction with a `BufferModel`.
+    Read more [here](https://clickhouse.yandex/reference_en.html#Buffer).
+    """
+
     #Buffer(database, table, num_layers, min_time, max_time, min_rows, max_rows, min_bytes, max_bytes)
     def __init__(self, main_model, num_layers=16, min_time=10, max_time=100, min_rows=10000, max_rows=1000000, min_bytes=10000000, max_bytes=100000000):
         self.main_model = main_model
@@ -97,7 +120,7 @@ class Buffer(Engine):
 
 
     def create_table_sql(self, db_name):
-        # Overriden create_table_sql example: 
+        # Overriden create_table_sql example:
         #sql = 'ENGINE = Buffer(merge, hits, 16, 10, 100, 10000, 1000000, 10000000, 100000000)'
         sql = 'ENGINE = Buffer(`%s`, `%s`, %d, %d, %d, %d, %d, %d, %d)' % (
                    db_name, self.main_model.table_name(), self.num_layers,

@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 import unittest
 
 from infi.clickhouse_orm.database import Database, DatabaseException
@@ -38,6 +39,11 @@ class EnginesTestCase(unittest.TestCase):
             engine = MergeTree('date', ('date', 'event_id', 'event_group'), index_granularity=4096)
         self._create_and_insert(TestModel)
 
+    def test_replicated_merge_tree(self):
+        engine = MergeTree('date', ('date', 'event_id', 'event_group'), replica_table_path='/clickhouse/tables/{layer}-{shard}/hits', replica_name='{replica}')
+        expected = "ReplicatedMergeTree('/clickhouse/tables/{layer}-{shard}/hits', '{replica}', date, (date, event_id, event_group), 8192)"
+        self.assertEquals(engine.create_table_sql(), expected)
+
     def test_collapsing_merge_tree(self):
         class TestModel(SampleModel):
             engine = CollapsingMergeTree('date', ('date', 'event_id', 'event_group'), 'event_version')
@@ -51,6 +57,21 @@ class EnginesTestCase(unittest.TestCase):
     def test_replacing_merge_tree(self):
         class TestModel(SampleModel):
             engine = ReplacingMergeTree('date', ('date', 'event_id', 'event_group'), 'event_uversion')
+        self._create_and_insert(TestModel)
+
+    def test_tiny_log(self):
+        class TestModel(SampleModel):
+            engine = TinyLog()
+        self._create_and_insert(TestModel)
+
+    def test_log(self):
+        class TestModel(SampleModel):
+            engine = Log()
+        self._create_and_insert(TestModel)
+
+    def test_memory(self):
+        class TestModel(SampleModel):
+            engine = Memory()
         self._create_and_insert(TestModel)
 
 

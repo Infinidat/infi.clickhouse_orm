@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 import unittest
 import datetime
 import pytz
@@ -89,4 +90,3 @@ class SimpleModel(Model):
     alias_field = Float32Field(alias='float_field')
 
     engine = MergeTree('date_field', ('int_field', 'date_field'))
-
