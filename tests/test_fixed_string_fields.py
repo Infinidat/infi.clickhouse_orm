@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-
+from __future__ import unicode_literals
 import unittest
 
 from infi.clickhouse_orm.database import Database
@@ -37,7 +37,7 @@ class FixedStringFieldsTest(unittest.TestCase):
         query = 'SELECT * from $table ORDER BY date_field'
         results = list(self.database.select(query, FixedStringModel))
         self._assert_sample_data(results)
-        
+
     def test_ad_hoc_model(self):
         self._insert_sample_data()
         query = 'SELECT * from $db.fixedstringmodel ORDER BY date_field'

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-
+from __future__ import unicode_literals
 import unittest
 
 from infi.clickhouse_orm.database import Database, DatabaseException
@@ -99,7 +99,7 @@ class DatabaseTestCase(TestCaseWithData):
             page_a = self.database.paginate(Person, 'first_name, last_name', -1, page_size)
             page_b = self.database.paginate(Person, 'first_name, last_name', page_a.pages_total, page_size)
             self.assertEquals(page_a[1:], page_b[1:])
-            self.assertEquals([obj.to_tsv() for obj in page_a.objects], 
+            self.assertEquals([obj.to_tsv() for obj in page_a.objects],
                               [obj.to_tsv() for obj in page_b.objects])
 
     def test_pagination_invalid_page(self):

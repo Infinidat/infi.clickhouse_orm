@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 import six
 import pytz
 from copy import copy
@@ -167,6 +168,7 @@ class Q(object):
         return q
 
 
+@six.python_2_unicode_compatible
 class QuerySet(object):
     """
     A queryset is an object that represents a database query using a specific `Model`.
@@ -190,7 +192,6 @@ class QuerySet(object):
         """
         Iterates over the model instances matching this queryset
         """
-        print self.as_sql()
         return self._database.select(self.as_sql(), self._model_cls)
 
     def __bool__(self):
@@ -202,7 +203,7 @@ class QuerySet(object):
     def __nonzero__(self):      # Python 2 compatibility
         return type(self).__bool__(self)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.as_sql()
 
     def __getitem__(self, s):
@@ -211,7 +212,7 @@ class QuerySet(object):
             assert s >= 0, 'negative indexes are not supported'
             qs = copy(self)
             qs._limits = (s, 1)
-            return iter(qs).next()
+            return six.next(iter(qs))
         else:
             # Slice
             assert s.step in (None, 1), 'step is not supported in slices'

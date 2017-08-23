@@ -2,6 +2,7 @@
 This file contains system readonly models that can be got from database
 https://clickhouse.yandex/reference_en.html#System tables
 """
+from __future__ import unicode_literals
 from six import string_types
 
 from .database import Database
@@ -25,7 +26,6 @@ class SystemPart(Model):
     engine = StringField()  # Name of the table engine, without parameters.
     partition = StringField()  # Name of the partition, in the format YYYYMM.
     name = StringField()  # Name of the part.
-    replicated = UInt8Field()  # Whether the part belongs to replicated data.
 
     # Whether the part is used in a table, or is no longer needed and will be deleted soon.
     # Inactive parts remain after merging.

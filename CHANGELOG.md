@@ -1,6 +1,12 @@
 Change Log
 ==========
 
+v0.9.6
+------
+- Fix python3 compatibility (TvoroG)
+- Nullable arrays not supported in latest ClickHouse version
+- system.parts table no longer includes "replicated" column in latest ClickHouse version
+
 v0.9.5
 ------
 - Added `QuerySet.paginate()`
