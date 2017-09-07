@@ -1,12 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
-import unittest
 
-import six
-from infi.clickhouse_orm.database import Database, DatabaseException
-from infi.clickhouse_orm.models import Model
-from infi.clickhouse_orm.fields import *
-from infi.clickhouse_orm.engines import *
+from infi.clickhouse_orm.database import DatabaseException
 from .base_test_with_data import *
 
 
@@ -45,15 +40,15 @@ class ReadonlyTestCase(TestCaseWithData):
             self.database.insert([m])
 
     def test_create_readonly_table(self):
-        with self.assertRaises(DatabaseException):
-            self.database.create_table(ReadOnlyModel)
+        self.database.create_table(ReadOnlyModel)
 
     def test_drop_readonly_table(self):
-        with self.assertRaises(DatabaseException):
-            self.database.drop_table(ReadOnlyModel)
+        self.database.drop_table(ReadOnlyModel)
 
 
 class ReadOnlyModel(Model):
     readonly = True
 
     name = StringField()
+    date = DateField()
+    engine = MergeTree('date', ('name',))

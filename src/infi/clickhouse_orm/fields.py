@@ -16,19 +16,21 @@ class Field(object):
     class_default = 0
     db_type = None
 
-    def __init__(self, default=None, alias=None, materialized=None):
+    def __init__(self, default=None, alias=None, materialized=None, readonly=None):
         assert (None, None) in {(default, alias), (alias, materialized), (default, materialized)}, \
             "Only one of default, alias and materialized parameters can be given"
         assert alias is None or isinstance(alias, string_types) and alias != "",\
             "Alias field must be string field name, if given"
         assert materialized is None or isinstance(materialized, string_types) and alias != "",\
             "Materialized field must be string, if given"
+        assert readonly is None or type(readonly) is bool, "readonly parameter must be bool if given"
 
         self.creation_counter = Field.creation_counter
         Field.creation_counter += 1
         self.default = self.class_default if default is None else default
         self.alias = alias
         self.materialized = materialized
+        self.readonly = bool(self.alias or self.materialized or readonly)
 
     def to_python(self, value, timezone_in_use):
         '''
@@ -74,10 +76,6 @@ class Field(object):
             return '%s DEFAULT %s' % (self.db_type, default)
         else:
             return self.db_type
-
-    @property
-    def readonly(self):
-        return bool(self.alias or self.materialized)
 
 
 class StringField(Field):

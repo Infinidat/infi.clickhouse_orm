@@ -36,6 +36,7 @@
       * [Engines in the MergeTree Family](table_engines.md#engines-in-the-mergetree-family)
          * [Data Replication](table_engines.md#data-replication)
       * [Buffer Engine](table_engines.md#buffer-engine)
+      * [Merge Engine](table_engines.md#merge-engine)
 
    * [Schema Migrations](schema_migrations.md#schema-migrations)
       * [Writing Migrations](schema_migrations.md#writing-migrations)

@@ -4,9 +4,10 @@ from logging import getLogger
 from six import with_metaclass
 import pytz
 
-from .fields import Field
+from .fields import Field, StringField
 from .utils import parse_tsv
 from .query import QuerySet
+from .engines import Merge
 
 logger = getLogger('clickhouse_orm')
 
@@ -86,7 +87,12 @@ class Model(with_metaclass(ModelBase)):
     '''
 
     engine = None
+
+    # Insert operations are restricted for read only models
     readonly = False
+
+    # Create table, drop table, insert operations are restricted for system models
+    system = False
 
     def __init__(self, **kwargs):
         '''
@@ -246,3 +252,25 @@ class BufferModel(Model):
         engine_str = cls.engine.create_table_sql(db_name)
         parts.append(engine_str)
         return ' '.join(parts)
+
+
+class MergeModel(Model):
+    '''
+    Model for Merge engine
+    Predefines virtual _table column an controls that rows can't be inserted to this table type
+    https://clickhouse.yandex/docs/en/single/index.html#document-table_engines/merge
+    '''
+    readonly = True
+
+    # Virtual fields can't be inserted into database
+    _table = StringField(readonly=True)
+
+    def set_database(self, db):
+        '''
+        Gets the `Database` that this model instance belongs to.
+        Returns `None` unless the instance was read from the database or written to it.
+        '''
+        assert isinstance(self.engine, Merge), "engine must be engines.Merge instance"
+        res = super(MergeModel, self).set_database(db)
+        self.engine.set_db_name(db.db_name)
+        return res

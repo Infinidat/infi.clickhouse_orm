@@ -75,16 +75,16 @@ class Database(object):
         Creates a table for the given model class, if it does not exist already.
         '''
         # TODO check that model has an engine
-        if model_class.readonly:
-            raise DatabaseException("You can't create read only table")
+        if model_class.system:
+            raise DatabaseException("You can't create system table")
         self._send(model_class.create_table_sql(self.db_name))
 
     def drop_table(self, model_class):
         '''
         Drops the database table of the given model class, if it exists.
         '''
-        if model_class.readonly:
-            raise DatabaseException("You can't drop read only table")
+        if model_class.system:
+            raise DatabaseException("You can't drop system table")
         self._send(model_class.drop_table_sql(self.db_name))
 
     def insert(self, model_instances, batch_size=1000):
@@ -103,8 +103,8 @@ class Database(object):
             return  # model_instances is empty
         model_class = first_instance.__class__
 
-        if first_instance.readonly:
-            raise DatabaseException("You can't insert into read only table")
+        if first_instance.readonly or first_instance.system:
+            raise DatabaseException("You can't insert into read only and system tables")
 
         def gen():
             buf = BytesIO()

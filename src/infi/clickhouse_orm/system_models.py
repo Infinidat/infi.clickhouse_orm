@@ -20,6 +20,7 @@ class SystemPart(Model):
     OPERATIONS = frozenset({'DETACH', 'DROP', 'ATTACH', 'FREEZE', 'FETCH'})
 
     readonly = True
+    system = True
 
     database = StringField()  # Name of the database where the table that this part belongs to is located.
     table = StringField()  # Name of the table that this part belongs to.
