@@ -141,7 +141,7 @@ class Merge(Engine):
     """
 
     def __init__(self, table_regex):
-        assert isinstance(table_regex, six.string_types), "'db_name' parameter must be string"
+        assert isinstance(table_regex, six.string_types), "'table_regex' parameter must be string"
 
         self.table_regex = table_regex
 
