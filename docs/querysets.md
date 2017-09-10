@@ -99,6 +99,16 @@ When some of the model fields aren't needed, it is more efficient to omit them f
 
     qs = Person.objects_in(database).only('first_name', 'birthday')
 
+Distinct
+--------
+
+Adds a DISTINCT clause to the query, meaning that any duplicate rows in the results will be omitted.
+
+    >>> Person.objects_in(database).only('first_name').count()
+    100
+    >>> Person.objects_in(database).only('first_name').distinct().count()
+    94
+
 Slicing
 -------
 

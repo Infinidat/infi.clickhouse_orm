@@ -3,6 +3,7 @@ Change Log
 
 Unreleased
 ----------
+- Add `distinct` method to querysets
 - Add `AlterTableWithBuffer` migration operation
 
 v0.9.6

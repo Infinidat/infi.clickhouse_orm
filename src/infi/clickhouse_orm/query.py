@@ -187,6 +187,7 @@ class QuerySet(object):
         self._q = []
         self._fields = []
         self._limits = None
+        self._distinct = False
 
     def __iter__(self):
         """
@@ -228,14 +229,15 @@ class QuerySet(object):
         """
         Returns the whole query as a SQL string.
         """
+        distinct = 'DISTINCT ' if self._distinct else ''
         fields = '*'
         if self._fields:
             fields = comma_join('`%s`' % field for field in self._fields)
         ordering = '\nORDER BY ' + self.order_by_as_sql() if self._order_by else ''
         limit = '\nLIMIT %d, %d' % self._limits if self._limits else ''
-        params = (fields, self._model_cls.table_name(),
+        params = (distinct, fields, self._model_cls.table_name(),
                   self.conditions_as_sql(), ordering, limit)
-        return u'SELECT %s\nFROM `%s`\nWHERE %s%s%s' % params
+        return u'SELECT %s%s\nFROM `%s`\nWHERE %s%s%s' % params
 
     def order_by_as_sql(self):
         """
@@ -259,6 +261,11 @@ class QuerySet(object):
         """
         Returns the number of matching model instances.
         """
+        if self._distinct:
+            # Use a subquery, since a simple count won't be accurate
+            sql = u'SELECT count() FROM (%s)' % self.as_sql()
+            raw = self._database.raw(sql)
+            return int(raw) if raw else 0
         return self._database.count(self._model_cls, self.conditions_as_sql())
 
     def order_by(self, *field_names):
@@ -296,7 +303,7 @@ class QuerySet(object):
         return qs
 
     def paginate(self, page_num=1, page_size=100):
-        '''
+        """
         Returns a single page of model instances that match the queryset.
         Note that `order_by` should be used first, to ensure a correct
         partitioning of records into pages.
@@ -306,7 +313,7 @@ class QuerySet(object):
 
         The result is a namedtuple containing `objects` (list), `number_of_objects`,
         `pages_total`, `number` (of the current page), and `page_size`.
-        '''
+        """
         from .database import Page
         count = self.count()
         pages_total = int(ceil(count / float(page_size)))
@@ -323,8 +330,17 @@ class QuerySet(object):
             page_size=page_size
         )
 
+    def distinct(self):
+        """
+        Adds a DISTINCT clause to the query, meaning that any duplicate rows
+        in the results will be omitted.
+        """
+        qs = copy(self)
+        qs._distinct = True
+        return qs
+
     def aggregate(self, *args, **kwargs):
-        '''
+        """
         Returns an `AggregateQuerySet` over this query, with `args` serving as
         grouping fields and `kwargs` serving as calculated fields. At least one
         calculated field is required. For example:
@@ -337,7 +353,7 @@ class QuerySet(object):
             WHERE data > '2017-08-01'
             GROUP BY event_type
         ```
-        '''
+        """
         return AggregateQuerySet(self, args, kwargs)
 
 
@@ -368,6 +384,7 @@ class AggregateQuerySet(QuerySet):
         self._order_by = list(base_qs._order_by)
         self._q = list(base_qs._q)
         self._limits = base_qs._limits
+        self._distinct = base_qs._distinct
 
     def group_by(self, *args):
         """
@@ -398,15 +415,17 @@ class AggregateQuerySet(QuerySet):
         """
         Returns the whole query as a SQL string.
         """
+        distinct = 'DISTINCT ' if self._distinct else ''
         grouping = comma_join('`%s`' % field for field in self._grouping_fields)
         fields = comma_join(list(self._fields) + ['%s AS %s' % (v, k) for k, v in self._calculated_fields.items()])
         params = dict(
+            distinct=distinct,
             grouping=grouping or "''",
             fields=fields,
             table=self._model_cls.table_name(),
             conds=self.conditions_as_sql()
         )
-        sql = u'SELECT %(fields)s\nFROM `%(table)s`\nWHERE %(conds)s\nGROUP BY %(grouping)s' % params
+        sql = u'SELECT %(distinct)s%(fields)s\nFROM `%(table)s`\nWHERE %(conds)s\nGROUP BY %(grouping)s' % params
         if self._order_by:
             sql += '\nORDER BY ' + self.order_by_as_sql()
         if self._limits:
