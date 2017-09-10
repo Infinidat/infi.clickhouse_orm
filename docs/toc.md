@@ -20,6 +20,7 @@
       * [Counting and Checking Existence](querysets.md#counting-and-checking-existence)
       * [Ordering](querysets.md#ordering)
       * [Omitting Fields](querysets.md#omitting-fields)
+      * [Distinct](querysets.md#distinct)
       * [Slicing](querysets.md#slicing)
       * [Pagination](querysets.md#pagination)
       * [Aggregation](querysets.md#aggregation)

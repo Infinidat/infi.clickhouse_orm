@@ -7,7 +7,7 @@ infi.clickhouse_orm.database
 ### Database
 
 
-Database instances connect to a specific ClickHouse database for running queries, 
+Database instances connect to a specific ClickHouse database for running queries,
 inserting data and other operations.
 
 #### Database(db_name, db_url="http://localhost:8123/", username=None, password=None, readonly=False, autocreate=True)
@@ -71,7 +71,7 @@ Insert records into the database.
 
 Executes schema migrations.
 
-- `migrations_package_name` - fully qualified name of the Python package 
+- `migrations_package_name` - fully qualified name of the Python package
   containing the migrations.
 - `up_to` - number of the last migration to apply.
 
@@ -89,7 +89,7 @@ Selects records and returns a single page of model instances.
 - `conditions`: optional SQL conditions (contents of the WHERE clause).
 - `settings`: query settings to send as HTTP GET parameters
 
-The result is a namedtuple containing `objects` (list), `number_of_objects`, 
+The result is a namedtuple containing `objects` (list), `number_of_objects`,
 `pages_total`, `number` (of the current page), and `page_size`.
 
 
@@ -128,7 +128,7 @@ infi.clickhouse_orm.models
 
 
 A base class for ORM models. Each model class represent a ClickHouse table. For example:
-    
+
     class CPUStats(Model):
         timestamp = DateTimeField()
         cpu_id = UInt16Field()
@@ -172,7 +172,7 @@ If omitted, it is assumed to be the names of all fields in the model, in order o
 #### get_database()
 
 
-Gets the `Database` that this model instance belongs to. 
+Gets the `Database` that this model instance belongs to.
 Returns `None` unless the instance was read from the database or written to it.
 
 
@@ -191,7 +191,7 @@ Returns a `QuerySet` for selecting instances of this model class.
 #### set_database(db)
 
 
-Sets the `Database` that this model instance belongs to. 
+Sets the `Database` that this model instance belongs to.
 This is done automatically when the instance is read from the database or written to it.
 
 
@@ -261,7 +261,7 @@ If omitted, it is assumed to be the names of all fields in the model, in order o
 #### get_database()
 
 
-Gets the `Database` that this model instance belongs to. 
+Gets the `Database` that this model instance belongs to.
 Returns `None` unless the instance was read from the database or written to it.
 
 
@@ -280,7 +280,7 @@ Returns a `QuerySet` for selecting instances of this model class.
 #### set_database(db)
 
 
-Sets the `Database` that this model instance belongs to. 
+Sets the `Database` that this model instance belongs to.
 This is done automatically when the instance is read from the database or written to it.
 
 
@@ -585,6 +585,13 @@ Returns the contents of the query's `WHERE` clause as a string.
 Returns the number of matching model instances.
 
 
+#### distinct()
+
+
+Adds a DISTINCT clause to the query, meaning that any duplicate rows
+in the results will be omitted.
+
+
 #### exclude(**kwargs)
 
 
@@ -676,6 +683,13 @@ Returns the contents of the query's `WHERE` clause as a string.
 
 
 Returns the number of rows after aggregation.
+
+
+#### distinct()
+
+
+Adds a DISTINCT clause to the query, meaning that any duplicate rows
+in the results will be omitted.
 
 
 #### exclude(**kwargs)

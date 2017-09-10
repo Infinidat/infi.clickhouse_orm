@@ -51,7 +51,10 @@ def get_method_sig(method):
     for arg in argspec.args:
         default_arg = _get_default_arg(argspec.args, argspec.defaults, arg_index)
         if default_arg.has_default:
-            args.append("%s=%s" % (arg, default_arg.default_value))
+            val = default_arg.default_value
+            if isinstance(val, basestring):
+                val = '"' + val + '"'
+            args.append("%s=%s" % (arg, val))
         else:
             args.append(arg)
         arg_index += 1
