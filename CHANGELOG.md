@@ -1,6 +1,10 @@
 Change Log
 ==========
 
+Unreleased
+----------
+- Add `AlterTableWithBuffer` migration operation
+
 v0.9.6
 ------
 - Fix python3 compatibility (TvoroG)
