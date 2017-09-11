@@ -93,10 +93,10 @@ class StringField(Field):
 
 class FixedStringField(StringField):
 
-    def __init__(self, length, default=None, alias=None, materialized=None):
+    def __init__(self, length, default=None, alias=None, materialized=None, readonly=None):
         self._length = length
         self.db_type = 'FixedString(%d)' % length
-        super(FixedStringField, self).__init__(default, alias, materialized)
+        super(FixedStringField, self).__init__(default, alias, materialized,readonly)
 
     def to_python(self, value, timezone_in_use):
         value = super(FixedStringField, self).to_python(value, timezone_in_use)
@@ -272,11 +272,11 @@ class BaseEnumField(Field):
     Abstract base class for all enum-type fields.
     '''
 
-    def __init__(self, enum_cls, default=None, alias=None, materialized=None):
+    def __init__(self, enum_cls, default=None, alias=None, materialized=None, readonly=None):
         self.enum_cls = enum_cls
         if default is None:
             default = list(enum_cls)[0]
-        super(BaseEnumField, self).__init__(default, alias, materialized)
+        super(BaseEnumField, self).__init__(default, alias, materialized, readonly)
 
     def to_python(self, value, timezone_in_use):
         if isinstance(value, self.enum_cls):
@@ -336,9 +336,9 @@ class ArrayField(Field):
 
     class_default = []
 
-    def __init__(self, inner_field, default=None, alias=None, materialized=None):
+    def __init__(self, inner_field, default=None, alias=None, materialized=None, readonly=None):
         self.inner_field = inner_field
-        super(ArrayField, self).__init__(default, alias, materialized)
+        super(ArrayField, self).__init__(default, alias, materialized, readonly)
 
     def to_python(self, value, timezone_in_use):
         if isinstance(value, text_type):
@@ -372,7 +372,7 @@ class NullableField(Field):
         self._null_values = [None]
         if extra_null_values:
             self._null_values.extend(extra_null_values)
-        super(NullableField, self).__init__(default, alias, materialized)
+        super(NullableField, self).__init__(default, alias, materialized, readonly=None)
 
     def to_python(self, value, timezone_in_use):
         if value == '\\N' or value is None:
