@@ -20,6 +20,7 @@
       * [Counting and Checking Existence](querysets.md#counting-and-checking-existence)
       * [Ordering](querysets.md#ordering)
       * [Omitting Fields](querysets.md#omitting-fields)
+      * [Distinct](querysets.md#distinct)
       * [Slicing](querysets.md#slicing)
       * [Pagination](querysets.md#pagination)
       * [Aggregation](querysets.md#aggregation)
@@ -36,6 +37,7 @@
       * [Engines in the MergeTree Family](table_engines.md#engines-in-the-mergetree-family)
          * [Data Replication](table_engines.md#data-replication)
       * [Buffer Engine](table_engines.md#buffer-engine)
+      * [Merge Engine](table_engines.md#merge-engine)
 
    * [Schema Migrations](schema_migrations.md#schema-migrations)
       * [Writing Migrations](schema_migrations.md#writing-migrations)
@@ -85,6 +87,7 @@
          * [Memory](class_reference.md#memory)
          * [MergeTree](class_reference.md#mergetree)
          * [Buffer](class_reference.md#buffer)
+         * [Merge](class_reference.md#merge)
          * [CollapsingMergeTree](class_reference.md#collapsingmergetree)
          * [SummingMergeTree](class_reference.md#summingmergetree)
          * [ReplacingMergeTree](class_reference.md#replacingmergetree)

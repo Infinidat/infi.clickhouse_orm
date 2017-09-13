@@ -15,6 +15,7 @@ The following engines are supported by the ORM:
 - SummingMergeTree / ReplicatedSummingMergeTree
 - ReplacingMergeTree / ReplicatedReplacingMergeTree
 - Buffer
+- Merge
 
 
 Simple Engines
@@ -85,6 +86,18 @@ Then you can insert objects into Buffer model and they will be handled by ClickH
     suzy = PersonBuffer(first_name='Suzy', last_name='Jones')
     dan = PersonBuffer(first_name='Dan', last_name='Schwartz')
     db.insert([dan, suzy])
+    
+    
+Merge Engine
+-------------
+
+[ClickHouse docs](https://clickhouse.yandex/docs/en/single/index.html#merge)  
+A `Merge` engine is only used in conjunction with a `MergeModel`.   
+This table does not store data itself, but allows reading from any number of other tables simultaneously. So you can't insert in it.
+Engine parameter specifies re2 (similar to PCRE) regular expression, from which data is selected.
+
+    class MergeTable(models.MergeModel):
+        engine = engines.Merge('^table_prefix')
 
 
 ---

@@ -1,4 +1,7 @@
 from __future__ import unicode_literals
+
+import six
+
 from .utils import comma_join
 
 
@@ -118,7 +121,6 @@ class Buffer(Engine):
         self.min_bytes = min_bytes
         self.max_bytes = max_bytes
 
-
     def create_table_sql(self, db_name):
         # Overriden create_table_sql example:
         #sql = 'ENGINE = Buffer(merge, hits, 16, 10, 100, 10000, 1000000, 10000000, 100000000)'
@@ -128,3 +130,27 @@ class Buffer(Engine):
                    self.max_rows, self.min_bytes, self.max_bytes
               )
         return sql
+
+
+class Merge(Engine):
+    """
+    The Merge engine (not to be confused with MergeTree) does not store data itself,
+    but allows reading from any number of other tables simultaneously.
+    Writing to a table is not supported
+    https://clickhouse.yandex/docs/en/single/index.html#document-table_engines/merge
+    """
+
+    def __init__(self, table_regex):
+        assert isinstance(table_regex, six.string_types), "'table_regex' parameter must be string"
+
+        self.table_regex = table_regex
+
+        # Use current database as default
+        self.db_name = 'currentDatabase()'
+
+    def create_table_sql(self):
+        return "Merge(%s, '%s')" % (self.db_name, self.table_regex)
+
+    def set_db_name(self, db_name):
+        assert isinstance(db_name, six.string_types), "'db_name' parameter must be string"
+        self.db_name = db_name

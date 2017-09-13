@@ -2,12 +2,32 @@ from __future__ import unicode_literals
 import unittest
 from datetime import date
 import os
-import shutil
-from infi.clickhouse_orm.database import Database
+from infi.clickhouse_orm.database import Database, DatabaseException
 from infi.clickhouse_orm.engines import *
 from infi.clickhouse_orm.fields import *
 from infi.clickhouse_orm.models import Model
 from infi.clickhouse_orm.system_models import SystemPart
+
+
+class SystemTest(unittest.TestCase):
+    def setUp(self):
+        self.database = Database('test-db')
+
+    def tearDown(self):
+        self.database.drop_database()
+
+    def test_insert_system(self):
+        m = SystemPart()
+        with self.assertRaises(DatabaseException):
+            self.database.insert([m])
+
+    def test_create_readonly_table(self):
+        with self.assertRaises(DatabaseException):
+            self.database.create_table(SystemTestModel)
+
+    def test_drop_readonly_table(self):
+        with self.assertRaises(DatabaseException):
+            self.database.drop_table(SystemTestModel)
 
 
 class SystemPartTest(unittest.TestCase):
@@ -75,3 +95,7 @@ class TestTable(Model):
     date_field = DateField()
 
     engine = MergeTree('date_field', ('date_field',))
+
+
+class SystemTestModel(Model):
+    system = True

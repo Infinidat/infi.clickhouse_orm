@@ -20,12 +20,17 @@ class SystemPart(Model):
     OPERATIONS = frozenset({'DETACH', 'DROP', 'ATTACH', 'FREEZE', 'FETCH'})
 
     readonly = True
+    system = True
 
     database = StringField()  # Name of the database where the table that this part belongs to is located.
     table = StringField()  # Name of the table that this part belongs to.
     engine = StringField()  # Name of the table engine, without parameters.
     partition = StringField()  # Name of the partition, in the format YYYYMM.
     name = StringField()  # Name of the part.
+
+    # This field is present in the docs (https://clickhouse.yandex/docs/en/single/index.html#system-parts),
+    # but is absent in ClickHouse (in version 1.1.54245)
+    # replicated = UInt8Field()  # Whether the part belongs to replicated data.
 
     # Whether the part is used in a table, or is no longer needed and will be deleted soon.
     # Inactive parts remain after merging.
