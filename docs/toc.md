@@ -87,6 +87,7 @@
          * [Memory](class_reference.md#memory)
          * [MergeTree](class_reference.md#mergetree)
          * [Buffer](class_reference.md#buffer)
+         * [Merge](class_reference.md#merge)
          * [CollapsingMergeTree](class_reference.md#collapsingmergetree)
          * [SummingMergeTree](class_reference.md#summingmergetree)
          * [ReplacingMergeTree](class_reference.md#replacingmergetree)

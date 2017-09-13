@@ -317,28 +317,28 @@ infi.clickhouse_orm.fields
 
 Abstract base class for all field types.
 
-#### Field(default=None, alias=None, materialized=None)
+#### Field(default=None, alias=None, materialized=None, readonly=None)
 
 
 ### StringField
 
 Extends Field
 
-#### StringField(default=None, alias=None, materialized=None)
+#### StringField(default=None, alias=None, materialized=None, readonly=None)
 
 
 ### DateField
 
 Extends Field
 
-#### DateField(default=None, alias=None, materialized=None)
+#### DateField(default=None, alias=None, materialized=None, readonly=None)
 
 
 ### DateTimeField
 
 Extends Field
 
-#### DateTimeField(default=None, alias=None, materialized=None)
+#### DateTimeField(default=None, alias=None, materialized=None, readonly=None)
 
 
 ### BaseIntField
@@ -348,7 +348,7 @@ Extends Field
 
 Abstract base class for all integer-type fields.
 
-#### BaseIntField(default=None, alias=None, materialized=None)
+#### BaseIntField(default=None, alias=None, materialized=None, readonly=None)
 
 
 ### BaseFloatField
@@ -358,7 +358,7 @@ Extends Field
 
 Abstract base class for all float-type fields.
 
-#### BaseFloatField(default=None, alias=None, materialized=None)
+#### BaseFloatField(default=None, alias=None, materialized=None, readonly=None)
 
 
 ### BaseEnumField
@@ -368,14 +368,14 @@ Extends Field
 
 Abstract base class for all enum-type fields.
 
-#### BaseEnumField(enum_cls, default=None, alias=None, materialized=None)
+#### BaseEnumField(enum_cls, default=None, alias=None, materialized=None, readonly=None)
 
 
 ### ArrayField
 
 Extends Field
 
-#### ArrayField(inner_field, default=None, alias=None, materialized=None)
+#### ArrayField(inner_field, default=None, alias=None, materialized=None, readonly=None)
 
 
 ### NullableField
@@ -389,91 +389,91 @@ Extends Field
 
 Extends StringField
 
-#### FixedStringField(length, default=None, alias=None, materialized=None)
+#### FixedStringField(length, default=None, alias=None, materialized=None, readonly=None)
 
 
 ### UInt8Field
 
 Extends BaseIntField
 
-#### UInt8Field(default=None, alias=None, materialized=None)
+#### UInt8Field(default=None, alias=None, materialized=None, readonly=None)
 
 
 ### UInt16Field
 
 Extends BaseIntField
 
-#### UInt16Field(default=None, alias=None, materialized=None)
+#### UInt16Field(default=None, alias=None, materialized=None, readonly=None)
 
 
 ### UInt32Field
 
 Extends BaseIntField
 
-#### UInt32Field(default=None, alias=None, materialized=None)
+#### UInt32Field(default=None, alias=None, materialized=None, readonly=None)
 
 
 ### UInt64Field
 
 Extends BaseIntField
 
-#### UInt64Field(default=None, alias=None, materialized=None)
+#### UInt64Field(default=None, alias=None, materialized=None, readonly=None)
 
 
 ### Int8Field
 
 Extends BaseIntField
 
-#### Int8Field(default=None, alias=None, materialized=None)
+#### Int8Field(default=None, alias=None, materialized=None, readonly=None)
 
 
 ### Int16Field
 
 Extends BaseIntField
 
-#### Int16Field(default=None, alias=None, materialized=None)
+#### Int16Field(default=None, alias=None, materialized=None, readonly=None)
 
 
 ### Int32Field
 
 Extends BaseIntField
 
-#### Int32Field(default=None, alias=None, materialized=None)
+#### Int32Field(default=None, alias=None, materialized=None, readonly=None)
 
 
 ### Int64Field
 
 Extends BaseIntField
 
-#### Int64Field(default=None, alias=None, materialized=None)
+#### Int64Field(default=None, alias=None, materialized=None, readonly=None)
 
 
 ### Float32Field
 
 Extends BaseFloatField
 
-#### Float32Field(default=None, alias=None, materialized=None)
+#### Float32Field(default=None, alias=None, materialized=None, readonly=None)
 
 
 ### Float64Field
 
 Extends BaseFloatField
 
-#### Float64Field(default=None, alias=None, materialized=None)
+#### Float64Field(default=None, alias=None, materialized=None, readonly=None)
 
 
 ### Enum8Field
 
 Extends BaseEnumField
 
-#### Enum8Field(enum_cls, default=None, alias=None, materialized=None)
+#### Enum8Field(enum_cls, default=None, alias=None, materialized=None, readonly=None)
 
 
 ### Enum16Field
 
 Extends BaseEnumField
 
-#### Enum16Field(enum_cls, default=None, alias=None, materialized=None)
+#### Enum16Field(enum_cls, default=None, alias=None, materialized=None, readonly=None)
 
 
 infi.clickhouse_orm.engines
@@ -510,6 +510,19 @@ Must be used in conjuction with a `BufferModel`.
 Read more [here](https://clickhouse.yandex/reference_en.html#Buffer).
 
 #### Buffer(main_model, num_layers=16, min_time=10, max_time=100, min_rows=10000, max_rows=1000000, min_bytes=10000000, max_bytes=100000000)
+
+
+### Merge
+
+Extends Engine
+
+
+The Merge engine (not to be confused with MergeTree) does not store data itself,
+but allows reading from any number of other tables simultaneously.
+Writing to a table is not supported
+https://clickhouse.yandex/docs/en/single/index.html#document-table_engines/merge
+
+#### Merge(table_regex)
 
 
 ### CollapsingMergeTree
