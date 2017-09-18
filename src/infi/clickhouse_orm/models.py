@@ -274,3 +274,9 @@ class MergeModel(Model):
         res = super(MergeModel, self).set_database(db)
         self.engine.set_db_name(db.db_name)
         return res
+
+    @classmethod
+    def create_table_sql(cls, db_name):
+        assert isinstance(cls.engine, Merge), "engine must be engines.Merge instance"
+        cls.engine.set_db_name(db_name)
+        return super(MergeModel, cls).create_table_sql(db_name)
