@@ -70,6 +70,16 @@ class MigrationsTestCase(unittest.TestCase):
         self.assertEquals(self.getTableFields(AliasModel),
                           [('date', 'Date'), ('date_alias', "Date")])
 
+        self.database.migrate('tests.sample_migrations', 10)
+        self.assertEqual(self.database.count(Model3), 3)
+        data = [item.f1 for item in self.database.select('SELECT f1 FROM $table ORDER BY f1', model_class=Model3)]
+        self.assertListEqual(data, [1, 2, 3])
+
+        self.database.migrate('tests.sample_migrations', 11)
+        self.assertEqual(self.database.count(Model3), 4)
+        data = [item.f1 for item in self.database.select('SELECT f1 FROM $table ORDER BY f1', model_class=Model3)]
+        self.assertListEqual(data, [1, 2, 3, 4])
+
 
 # Several different models with the same table name, to simulate a table that changes over time
 
