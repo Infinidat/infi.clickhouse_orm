@@ -1,6 +1,12 @@
 Change Log
 ==========
 
+v0.9.7
+------
+- Add `distinct` method to querysets
+- Add `AlterTableWithBuffer` migration operation
+- Support Merge engine (M1hacka)
+
 v0.9.6
 ------
 - Fix python3 compatibility (TvoroG)

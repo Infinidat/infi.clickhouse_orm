@@ -34,11 +34,13 @@ The following operations are supported:
 
 **CreateTable**
 
-A migration operation that creates a table for a given model class.
+A migration operation that creates a table for a given model class. If the table already exists, the operation does nothing.
+
+In case the model class is a `BufferModel`, the operation first creates the underlying on-disk table, and then creates the buffer table.
 
 **DropTable**
 
-A migration operation that drops the table of a given model class.
+A migration operation that drops the table of a given model class. If the table does not exist, the operation does nothing.
 
 **AlterTable**
 
@@ -49,6 +51,13 @@ A migration operation that compares the table of a given model class to the mode
 -   modify column types
 
 Default values are not altered by this operation.
+
+**AlterTableWithBuffer**
+
+A compound migration operation for altering a buffer table and its underlying on-disk table. The buffer table is dropped, the on-disk table is altered, and then the buffer table is re-created. This is the procedure recommended in the ClickHouse documentation for handling scenarios in which the underlying table needs to be modified.
+
+Applying this migration operation to a regular table has the same effect as an `AlterTable` operation.
+
 
 **RunPython**
 

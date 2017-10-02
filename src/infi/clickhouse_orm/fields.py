@@ -96,7 +96,7 @@ class FixedStringField(StringField):
     def __init__(self, length, default=None, alias=None, materialized=None, readonly=None):
         self._length = length
         self.db_type = 'FixedString(%d)' % length
-        super(FixedStringField, self).__init__(default, alias, materialized,readonly)
+        super(FixedStringField, self).__init__(default, alias, materialized, readonly)
 
     def to_python(self, value, timezone_in_use):
         value = super(FixedStringField, self).to_python(value, timezone_in_use)

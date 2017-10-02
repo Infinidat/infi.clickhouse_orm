@@ -2,7 +2,7 @@ from __future__ import unicode_literals
 import unittest
 
 from infi.clickhouse_orm.database import Database
-from infi.clickhouse_orm.models import Model
+from infi.clickhouse_orm.models import Model, BufferModel
 from infi.clickhouse_orm.fields import *
 from infi.clickhouse_orm.engines import *
 from infi.clickhouse_orm.migrations import MigrationHistory
@@ -61,6 +61,7 @@ class MigrationsTestCase(unittest.TestCase):
         self.assertTrue(self.tableExists(EnumModel1))
         self.assertEquals(self.getTableFields(EnumModel2),
                           [('date', 'Date'), ('f1', "Enum16('dog' = 1, 'cat' = 2, 'horse' = 3, 'pig' = 4)")])
+        # Materialized fields and alias fields
         self.database.migrate('tests.sample_migrations', 8)
         self.assertTrue(self.tableExists(MaterializedModel))
         self.assertEquals(self.getTableFields(MaterializedModel),
@@ -69,13 +70,22 @@ class MigrationsTestCase(unittest.TestCase):
         self.assertTrue(self.tableExists(AliasModel))
         self.assertEquals(self.getTableFields(AliasModel),
                           [('date', 'Date'), ('date_alias', "Date")])
-
+        # Buffer models creation and alteration
         self.database.migrate('tests.sample_migrations', 10)
+        self.assertTrue(self.tableExists(Model4))
+        self.assertTrue(self.tableExists(Model4Buffer))
+        self.assertEquals(self.getTableFields(Model4), [('date', 'Date'), ('f1', 'Int32'), ('f2', 'String')])
+        self.assertEquals(self.getTableFields(Model4Buffer), [('date', 'Date'), ('f1', 'Int32'), ('f2', 'String')])
+        self.database.migrate('tests.sample_migrations', 11)
+        self.assertEquals(self.getTableFields(Model4), [('date', 'Date'), ('f3', 'DateTime'), ('f2', 'String')])
+        self.assertEquals(self.getTableFields(Model4Buffer), [('date', 'Date'), ('f3', 'DateTime'), ('f2', 'String')])
+
+        self.database.migrate('tests.sample_migrations', 12)
         self.assertEqual(self.database.count(Model3), 3)
         data = [item.f1 for item in self.database.select('SELECT f1 FROM $table ORDER BY f1', model_class=Model3)]
         self.assertListEqual(data, [1, 2, 3])
 
-        self.database.migrate('tests.sample_migrations', 11)
+        self.database.migrate('tests.sample_migrations', 13)
         self.assertEqual(self.database.count(Model3), 4)
         data = [item.f1 for item in self.database.select('SELECT f1 FROM $table ORDER BY f1', model_class=Model3)]
         self.assertListEqual(data, [1, 2, 3, 4])
@@ -169,3 +179,47 @@ class AliasModel(Model):
     @classmethod
     def table_name(cls):
         return 'alias_date'
+
+
+class Model4(Model):
+
+    date = DateField()
+    f1 = Int32Field()
+    f2 = StringField()
+
+    engine = MergeTree('date', ('date',))
+
+    @classmethod
+    def table_name(cls):
+        return 'model4'
+
+
+class Model4Buffer(BufferModel, Model4):
+
+    engine = Buffer(Model4)
+
+    @classmethod
+    def table_name(cls):
+        return 'model4buffer'
+
+
+class Model4_changed(Model):
+
+    date = DateField()
+    f3 = DateTimeField()
+    f2 = StringField()
+
+    engine = MergeTree('date', ('date',))
+
+    @classmethod
+    def table_name(cls):
+        return 'model4'
+
+
+class Model4Buffer_changed(BufferModel, Model4_changed):
+
+    engine = Buffer(Model4_changed)
+
+    @classmethod
+    def table_name(cls):
+        return 'model4buffer'

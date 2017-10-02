@@ -84,6 +84,25 @@ class AlterTable(Operation):
                 self._alter_table(database, 'MODIFY COLUMN %s %s' % model_field)
 
 
+class AlterTableWithBuffer(Operation):
+    '''
+    A migration operation for altering a buffer table and its underlying on-disk table.
+    The buffer table is dropped, the on-disk table is altered, and then the buffer table
+    is re-created.
+    '''
+
+    def __init__(self, model_class):
+        self.model_class = model_class
+
+    def apply(self, database):
+        if issubclass(self.model_class, BufferModel):
+            DropTable(self.model_class).apply(database)
+            AlterTable(self.model_class.engine.main_model).apply(database)
+            CreateTable(self.model_class).apply(database)
+        else:
+            AlterTable(self.model_class).apply(database)
+
+
 class DropTable(Operation):
     '''
     A migration operation that drops the table of a given model class.
@@ -93,7 +112,7 @@ class DropTable(Operation):
         self.model_class = model_class
 
     def apply(self, database):
-        logger.info('    Drop table %s', self.model_class.__name__)
+        logger.info('    Drop table %s', self.model_class.table_name())
         database.drop_table(self.model_class)
 
 
