@@ -24,7 +24,6 @@ class JoinTest(unittest.TestCase):
         self.print_res("SELECT * FROM {}".format(Bar.table_name()))
         self.print_res("SELECT b FROM {} ALL LEFT JOIN {} USING id".format(Foo.table_name(), Bar.table_name()))
 
-    @unittest.skip('ClickHouse issue - https://github.com/yandex/ClickHouse/issues/635')
     def test_with_db_name(self):
         self.print_res("SELECT * FROM $db.{}".format(Foo.table_name()))
         self.print_res("SELECT * FROM $db.{}".format(Bar.table_name()))
