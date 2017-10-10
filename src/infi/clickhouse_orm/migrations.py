@@ -57,13 +57,18 @@ class AlterTable(Operation):
 
     def apply(self, database):
         logger.info('    Alter table %s', self.model_class.table_name())
+
+        # Note that MATERIALIZED and ALIAS fields are always at the end of the DESC,
+        # ADD COLUMN ... AFTER doesn't affect it
         table_fields = dict(self._get_table_fields(database))
+
         # Identify fields that were deleted from the model
         deleted_fields = set(table_fields.keys()) - set(name for name, field in self.model_class._fields)
         for name in deleted_fields:
             logger.info('        Drop column %s', name)
             self._alter_table(database, 'DROP COLUMN %s' % name)
             del table_fields[name]
+
         # Identify fields that were added to the model
         prev_name = None
         for name, field in self.model_class._fields:
@@ -72,14 +77,25 @@ class AlterTable(Operation):
                 assert prev_name, 'Cannot add a column to the beginning of the table'
                 cmd = 'ADD COLUMN %s %s AFTER %s' % (name, field.get_sql(), prev_name)
                 self._alter_table(database, cmd)
-            prev_name = name
+
+            if not field.materialized and not field.alias:
+                # ALIAS and MATERIALIZED fields are not stored in the database, and raise DatabaseError
+                # (no AFTER column). So we will skip them
+                prev_name = name
+
         # Identify fields whose type was changed
-        model_fields = [(name, field.get_sql(with_default=False)) for name, field in self.model_class._fields]
-        for model_field, table_field in zip(model_fields, self._get_table_fields(database)):
-            assert model_field[0] == table_field[0], 'Model fields and table columns in disagreement'
-            if model_field[1] != table_field[1]:
-                logger.info('        Change type of column %s from %s to %s', table_field[0], table_field[1], model_field[1])
-                self._alter_table(database, 'MODIFY COLUMN %s %s' % model_field)
+        # The order of class attributes can be changed any time, so we can't count on it
+        # Secondly, MATERIALIZED and ALIAS fields are always at the end of the DESC, so we can't expect them to save
+        # attribute position. Watch https://github.com/Infinidat/infi.clickhouse_orm/issues/47
+        model_fields = {name: field.get_sql(with_default_expression=False) for name, field in self.model_class._fields}
+        for field_name, field_sql in self._get_table_fields(database):
+            # All fields must have been created and dropped by this moment
+            assert field_name in model_fields, 'Model fields and table columns in disagreement'
+
+            if field_sql != model_fields[field_name]:
+                logger.info('        Change type of column %s from %s to %s', field_name, field_sql,
+                            model_fields[field_name])
+                self._alter_table(database, 'MODIFY COLUMN %s %s' % (field_name, model_fields[field_name]))
 
 
 class AlterTableWithBuffer(Operation):
