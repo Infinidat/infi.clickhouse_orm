@@ -21,8 +21,11 @@ class QuerySetTestCase(TestCaseWithData):
 
     def _test_qs(self, qs, expected_count):
         logging.info(qs.as_sql())
+        count = 0
         for instance in qs:
-            logging.info('\t%s' % instance.to_dict())
+            count += 1
+            logging.info('\t[%d]\t%s' % (count, instance.to_dict()))
+        self.assertEquals(count, expected_count)
         self.assertEquals(qs.count(), expected_count)
 
     def test_no_filtering(self):
@@ -202,6 +205,11 @@ class QuerySetTestCase(TestCaseWithData):
         page = qs.paginate(1, 100)
         self.assertEquals(page.number_of_objects, 10)
 
+    def test_distinct(self):
+        qs = Person.objects_in(self.database).distinct()
+        self._test_qs(qs, 100)
+        self._test_qs(qs.only('first_name'), 94)
+
 
 class AggregateTestCase(TestCaseWithData):
 
@@ -309,6 +317,12 @@ class AggregateTestCase(TestCaseWithData):
             qs = Person.objects_in(self.database).aggregate(weekday='toDayOfWeek(birthday)', count='count()').group_by('weekday')
             qs = qs.filter(weekday=1)
             self.assertEquals(qs.count(), 1)
+
+    def test_aggregate_with_distinct(self):
+        # In this case distinct has no effect
+        qs = Person.objects_in(self.database).aggregate(average_height='avg(height)').distinct()
+        print(qs.as_sql())
+        self.assertEquals(qs.count(), 1)
 
 
 Color = Enum('Color', u'red blue green yellow brown white black')
