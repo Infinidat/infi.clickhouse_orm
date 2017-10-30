@@ -274,7 +274,7 @@ class Database(object):
             mapping = dict(db="`%s`" % self.db_name)
             if model_class:
                 mapping['table'] = "`%s`.`%s`" % (self.db_name, model_class.table_name())
-            query = Template(query).substitute(mapping)
+            query = Template(query).safe_substitute(mapping)
         return query
 
     def _get_server_timezone(self):
