@@ -1,6 +1,11 @@
 Change Log
 ==========
 
+Unreleased
+----------
+- Bug fix: add field names list explicitly to Database.insert method (anci)
+- Added RunPython and RunSQL migrations (M1hacka)
+
 v0.9.7
 ------
 - Add `distinct` method to querysets
