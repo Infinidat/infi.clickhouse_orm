@@ -90,6 +90,14 @@ class MigrationsTestCase(unittest.TestCase):
         data = [item.f1 for item in self.database.select('SELECT f1 FROM $table ORDER BY f1', model_class=Model3)]
         self.assertListEqual(data, [1, 2, 3, 4])
 
+        self.database.migrate('tests.sample_migrations', 14)
+        self.assertTrue(self.tableExists(MaterializedModel1))
+        self.assertEquals(self.getTableFields(MaterializedModel1),
+                          [('date_time', "DateTime"), ('int_field', 'Int8'), ('date', 'Date')])
+        self.assertTrue(self.tableExists(AliasModel1))
+        self.assertEquals(self.getTableFields(AliasModel1),
+                          [('date', 'Date'), ('int_field', 'Int8'), ('date_alias', "Date")])
+
 
 # Several different models with the same table name, to simulate a table that changes over time
 
@@ -170,9 +178,33 @@ class MaterializedModel(Model):
         return 'materalized_date'
 
 
+class MaterializedModel1(Model):
+    date_time = DateTimeField()
+    date = DateField(materialized='toDate(date_time)')
+    int_field = Int8Field()
+
+    engine = MergeTree('date', ('date',))
+
+    @classmethod
+    def table_name(cls):
+        return 'materalized_date'
+
+
 class AliasModel(Model):
     date = DateField()
     date_alias = DateField(alias='date')
+
+    engine = MergeTree('date', ('date',))
+
+    @classmethod
+    def table_name(cls):
+        return 'alias_date'
+
+
+class AliasModel1(Model):
+    date = DateField()
+    date_alias = DateField(alias='date')
+    int_field = Int8Field()
 
     engine = MergeTree('date', ('date',))
 
