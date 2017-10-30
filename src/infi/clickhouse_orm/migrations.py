@@ -1,3 +1,5 @@
+import six
+
 from .models import Model, BufferModel
 from .fields import DateField, StringField
 from .engines import MergeTree
@@ -112,6 +114,37 @@ class DropTable(Operation):
     def apply(self, database):
         logger.info('    Drop table %s', self.model_class.table_name())
         database.drop_table(self.model_class)
+
+
+class RunPython(Operation):
+    '''
+    A migration operation that executes given python function on database
+    '''
+    def __init__(self, func):
+        assert callable(func), "'func' parameter must be function"
+        self._func = func
+
+    def apply(self, database):
+        logger.info('    Executing python operation %s', self._func.__name__)
+        self._func(database)
+
+
+class RunSQL(Operation):
+    '''
+    A migration operation that executes given SQL on database
+    '''
+
+    def __init__(self, sql):
+        if isinstance(sql, six.string_types):
+            sql = [sql]
+
+        assert isinstance(sql, list), "'sql' parameter must be string or list of strings"
+        self._sql = sql
+
+    def apply(self, database):
+        logger.info('    Executing raw SQL operations')
+        for item in self._sql:
+            database.raw(item)
 
 
 class MigrationHistory(Model):
