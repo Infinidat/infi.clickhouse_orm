@@ -39,6 +39,10 @@ class DatabaseTestCase(TestCaseWithData):
         self.assertEqual(results[0].get_database(), self.database)
         self.assertEqual(results[1].get_database(), self.database)
 
+    def test_dollar_in_select(self):
+        query = "SELECT * FROM $table WHERE first_name = '$utm_source'"
+        list(self.database.select(query, Person))
+
     def test_select_partial_fields(self):
         self._insert_and_check(self._sample_data(), len(data))
         query = "SELECT first_name, last_name FROM `test-db`.person WHERE first_name = 'Whitney' ORDER BY last_name"
