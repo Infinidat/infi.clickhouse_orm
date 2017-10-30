@@ -79,6 +79,27 @@ class ModelTestCase(unittest.TestCase):
                 "datetime_field": datetime.datetime(1970, 1, 1, 0, 0, 0, tzinfo=pytz.utc)
             })
 
+    def test_field_name_in_error_message_for_invalid_value_in_constructor(self):
+        bad_value = 1
+        with self.assertRaises(ValueError) as cm:
+            SimpleModel(str_field=bad_value)
+
+        self.assertEqual(
+            "Invalid value for StringField: {} (field 'str_field')".format(repr(bad_value)),
+            text_type(cm.exception)
+        )
+
+    def test_field_name_in_error_message_for_invalid_value_in_assignment(self):
+        instance = SimpleModel()
+        bad_value = 'foo'
+        with self.assertRaises(ValueError) as cm:
+            instance.float_field = bad_value
+
+        self.assertEqual(
+            "Invalid value for Float32Field - {} (field 'float_field')".format(repr(bad_value)),
+            text_type(cm.exception)
+        )
+
 
 class SimpleModel(Model):
 

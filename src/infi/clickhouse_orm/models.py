@@ -1,7 +1,8 @@
 from __future__ import unicode_literals
+import sys
 from logging import getLogger
 
-from six import with_metaclass
+from six import with_metaclass, reraise
 import pytz
 
 from .fields import Field, StringField
@@ -124,8 +125,13 @@ class Model(with_metaclass(ModelBase)):
         '''
         field = self.get_field(name)
         if field:
-            value = field.to_python(value, pytz.utc)
-            field.validate(value)
+            try:
+                value = field.to_python(value, pytz.utc)
+                field.validate(value)
+            except ValueError:
+                tp, v, tb = sys.exc_info()
+                new_msg = "{} (field '{}')".format(v, name)
+                reraise(tp, tp(new_msg), tb)
         super(Model, self).__setattr__(name, value)
 
     def set_database(self, db):

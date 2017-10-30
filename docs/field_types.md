@@ -32,7 +32,7 @@ A `DateTimeField` can be assigned values from one of the following types:
 -   datetime
 -   date
 -   integer - number of seconds since the Unix epoch
--   string in `YYYY-MM-DD HH:MM:SS` format
+-   string in `YYYY-MM-DD HH:MM:SS` format or [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601)-compatible format
 
 The assigned value always gets converted to a timezone-aware `datetime` in UTC. If the assigned value is a timezone-aware `datetime` in another timezone, it will be converted to UTC. Otherwise, the assigned value is assumed to already be in UTC.
 
