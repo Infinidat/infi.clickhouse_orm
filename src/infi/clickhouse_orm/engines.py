@@ -146,10 +146,11 @@ class Merge(Engine):
         self.table_regex = table_regex
 
         # Use current database as default
-        self.db_name = 'currentDatabase()'
+        self.db_name = None
 
     def create_table_sql(self):
-        return "Merge(%s, '%s')" % (self.db_name, self.table_regex)
+        db_name = ("`%s`" % self.db_name) if self.db_name else 'currentDatabase()'
+        return "Merge(%s, '%s')" % (db_name, self.table_regex)
 
     def set_db_name(self, db_name):
         assert isinstance(db_name, six.string_types), "'db_name' parameter must be string"
