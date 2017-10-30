@@ -5,6 +5,8 @@ Unreleased
 ----------
 - Bug fix: add field names list explicitly to Database.insert method (anci)
 - Added RunPython and RunSQL migrations (M1hacka)
+- Allow ISO-formatted datetime values (tsionyx)
+- Show field name in error message when invalid value assigned (tsionyx)
 
 v0.9.7
 ------
