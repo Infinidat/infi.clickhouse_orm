@@ -59,6 +59,35 @@ A compound migration operation for altering a buffer table and its underlying on
 Applying this migration operation to a regular table has the same effect as an `AlterTable` operation.
 
 
+**RunPython**
+
+A migration operation that runs python function inside migration.
+ 
+    def forward(database):
+        database.insert([
+             TestModel(field=1)
+        ])
+ 
+    operations = [
+        RunPython(forward),
+    ]
+
+
+**RunSQL**
+
+A migration operation that runs raw SQL queries inside migration. 
+SQL parameter can be a string or array of SQL-query strings
+Example:
+  
+    operations = [
+        RunSQL('INSERT INTO `test_table` (field) VALUES (1)'),
+        RunSQL([
+          'INSERT INTO `test_table` (field) VALUES (2)',
+          'INSERT INTO `test_table` (field) VALUES (3)'
+         ])
+    ]
+
+
 Running Migrations
 ------------------
 

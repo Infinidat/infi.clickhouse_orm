@@ -80,6 +80,16 @@ class MigrationsTestCase(unittest.TestCase):
         self.assertEquals(self.getTableFields(Model4), [('date', 'Date'), ('f3', 'DateTime'), ('f2', 'String')])
         self.assertEquals(self.getTableFields(Model4Buffer), [('date', 'Date'), ('f3', 'DateTime'), ('f2', 'String')])
 
+        self.database.migrate('tests.sample_migrations', 12)
+        self.assertEqual(self.database.count(Model3), 3)
+        data = [item.f1 for item in self.database.select('SELECT f1 FROM $table ORDER BY f1', model_class=Model3)]
+        self.assertListEqual(data, [1, 2, 3])
+
+        self.database.migrate('tests.sample_migrations', 13)
+        self.assertEqual(self.database.count(Model3), 4)
+        data = [item.f1 for item in self.database.select('SELECT f1 FROM $table ORDER BY f1', model_class=Model3)]
+        self.assertListEqual(data, [1, 2, 3, 4])
+
 
 # Several different models with the same table name, to simulate a table that changes over time
 
