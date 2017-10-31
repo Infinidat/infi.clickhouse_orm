@@ -1,6 +1,6 @@
 from __future__ import unicode_literals
 import unittest
-from six import string_types
+import six
 from uuid import UUID
 from infi.clickhouse_orm.database import Database
 from infi.clickhouse_orm.fields import Field, Int16Field
@@ -101,9 +101,9 @@ class UUIDField(Field):
         # Convert valid values to UUID instance
         if isinstance(value, UUID):
             return value
-        elif isinstance(value, string_types):
-            return UUID(bytes=value) if len(value) == 16 else UUID(value)
-        elif isinstance(value, (int, long)):
+        elif isinstance(value, six.string_types):
+            return UUID(bytes=value.encode('latin1')) if len(value) == 16 else UUID(value)
+        elif isinstance(value, six.integer_types):
             return UUID(int=value)
         elif isinstance(value, tuple):
             return UUID(fields=value)
@@ -112,4 +112,8 @@ class UUIDField(Field):
 
     def to_db_string(self, value, quote=True):
         # The value was already converted by to_python, so it's a UUID instance
-        return escape(value.bytes, quote)
+        val = value.bytes
+        if six.PY3:
+            val = str(val, 'latin1')
+        return escape(val, quote)
+

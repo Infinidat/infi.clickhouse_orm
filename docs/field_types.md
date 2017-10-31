@@ -178,36 +178,42 @@ class BooleanField(Field):
 Here's another example - a field for storing UUIDs in the database as 16-byte strings. We'll use Python's built-in `UUID` class to handle the conversion from strings, ints and tuples into UUID instances. So in our Python code we'll have the convenience of working with UUID objects, but they will be stored in the database as efficiently as possible:
 
 ```python
-    from infi.clickhouse_orm.fields import Field
-    from infi.clickhouse_orm.utils import escape
-    from six import string_types
-    from uuid import UUID
+from infi.clickhouse_orm.fields import Field
+from infi.clickhouse_orm.utils import escape
+from uuid import UUID
+import six
 
-    class UUIDField(Field):
+class UUIDField(Field):
 
-        # The ClickHouse column type to use
-        db_type = 'FixedString(16)'
+    # The ClickHouse column type to use
+    db_type = 'FixedString(16)'
 
-        # The default value if empty
-        class_default = UUID(int=0)
+    # The default value if empty
+    class_default = UUID(int=0)
 
-        def to_python(self, value, timezone_in_use):
-            # Convert valid values to UUID instance
-            if isinstance(value, UUID):
-                return value
-            elif isinstance(value, string_types):
-                return UUID(bytes=value) if len(value) == 16 else UUID(value)
-            elif isinstance(value, (int, long)):
-                return UUID(int=value)
-            elif isinstance(value, tuple):
-                return UUID(fields=value)
-            else:
-                raise ValueError('Invalid value for UUIDField: %r' % value)
+    def to_python(self, value, timezone_in_use):
+        # Convert valid values to UUID instance
+        if isinstance(value, UUID):
+            return value
+        elif isinstance(value, six.string_types):
+            return UUID(bytes=value.encode('latin1')) if len(value) == 16 else UUID(value)
+        elif isinstance(value, six.integer_types):
+            return UUID(int=value)
+        elif isinstance(value, tuple):
+            return UUID(fields=value)
+        else:
+            raise ValueError('Invalid value for UUIDField: %r' % value)
 
-        def to_db_string(self, value, quote=True):
-            # The value was already converted by to_python, so it's a UUID instance
-            return escape(value.bytes, quote)
+    def to_db_string(self, value, quote=True):
+        # The value was already converted by to_python, so it's a UUID instance
+        val = value.bytes
+        if six.PY3:
+            val = str(val, 'latin1')
+        return escape(val, quote)
+
 ```
+
+Note that the latin-1 encoding is used as an identity encoding for converting between raw bytes and strings. This is required in Python 3, where `str` and `bytes` are different types.
 
 ---
 
