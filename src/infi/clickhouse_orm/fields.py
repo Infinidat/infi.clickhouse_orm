@@ -1,6 +1,7 @@
 from __future__ import unicode_literals
 from six import string_types, text_type, binary_type
 import datetime
+import iso8601
 import pytz
 import time
 from calendar import timegm
@@ -61,19 +62,20 @@ class Field(object):
         '''
         return escape(value, quote)
 
-    def get_sql(self, with_default=True):
+    def get_sql(self, with_default_expression=True):
         '''
         Returns an SQL expression describing the field (e.g. for CREATE TABLE).
-        :param with_default: If True, adds default value to sql.
+        :param with_default_expression: If True, adds default value to sql.
             It doesn't affect fields with alias and materialized values.
         '''
-        if self.alias:
-            return '%s ALIAS %s' % (self.db_type, self.alias)
-        elif self.materialized:
-            return '%s MATERIALIZED %s' % (self.db_type, self.materialized)
-        elif with_default:
-            default = self.to_db_string(self.default)
-            return '%s DEFAULT %s' % (self.db_type, default)
+        if with_default_expression:
+            if self.alias:
+                return '%s ALIAS %s' % (self.db_type, self.alias)
+            elif self.materialized:
+                return '%s MATERIALIZED %s' % (self.db_type, self.materialized)
+            else:
+                default = self.to_db_string(self.default)
+                return '%s DEFAULT %s' % (self.db_type, default)
         else:
             return self.db_type
 
@@ -157,8 +159,16 @@ class DateTimeField(Field):
                     return datetime.datetime.utcfromtimestamp(value).replace(tzinfo=pytz.utc)
                 except ValueError:
                     pass
-            dt = datetime.datetime.strptime(value, '%Y-%m-%d %H:%M:%S')
-            return timezone_in_use.localize(dt).astimezone(pytz.utc)
+            try:
+                # left the date naive in case of no tzinfo set
+                dt = iso8601.parse_date(value, default_timezone=None)
+            except iso8601.ParseError as e:
+                raise ValueError(text_type(e))
+
+            # convert naive to aware
+            if dt.tzinfo is None or dt.tzinfo.utcoffset(dt) is None:
+                dt = timezone_in_use.localize(dt)
+            return dt.astimezone(pytz.utc)
         raise ValueError('Invalid value for %s - %r' % (self.__class__.__name__, value))
 
     def to_db_string(self, value, quote=True):
@@ -295,10 +305,10 @@ class BaseEnumField(Field):
     def to_db_string(self, value, quote=True):
         return escape(value.name, quote)
 
-    def get_sql(self, with_default=True):
+    def get_sql(self, with_default_expression=True):
         values = ['%s = %d' % (escape(item.name), item.value) for item in self.enum_cls]
         sql = '%s(%s)' % (self.db_type, ' ,'.join(values))
-        if with_default:
+        if with_default_expression:
             default = self.to_db_string(self.default)
             sql = '%s DEFAULT %s' % (sql, default)
         return sql
@@ -357,9 +367,9 @@ class ArrayField(Field):
         array = [self.inner_field.to_db_string(v, quote=True) for v in value]
         return '[' + comma_join(array) + ']'
 
-    def get_sql(self, with_default=True):
+    def get_sql(self, with_default_expression=True):
         from .utils import escape
-        return 'Array(%s)' % self.inner_field.get_sql(with_default=False)
+        return 'Array(%s)' % self.inner_field.get_sql(with_default_expression=False)
 
 
 class NullableField(Field):
@@ -387,6 +397,6 @@ class NullableField(Field):
             return '\\N'
         return self.inner_field.to_db_string(value, quote=quote)
 
-    def get_sql(self, with_default=True):
+    def get_sql(self, with_default_expression=True):
         from .utils import escape
-        return 'Nullable(%s)' % self.inner_field.get_sql(with_default=False)
+        return 'Nullable(%s)' % self.inner_field.get_sql(with_default_expression=False)

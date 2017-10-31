@@ -106,9 +106,13 @@ class Database(object):
         if first_instance.readonly or first_instance.system:
             raise DatabaseException("You can't insert into read only and system tables")
 
+        fields_list = ','.join(
+            ['`%s`' % name for name, _ in first_instance._writable_fields])
+
         def gen():
             buf = BytesIO()
-            buf.write(self._substitute('INSERT INTO $table FORMAT TabSeparated\n', model_class).encode('utf-8'))
+            query = 'INSERT INTO $table (%s) FORMAT TabSeparated\n' % fields_list
+            buf.write(self._substitute(query, model_class).encode('utf-8'))
             first_instance.set_database(self)
             buf.write(first_instance.to_tsv(include_readonly=False).encode('utf-8'))
             buf.write('\n'.encode('utf-8'))
@@ -270,7 +274,7 @@ class Database(object):
             mapping = dict(db="`%s`" % self.db_name)
             if model_class:
                 mapping['table'] = "`%s`.`%s`" % (self.db_name, model_class.table_name())
-            query = Template(query).substitute(mapping)
+            query = Template(query).safe_substitute(mapping)
         return query
 
     def _get_server_timezone(self):

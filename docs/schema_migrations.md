@@ -32,15 +32,18 @@ Each migration file is expected to contain a list of `operations`, for example:
 
 The following operations are supported:
 
+
 **CreateTable**
 
 A migration operation that creates a table for a given model class. If the table already exists, the operation does nothing.
 
 In case the model class is a `BufferModel`, the operation first creates the underlying on-disk table, and then creates the buffer table.
 
+
 **DropTable**
 
 A migration operation that drops the table of a given model class. If the table does not exist, the operation does nothing.
+
 
 **AlterTable**
 
@@ -52,11 +55,41 @@ A migration operation that compares the table of a given model class to the mode
 
 Default values are not altered by this operation.
 
+
 **AlterTableWithBuffer**
 
 A compound migration operation for altering a buffer table and its underlying on-disk table. The buffer table is dropped, the on-disk table is altered, and then the buffer table is re-created. This is the procedure recommended in the ClickHouse documentation for handling scenarios in which the underlying table needs to be modified.
 
 Applying this migration operation to a regular table has the same effect as an `AlterTable` operation.
+
+
+**RunPython**
+
+A migration operation that runs a Python function. The function receives the `Database` instance to operate on.
+
+    def forward(database):
+        database.insert([
+             TestModel(field=1)
+        ])
+
+    operations = [
+        migrations.RunPython(forward),
+    ]
+
+
+**RunSQL**
+
+A migration operation that runs raw SQL queries. It expects a string containing an SQL query, or an array of SQL-query strings.
+
+Example:
+
+    operations = [
+        RunSQL('INSERT INTO `test_table` (field) VALUES (1)'),
+        RunSQL([
+          'INSERT INTO `test_table` (field) VALUES (2)',
+          'INSERT INTO `test_table` (field) VALUES (3)'
+         ])
+    ]
 
 
 Running Migrations

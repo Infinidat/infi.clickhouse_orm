@@ -1,6 +1,16 @@
 Change Log
 ==========
 
+v0.9.8
+------
+- Bug fix: add field names list explicitly to Database.insert method (anci)
+- Added RunPython and RunSQL migrations (M1hacka)
+- Allow ISO-formatted datetime values (tsionyx)
+- Show field name in error message when invalid value assigned (tsionyx)
+- Bug fix: select query fails when query contains '$' symbol (M1hacka)
+- Prevent problems with AlterTable migrations related to field order (M1hacka)
+- Added documentation about custom fields.
+
 v0.9.7
 ------
 - Add `distinct` method to querysets
