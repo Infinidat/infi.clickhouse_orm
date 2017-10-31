@@ -31,6 +31,7 @@
       * [Working with array fields](field_types.md#working-with-array-fields)
       * [Working with materialized and alias fields](field_types.md#working-with-materialized-and-alias-fields)
       * [Working with nullable fields](field_types.md#working-with-nullable-fields)
+      * [Creating custom field types](field_types.md#creating-custom-field-types)
 
    * [Table Engines](table_engines.md#table-engines)
       * [Simple Engines](table_engines.md#simple-engines)
