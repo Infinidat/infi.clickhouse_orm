@@ -1,5 +1,6 @@
 from __future__ import unicode_literals
 
+import re
 import requests
 from collections import namedtuple
 from .models import ModelBase
@@ -22,6 +23,46 @@ class DatabaseException(Exception):
     Raised when a database operation fails.
     '''
     pass
+
+
+class ServerError(DatabaseException):
+    """
+    Raised when a server returns an error.
+    """
+    def __init__(self, message):
+        self.code = None
+        processed = self.get_error_code_msg(message)
+        if processed:
+            self.code, self.message = processed
+        else:
+            # just skip custom init
+            # if non-standard message format
+            super(ServerError, self).__init__(message)
+
+    ERROR_PATTERN = re.compile(r'''
+        Code:\ (?P<code>\d+),
+        \ e\.displayText\(\)\ =\ (?P<type1>[^ \n]+):\ (?P<msg>.+?),
+        \ e.what\(\)\ =\ (?P<type2>[^ \n]+)
+    ''', re.VERBOSE | re.DOTALL)
+
+    @classmethod
+    def get_error_code_msg(cls, full_error_message):
+        """
+        Extract the code and message of the exception that clickhouse-server generated.
+
+        See the list of error codes here:
+        https://github.com/yandex/ClickHouse/blob/master/dbms/src/Common/ErrorCodes.cpp
+        """
+        match = cls.ERROR_PATTERN.match(full_error_message)
+        if match:
+            # assert match.group('type1') == match.group('type2')
+            return int(match.group('code')), match.group('msg')
+
+        return 0, full_error_message
+
+    def __str__(self):
+        if self.code is not None:
+            return "{} ({})".format(self.message, self.code)
 
 
 class Database(object):
@@ -250,7 +291,7 @@ class Database(object):
         params = self._build_params(settings)
         r = requests.post(self.db_url, params=params, data=data, stream=stream)
         if r.status_code != 200:
-            raise DatabaseException(r.text)
+            raise ServerError(r.text)
         return r
 
     def _build_params(self, settings):
@@ -281,8 +322,8 @@ class Database(object):
         try:
             r = self._send('SELECT timezone()')
             return pytz.timezone(r.text.strip())
-        except DatabaseException:
-            logger.exception('Cannot determine server timezone, assuming UTC')
+        except ServerError as e:
+            logger.exception('Cannot determine server timezone (%s), assuming UTC', e)
             return pytz.utc
 
     def _is_connection_readonly(self):
