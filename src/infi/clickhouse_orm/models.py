@@ -1,8 +1,9 @@
 from __future__ import unicode_literals
 import sys
+from collections import OrderedDict
 from logging import getLogger
 
-from six import with_metaclass, reraise
+from six import with_metaclass, reraise, iteritems
 import pytz
 
 from .fields import Field, StringField
@@ -23,15 +24,19 @@ class ModelBase(type):
     def __new__(cls, name, bases, attrs):
         new_cls = super(ModelBase, cls).__new__(cls, str(name), bases, attrs)
         # Collect fields from parent classes
-        base_fields = []
+        base_fields = dict()
         for base in bases:
             if isinstance(base, ModelBase):
-                base_fields += base._fields
+                base_fields.update(base._fields)
+
+        fields = base_fields
+
         # Build a list of fields, in the order they were listed in the class
-        fields = base_fields + [item for item in attrs.items() if isinstance(item[1], Field)]
-        fields.sort(key=lambda item: item[1].creation_counter)
-        setattr(new_cls, '_fields', fields)
-        setattr(new_cls, '_writable_fields', [f for f in fields if not f[1].readonly])
+        fields.update({n: f for n, f in iteritems(attrs) if isinstance(f, Field)})
+        fields = sorted(iteritems(fields), key=lambda item: item[1].creation_counter)
+
+        setattr(new_cls, '_fields', OrderedDict(fields))
+        setattr(new_cls, '_writable_fields', OrderedDict([f for f in fields if not f[1].readonly]))
         return new_cls
 
     @classmethod
@@ -107,14 +112,14 @@ class Model(with_metaclass(ModelBase)):
         self._database = None
 
         # Assign field values from keyword arguments
-        for name, value in kwargs.items():
+        for name, value in iteritems(kwargs):
             field = self.get_field(name)
             if field:
                 setattr(self, name, value)
             else:
                 raise AttributeError('%s does not have a field called %s' % (self.__class__.__name__, name))
         # Assign default values for fields not included in the keyword arguments
-        for name, field in self._fields:
+        for name, field in iteritems(self.fields()):
             if name not in kwargs:
                 setattr(self, name, field.default)
 
@@ -174,7 +179,7 @@ class Model(with_metaclass(ModelBase)):
         '''
         parts = ['CREATE TABLE IF NOT EXISTS `%s`.`%s` (' % (db_name, cls.table_name())]
         cols = []
-        for name, field in cls._fields:
+        for name, field in iteritems(cls.fields()):
             cols.append('    %s %s' % (name, field.get_sql()))
         parts.append(',\n'.join(cols))
         parts.append(')')
@@ -201,7 +206,7 @@ class Model(with_metaclass(ModelBase)):
         - `database`: if given, sets the database that this instance belongs to.
         '''
         from six import next
-        field_names = field_names or [name for name, field in cls._fields]
+        field_names = field_names or list(cls.fields())
         values = iter(parse_tsv(line))
         kwargs = {}
         for name in field_names:
@@ -221,8 +226,8 @@ class Model(with_metaclass(ModelBase)):
         - `include_readonly`: if false, returns only fields that can be inserted into database.
         '''
         data = self.__dict__
-        fields = self._fields if include_readonly else self._writable_fields
-        return '\t'.join(field.to_db_string(data[name], quote=False) for name, field in fields)
+        fields = self.fields(writable=not include_readonly)
+        return '\t'.join(field.to_db_string(data[name], quote=False) for name, field in iteritems(fields))
 
     def to_dict(self, include_readonly=True, field_names=None):
         '''
@@ -231,13 +236,13 @@ class Model(with_metaclass(ModelBase)):
         - `include_readonly`: if false, returns only fields that can be inserted into database.
         - `field_names`: an iterable of field names to return (optional)
         '''
-        fields = self._fields if include_readonly else self._writable_fields
+        fields = self.fields(writable=not include_readonly)
 
         if field_names is not None:
-            fields = [f for f in fields if f[0] in field_names]
+            fields = [f for f in fields if f in field_names]
 
         data = self.__dict__
-        return {name: data[name] for name, field in fields}
+        return {name: data[name] for name in fields}
 
     @classmethod
     def objects_in(cls, database):
@@ -245,6 +250,11 @@ class Model(with_metaclass(ModelBase)):
         Returns a `QuerySet` for selecting instances of this model class.
         '''
         return QuerySet(cls, database)
+
+    @classmethod
+    def fields(cls, writable=False):
+        # noinspection PyProtectedMember,PyUnresolvedReferences
+        return cls._writable_fields if writable else cls._fields
 
 
 class BufferModel(Model):

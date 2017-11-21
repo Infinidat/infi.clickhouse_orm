@@ -126,7 +126,7 @@ class SystemPart(Model):
         assert isinstance(conditions, string_types), "conditions must be a string"
         if conditions:
             conditions += " AND"
-        field_names = ','.join([f[0] for f in cls._fields])
+        field_names = ','.join(cls.fields())
         return database.select("SELECT %s FROM %s WHERE %s database='%s'" %
                                (field_names,  cls.table_name(), conditions, database.db_name), model_class=cls)
 

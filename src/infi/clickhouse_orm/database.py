@@ -148,7 +148,7 @@ class Database(object):
             raise DatabaseException("You can't insert into read only and system tables")
 
         fields_list = ','.join(
-            ['`%s`' % name for name, _ in first_instance._writable_fields])
+            ['`%s`' % name for name in first_instance.fields(writable=True)])
 
         def gen():
             buf = BytesIO()
