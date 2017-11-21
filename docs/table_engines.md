@@ -16,6 +16,7 @@ The following engines are supported by the ORM:
 - ReplacingMergeTree / ReplicatedReplacingMergeTree
 - Buffer
 - Merge
+- Distributed
 
 
 Simple Engines

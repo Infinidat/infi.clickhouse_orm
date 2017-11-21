@@ -9,7 +9,7 @@ import pytz
 from .fields import Field, StringField
 from .utils import parse_tsv
 from .query import QuerySet
-from .engines import Merge
+from .engines import Merge, Distributed
 
 logger = getLogger('clickhouse_orm')
 
@@ -296,3 +296,82 @@ class MergeModel(Model):
         assert isinstance(cls.engine, Merge), "engine must be engines.Merge instance"
         cls.engine.set_db_name(db_name)
         return super(MergeModel, cls).create_table_sql(db_name)
+
+
+# TODO: base class for models that require specific engine
+
+
+class DistributedModel(Model):
+    """
+    Model for Distributed engine
+    """
+
+    def set_database(self, db):
+        assert isinstance(self.engine, Distributed), "engine must be engines.Distributed instance"
+        res = super(DistributedModel, self).set_database(db)
+        self.engine.set_db_name(db.db_name)
+        return res
+
+    @classmethod
+    def fix_engine_table(cls):
+        """
+        Remember: Distributed table does not store any data, just provides distributed access to it.
+
+        So if we define a model with engine that has no defined table for data storage
+        (see FooDistributed below), that table cannot be successfully created.
+        This routine can automatically fix engine's storage table by finding the first
+        non-distributed model among your model's superclasses.
+
+        >>> class Foo(Model):
+        ...     id = UInt8Field(1)
+        ...
+        >>> class FooDistributed(Foo, DistributedModel):
+        ...     engine = Distributed('my_cluster')
+        ...
+        >>> FooDistributed.engine.table
+        None
+        >>> FooDistributed.fix_engine()
+        >>> FooDistributed.engine.table
+        <class '__main__.Foo'>
+
+        However if you prefer more explicit way of doing things,
+        you can always mention the Foo model twice without bothering with any fixes:
+
+        >>> class FooDistributedVerbose(Foo, DistributedModel):
+        ...     engine = Distributed('my_cluster', Foo)
+        >>> FooDistributedVerbose.engine.table
+        <class '__main__.Foo'>
+
+        See tests.test_engines:DistributedTestCase for more examples
+        """
+
+        # apply only when engine has no table defined
+        if cls.engine.table_name:
+            return
+
+        # find out all the superclasses of the Model that store any data
+        storage_models = [b for b in cls.__bases__ if issubclass(b, Model)
+                          and not issubclass(b, DistributedModel)]
+        if not storage_models:
+            raise TypeError("When defining Distributed engine without the table_name "
+                            "ensure that your model has a parent model")
+
+        if len(storage_models) > 1:
+            raise TypeError("When defining Distributed engine without the table_name "
+                            "ensure that your model has exactly one non-distributed superclass")
+
+        # enable correct SQL for engine
+        cls.engine.table = storage_models[0]
+
+    @classmethod
+    def create_table_sql(cls, db_name):
+        assert isinstance(cls.engine, Distributed), "engine must be engines.Distributed instance"
+        cls.engine.set_db_name(db_name)
+
+        cls.fix_engine_table()
+
+        parts = [
+            'CREATE TABLE IF NOT EXISTS `{0}`.`{1}` AS `{0}`.`{2}`'.format(
+                db_name, cls.table_name(), cls.engine.table_name),
+            'ENGINE = ' + cls.engine.create_table_sql()]
+        return '\n'.join(parts)
