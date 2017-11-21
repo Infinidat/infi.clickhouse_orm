@@ -155,3 +155,63 @@ class Merge(Engine):
     def set_db_name(self, db_name):
         assert isinstance(db_name, six.string_types), "'db_name' parameter must be string"
         self.db_name = db_name
+
+
+class Distributed(Engine):
+    """
+    The Distributed engine by itself does not store data,
+    but allows distributed query processing on multiple servers.
+    Reading is automatically parallelized.
+    During a read, the table indexes on remote servers are used, if there are any.
+
+    See full documentation here
+    https://clickhouse.yandex/docs/en/table_engines/distributed.html
+    """
+    def __init__(self, cluster, table=None, db_name=None, sharding_key=None):
+        """
+        :param cluster: what cluster to access data from
+        :param table: underlying table that actually stores data.
+        If you are not specifying any table here, ensure that it can be inferred
+        from your model's superclass (see models.DistributedModel.fix_engine_table)
+        :param db_name: which database to access data from
+        By default it is 'currentDatabase()'
+        :param sharding_key: how to distribute data among shards when inserting
+        straightly into Distributed table, optional
+        """
+        self.cluster = cluster
+        self.table = table
+        self.db_name = db_name
+        self.sharding_key = sharding_key
+
+    @property
+    def table_name(self):
+        # TODO: circular import is bad
+        from .models import ModelBase
+
+        table = self.table
+
+        if isinstance(table, ModelBase):
+            return table.table_name()
+
+        return table
+
+    def set_db_name(self, db_name):
+        assert isinstance(db_name, six.string_types), "'db_name' parameter must be string"
+        self.db_name = db_name
+
+    def create_table_sql(self):
+        name = self.__class__.__name__
+        params = self._build_sql_params()
+        return '%s(%s)' % (name, ', '.join(params))
+
+    def _build_sql_params(self):
+        db_name = ("`%s`" % self.db_name) if self.db_name else 'currentDatabase()'
+
+        if self.table_name is None:
+            raise ValueError("Cannot create {} engine: specify an underlying table".format(
+                self.__class__.__name__))
+
+        params = [self.cluster, db_name, self.table_name]
+        if self.sharding_key:
+            params.append(self.sharding_key)
+        return params
