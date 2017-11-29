@@ -26,6 +26,12 @@ It is possible to specify several fields to filter or exclude by:
     >>> qs.conditions_as_sql()
     u"last_name = 'Smith' AND height > 1.75"
 
+For filters with compound conditions you can use `Q` objects inside `filter` with overloaded operators `&` (AND), `|` (OR) and `~` (NOT):
+
+    >>> qs = Person.objects_in(database).filter((Q(first_name='Ciaran', last_name='Carver') | Q(height_lte=1.8)) & ~Q(first_name='David'))
+    >>> qs.conditions_as_sql()
+    u"((first_name = 'Ciaran' AND last_name = 'Carver') OR height <= 1.8) AND (NOT (first_name = 'David'))"
+
 There are different operators that can be used, by passing `<fieldname>__<operator>=<value>` (two underscores separate the field name from the operator). In case no operator is given, `eq` is used by default. Below are all the supported operators.
 
 | Operator       | Equivalent SQL                               | Comments                           |
@@ -36,6 +42,7 @@ There are different operators that can be used, by passing `<fieldname>__<operat
 | `gte`          | `field >= value`                             |                                    |
 | `lt`           | `field < value`                              |                                    |
 | `lte`          | `field <= value`                             |                                    |
+| `between`      | `field BETWEEN value1 AND value2`            |                                    |
 | `in`           | `field IN (values)`                          | See below                          |
 | `not_in`       | `field NOT IN (values)`                      | See below                          |
 | `contains`     | `field LIKE '%value%'`                       | For string fields only             |
