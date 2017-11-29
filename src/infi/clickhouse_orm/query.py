@@ -103,6 +103,21 @@ class NotOperator(Operator):
         return 'NOT (%s)' % self._base_operator.to_sql(model_cls, field_name, value)
 
 
+class BetweenOperator(Operator):
+
+    def to_sql(self, model_cls, field_name, value):
+        field = getattr(model_cls, field_name)
+        value0 = field.to_db_string(
+                field.to_python(value[0], pytz.utc)) if value[0] is not None or len(str(value[0])) > 0 else None
+        value1 = field.to_db_string(
+                field.to_python(value[1], pytz.utc)) if value[1] is not None or len(str(value[1])) > 0 else None
+        if value0 and value1:
+            return '%s BETWEEN %s and %s' % (field_name, value0, value1)
+        if value0 and not value1:
+            return ' '.join([field_name, '>=', value0])
+        if value1 and not value0:
+            return ' '.join([field_name, '<=', value1])
+
 # Define the set of builtin operators
 
 _operators = {}
@@ -116,6 +131,7 @@ register_operator('gt',          SimpleOperator('>'))
 register_operator('gte',         SimpleOperator('>='))
 register_operator('lt',          SimpleOperator('<'))
 register_operator('lte',         SimpleOperator('<='))
+register_operator('between',     BetweenOperator())
 register_operator('in',          InOperator())
 register_operator('not_in',      NotOperator(InOperator()))
 register_operator('contains',    LikeOperator('%{}%'))
@@ -173,7 +189,8 @@ class Q(object):
             sql = ' {} '.format(self._mode).join(fov.to_sql(model_cls) for fov in self._fovs)
         else:
             if self._l_child and self._r_child:
-                sql = '({}) {} ({})'.format(self._l_child.to_sql(model_cls), self._mode, self._r_child.to_sql(model_cls))
+                sql = '({}) {} ({})'.format(
+                        self._l_child.to_sql(model_cls), self._mode, self._r_child.to_sql(model_cls))
             else:
                 return '1'
         if self._negate:
