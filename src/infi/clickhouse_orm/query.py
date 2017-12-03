@@ -104,6 +104,14 @@ class NotOperator(Operator):
 
 
 class BetweenOperator(Operator):
+    """
+    An operator that implements BETWEEN.
+    Accepts list or tuple of two elements and generates sql condition:
+    - 'BETWEEN value[0] AND value[1]' if value[0] and value[1] are not None and not empty
+    Then imitations of BETWEEN, where one of two limits is missing
+    - '>= value[0]' if value[1] is None or empty
+    - '<= value[1]' if value[0] is None or empty
+    """
 
     def to_sql(self, model_cls, field_name, value):
         field = getattr(model_cls, field_name)
