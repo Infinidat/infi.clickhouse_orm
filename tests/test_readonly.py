@@ -20,11 +20,11 @@ class ReadonlyTestCase(TestCaseWithData):
             list(self.database.select('SELECT * from $table', Person))
             with self.assertRaises(ServerError) as cm:
                 self.database.drop_table(Person)
-            self._check_db_readonly_err(cm.exception)
+            self._check_db_readonly_err(cm.exception, drop_table=True)
 
             with self.assertRaises(ServerError) as cm:
                 self.database.drop_database()
-            self._check_db_readonly_err(cm.exception)
+            self._check_db_readonly_err(cm.exception, drop_table=True)
         except ServerError as e:
             if e.code == 192 and e.message.startswith('Unknown user'):
                 raise unittest.SkipTest('Database user "%s" is not defined' % username)
@@ -33,9 +33,12 @@ class ReadonlyTestCase(TestCaseWithData):
         finally:
             self.database = orig_database
 
-    def _check_db_readonly_err(self, exc):
+    def _check_db_readonly_err(self, exc, drop_table=None):
         self.assertEqual(exc.code, 164)
-        self.assertEqual(exc.message, 'Cannot execute query in readonly mode')
+        if drop_table:
+            self.assertEqual(exc.message, 'Cannot drop table in readonly mode')
+        else:
+            self.assertEqual(exc.message, 'Cannot insert into table in readonly mode')
 
     def test_readonly_db_with_default_user(self):
         self._test_readonly_db('default')
