@@ -33,7 +33,9 @@ class EnginesTestCase(_EnginesHelperTestCase):
 
     def test_merge_tree_with_sampling(self):
         class TestModel(SampleModel):
-            engine = MergeTree('date', ('date', 'event_id', 'event_group', 'intHash32(event_id)'), sampling_expr='intHash32(event_id)')
+            engine = MergeTree('date',
+                               ('date', 'event_id', 'event_group', 'intHash32(event_id)'),
+                               sampling_expr='intHash32(event_id)')
         self._create_and_insert(TestModel)
 
     def test_merge_tree_with_granularity(self):
