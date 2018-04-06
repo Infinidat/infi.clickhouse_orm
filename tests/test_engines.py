@@ -166,8 +166,8 @@ class DistributedTestCase(_EnginesHelperTestCase):
         return TestDistributedModel
 
     def test_bad_cluster_name(self):
-        d_model = self._create_distributed('cluster_name')
         with self.assertRaises(ServerError) as cm:
+            d_model = self._create_distributed('cluster_name')
             self.database.count(d_model)
 
         exc = cm.exception
