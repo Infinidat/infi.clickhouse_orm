@@ -3,9 +3,7 @@ import six
 from .models import Model, BufferModel
 from .fields import DateField, StringField
 from .engines import MergeTree
-from .utils import escape
 
-from six.moves import zip
 from six import iteritems
 
 import logging

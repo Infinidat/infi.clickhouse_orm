@@ -64,15 +64,15 @@ class ModelBase(type):
             return orm_fields.BaseEnumField.create_ad_hoc_field(db_type)
         # Arrays
         if db_type.startswith('Array'):
-            inner_field = cls.create_ad_hoc_field(db_type[6 : -1])
+            inner_field = cls.create_ad_hoc_field(db_type[6: -1])
             return orm_fields.ArrayField(inner_field)
         # FixedString
         if db_type.startswith('FixedString'):
-            length = int(db_type[12 : -1])
+            length = int(db_type[12: -1])
             return orm_fields.FixedStringField(length)
         # Nullable
         if db_type.startswith('Nullable'):
-            inner_field = cls.create_ad_hoc_field(db_type[9 : -1])
+            inner_field = cls.create_ad_hoc_field(db_type[9: -1])
             return orm_fields.NullableField(inner_field)
         # Simple fields
         name = db_type + 'Field'
@@ -264,7 +264,8 @@ class BufferModel(Model):
         '''
         Returns the SQL command for creating a table for this model.
         '''
-        parts = ['CREATE TABLE IF NOT EXISTS `%s`.`%s` AS `%s`.`%s`' % (db_name, cls.table_name(), db_name, cls.engine.main_model.table_name())]
+        parts = ['CREATE TABLE IF NOT EXISTS `%s`.`%s` AS `%s`.`%s`' % (
+            db_name, cls.table_name(), db_name, cls.engine.main_model.table_name())]
         engine_str = cls.engine.create_table_sql(db_name)
         parts.append(engine_str)
         return ' '.join(parts)
@@ -350,8 +351,8 @@ class DistributedModel(Model):
             return
 
         # find out all the superclasses of the Model that store any data
-        storage_models = [b for b in cls.__bases__ if issubclass(b, Model)
-                          and not issubclass(b, DistributedModel)]
+        storage_models = [b for b in cls.__bases__ if issubclass(b, Model) and
+                          not issubclass(b, DistributedModel)]
         if not storage_models:
             raise TypeError("When defining Distributed engine without the table_name "
                             "ensure that your model has a parent model")

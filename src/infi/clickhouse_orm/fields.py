@@ -3,7 +3,6 @@ from six import string_types, text_type, binary_type
 import datetime
 import iso8601
 import pytz
-import time
 from calendar import timegm
 
 from .utils import escape, parse_array, comma_join
@@ -53,7 +52,8 @@ class Field(object):
         Utility method to check that the given value is between min_value and max_value.
         '''
         if value < min_value or value > max_value:
-            raise ValueError('%s out of range - %s is not between %s and %s' % (self.__class__.__name__, value, min_value, max_value))
+            raise ValueError('%s out of range - %s is not between %s and %s' % (
+                self.__class__.__name__, value, min_value, max_value))
 
     def to_db_string(self, value, quote=True):
         '''
@@ -182,7 +182,7 @@ class BaseIntField(Field):
     def to_python(self, value, timezone_in_use):
         try:
             return int(value)
-        except:
+        except (TypeError, ValueError):
             raise ValueError('Invalid value for %s - %r' % (self.__class__.__name__, value))
 
     def to_db_string(self, value, quote=True):
@@ -258,7 +258,7 @@ class BaseFloatField(Field):
     def to_python(self, value, timezone_in_use):
         try:
             return float(value)
-        except:
+        except (TypeError, ValueError):
             raise ValueError('Invalid value for %s - %r' % (self.__class__.__name__, value))
 
     def to_db_string(self, value, quote=True):
@@ -321,9 +321,9 @@ class BaseEnumField(Field):
         '''
         import re
         try:
-            Enum # exists in Python 3.4+
+            Enum  # exists in Python 3.4+
         except NameError:
-            from enum import Enum # use the enum34 library instead
+            from enum import Enum  # use the enum34 library instead
         members = {}
         for match in re.finditer("'(\w+)' = (\d+)", db_type):
             members[match.group(1)] = int(match.group(2))
@@ -368,7 +368,6 @@ class ArrayField(Field):
         return '[' + comma_join(array) + ']'
 
     def get_sql(self, with_default_expression=True):
-        from .utils import escape
         return 'Array(%s)' % self.inner_field.get_sql(with_default_expression=False)
 
 
@@ -398,5 +397,4 @@ class NullableField(Field):
         return self.inner_field.to_db_string(value, quote=quote)
 
     def get_sql(self, with_default_expression=True):
-        from .utils import escape
         return 'Nullable(%s)' % self.inner_field.get_sql(with_default_expression=False)

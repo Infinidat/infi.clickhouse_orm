@@ -4,11 +4,11 @@ import re
 import requests
 from collections import namedtuple
 from .models import ModelBase
-from .utils import escape, parse_tsv, import_submodules
+from .utils import parse_tsv, import_submodules
 from math import ceil
 import datetime
 from string import Template
-from six import PY3, string_types
+from six import string_types
 import pytz
 
 import logging
@@ -274,7 +274,10 @@ class Database(object):
             logger.info('Applying migration %s...', name)
             for operation in modules[name].operations:
                 operation.apply(self)
-            self.insert([MigrationHistory(package_name=migrations_package_name, module_name=name, applied=datetime.date.today())])
+
+            hist = MigrationHistory(
+                package_name=migrations_package_name, module_name=name, applied=datetime.date.today())
+            self.insert([hist])
             if int(name[:4]) >= up_to:
                 break
 

@@ -5,18 +5,17 @@ import re
 
 
 SPECIAL_CHARS = {
-    "\b" : "\\b",
-    "\f" : "\\f",
-    "\r" : "\\r",
-    "\n" : "\\n",
-    "\t" : "\\t",
-    "\0" : "\\0",
-    "\\" : "\\\\",
-    "'"  : "\\'"
+    "\b": "\\b",
+    "\f": "\\f",
+    "\r": "\\r",
+    "\n": "\\n",
+    "\t": "\\t",
+    "\0": "\\0",
+    "\\": "\\\\",
+    "'": "\\'"
 }
 
 SPECIAL_CHARS_REGEX = re.compile("[" + ''.join(SPECIAL_CHARS.values()) + "]")
-
 
 
 def escape(value, quote=True):
@@ -72,12 +71,12 @@ def parse_array(array_string):
             match = re.search(r"[^\\]'", array_string)
             if match is None:
                 raise ValueError('Missing closing quote: "%s"' % array_string)
-            values.append(array_string[1 : match.start() + 1])
+            values.append(array_string[1: match.start() + 1])
             array_string = array_string[match.end():]
         else:
             # Start of non-quoted value, find its end
             match = re.search(r",|\]", array_string)
-            values.append(array_string[0 : match.start()])
+            values.append(array_string[0: match.start()])
             array_string = array_string[match.end() - 1:]
 
 
@@ -85,7 +84,8 @@ def import_submodules(package_name):
     """
     Import all submodules of a module.
     """
-    import importlib, pkgutil
+    import importlib
+    import pkgutil
     package = importlib.import_module(package_name)
     return {
         name: importlib.import_module(package_name + '.' + name)

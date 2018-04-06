@@ -65,7 +65,8 @@ class CollapsingMergeTree(MergeTree):
 
     def __init__(self, date_col, key_cols, sign_col, sampling_expr=None,
                  index_granularity=8192, replica_table_path=None, replica_name=None):
-        super(CollapsingMergeTree, self).__init__(date_col, key_cols, sampling_expr, index_granularity, replica_table_path, replica_name)
+        super(CollapsingMergeTree, self).__init__(
+            date_col, key_cols, sampling_expr, index_granularity, replica_table_path, replica_name)
         self.sign_col = sign_col
 
     def _build_sql_params(self):
@@ -78,7 +79,8 @@ class SummingMergeTree(MergeTree):
 
     def __init__(self, date_col, key_cols, summing_cols=None, sampling_expr=None,
                  index_granularity=8192, replica_table_path=None, replica_name=None):
-        super(SummingMergeTree, self).__init__(date_col, key_cols, sampling_expr, index_granularity, replica_table_path, replica_name)
+        super(SummingMergeTree, self).__init__(
+            date_col, key_cols, sampling_expr, index_granularity, replica_table_path, replica_name)
         assert type is None or type(summing_cols) in (list, tuple), 'summing_cols must be a list or tuple'
         self.summing_cols = summing_cols
 
@@ -93,7 +95,8 @@ class ReplacingMergeTree(MergeTree):
 
     def __init__(self, date_col, key_cols, ver_col=None, sampling_expr=None,
                  index_granularity=8192, replica_table_path=None, replica_name=None):
-        super(ReplacingMergeTree, self).__init__(date_col, key_cols, sampling_expr, index_granularity, replica_table_path, replica_name)
+        super(ReplacingMergeTree, self).__init__(
+            date_col, key_cols, sampling_expr, index_granularity, replica_table_path, replica_name)
         self.ver_col = ver_col
 
     def _build_sql_params(self):
@@ -110,8 +113,11 @@ class Buffer(Engine):
     Read more [here](https://clickhouse.yandex/reference_en.html#Buffer).
     """
 
-    #Buffer(database, table, num_layers, min_time, max_time, min_rows, max_rows, min_bytes, max_bytes)
-    def __init__(self, main_model, num_layers=16, min_time=10, max_time=100, min_rows=10000, max_rows=1000000, min_bytes=10000000, max_bytes=100000000):
+    # Buffer(database, table, num_layers, min_time, max_time, min_rows, max_rows, min_bytes, max_bytes)
+    def __init__(self, main_model, num_layers=16,
+                 min_time=10, max_time=100,
+                 min_rows=10000, max_rows=1000000,
+                 min_bytes=10000000, max_bytes=100000000):
         self.main_model = main_model
         self.num_layers = num_layers
         self.min_time = min_time
@@ -123,12 +129,12 @@ class Buffer(Engine):
 
     def create_table_sql(self, db_name):
         # Overriden create_table_sql example:
-        #sql = 'ENGINE = Buffer(merge, hits, 16, 10, 100, 10000, 1000000, 10000000, 100000000)'
+        # sql = 'ENGINE = Buffer(merge, hits, 16, 10, 100, 10000, 1000000, 10000000, 100000000)'
         sql = 'ENGINE = Buffer(`%s`, `%s`, %d, %d, %d, %d, %d, %d, %d)' % (
-                   db_name, self.main_model.table_name(), self.num_layers,
-                   self.min_time, self.max_time, self.min_rows,
-                   self.max_rows, self.min_bytes, self.max_bytes
-              )
+            db_name, self.main_model.table_name(), self.num_layers,
+            self.min_time, self.max_time, self.min_rows,
+            self.max_rows, self.min_bytes, self.max_bytes
+        )
         return sql
 
 
