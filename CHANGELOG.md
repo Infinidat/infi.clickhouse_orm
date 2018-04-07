@@ -1,6 +1,11 @@
 Change Log
 ==========
 
+Unreleased
+----------
+- Add support for compound filters with Q objects (desile)
+- Add support for BETWEEN operator (desile)
+
 v0.9.8
 ------
 - Bug fix: add field names list explicitly to Database.insert method (anci)

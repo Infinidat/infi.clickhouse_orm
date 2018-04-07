@@ -605,16 +605,17 @@ Adds a DISTINCT clause to the query, meaning that any duplicate rows
 in the results will be omitted.
 
 
-#### exclude(**kwargs)
+#### exclude(**filter_fields)
 
 
 Returns a copy of this queryset that excludes all rows matching the conditions.
 
 
-#### filter(**kwargs)
+#### filter(*q, **filter_fields)
 
 
 Returns a copy of this queryset that includes only rows matching the conditions.
+Add q object to query if it specified.
 
 
 #### only(*field_names)
@@ -705,16 +706,17 @@ Adds a DISTINCT clause to the query, meaning that any duplicate rows
 in the results will be omitted.
 
 
-#### exclude(**kwargs)
+#### exclude(**filter_fields)
 
 
 Returns a copy of this queryset that excludes all rows matching the conditions.
 
 
-#### filter(**kwargs)
+#### filter(*q, **filter_fields)
 
 
 Returns a copy of this queryset that includes only rows matching the conditions.
+Add q object to query if it specified.
 
 
 #### group_by(*args)

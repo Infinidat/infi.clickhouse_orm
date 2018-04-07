@@ -7,7 +7,6 @@ from .utils import comma_join
 
 
 # TODO
-# - and/or between Q objects
 # - check that field names are valid
 # - operators for arrays: length, has, empty
 
@@ -120,7 +119,7 @@ class BetweenOperator(Operator):
         value1 = field.to_db_string(
                 field.to_python(value[1], pytz.utc)) if value[1] is not None or len(str(value[1])) > 0 else None
         if value0 and value1:
-            return '%s BETWEEN %s and %s' % (field_name, value0, value1)
+            return '%s BETWEEN %s AND %s' % (field_name, value0, value1)
         if value0 and not value1:
             return ' '.join([field_name, '>=', value0])
         if value1 and not value0:
