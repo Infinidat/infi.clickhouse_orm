@@ -3,6 +3,7 @@ from __future__ import unicode_literals, print_function
 import unittest
 
 from infi.clickhouse_orm.database import Database
+from infi.clickhouse_orm.query import Q
 from .base_test_with_data import *
 import logging
 from datetime import date, datetime
@@ -58,6 +59,15 @@ class QuerySetTestCase(TestCaseWithData):
         self._test_qs(qs.filter(first_name__endswith='IA'), 0) # case sensitive
         self._test_qs(qs.filter(first_name__iendswith='ia'), 3) # case insensitive
         self._test_qs(qs.filter(first_name__iendswith=''), 100) # empty suffix
+
+    def test_filter_with_q_objects(self):
+        qs = Person.objects_in(self.database)
+        self._test_qs(qs.filter(Q(first_name='Ciaran')), 2)
+        self._test_qs(qs.filter(Q(first_name='Ciaran') | Q(first_name='Chelsea')), 3)
+        self._test_qs(qs.filter(Q(first_name__in=['Warren', 'Whilemina', 'Whitney']) & Q(height__gte=1.7)), 3)
+        self._test_qs(qs.filter((Q(first_name__in=['Warren', 'Whilemina', 'Whitney']) & Q(height__gte=1.7) |
+                                 (Q(first_name__in=['Victoria', 'Victor', 'Venus']) & Q(height__lt=1.7)))), 4)
+        self._test_qs(qs.filter(Q(first_name='Elton') & ~Q(last_name='Smith')), 1)
 
     def test_filter_unicode_string(self):
         self.database.insert([
