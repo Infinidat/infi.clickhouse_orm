@@ -30,6 +30,10 @@ To see test coverage information run:
 
     bin/nosetests --with-coverage --cover-package=infi.clickhouse_orm
 
+To test with tox, ensure that the setup.py is present (otherwise run `bin/buildout buildout:develop= setup.py`) and run:
+
+    pip install tox
+    tox
 
 ---
 

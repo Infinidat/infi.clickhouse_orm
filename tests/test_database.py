@@ -2,7 +2,7 @@
 from __future__ import unicode_literals
 import unittest
 
-from infi.clickhouse_orm.database import Database, DatabaseException
+from infi.clickhouse_orm.database import ServerError
 from .base_test_with_data import *
 
 
@@ -131,13 +131,21 @@ class DatabaseTestCase(TestCaseWithData):
         self.assertEqual(results, "Whitney\tDurham\t1977-09-15\t1.72\nWhitney\tScott\t1971-07-04\t1.7\n")
 
     def test_invalid_user(self):
-        with self.assertRaises(DatabaseException):
+        with self.assertRaises(ServerError) as cm:
             Database(self.database.db_name, username='default', password='wrong')
+
+        exc = cm.exception
+        self.assertEqual(exc.code, 193)
+        self.assertEqual(exc.message, 'Wrong password for user default')
 
     def test_nonexisting_db(self):
         db = Database('db_not_here', autocreate=False)
-        with self.assertRaises(DatabaseException):
+        with self.assertRaises(ServerError) as cm:
             db.create_table(Person)
+
+        exc = cm.exception
+        self.assertEqual(exc.code, 81)
+        self.assertEqual(exc.message, "Database db_not_here doesn't exist")
 
     def test_preexisting_db(self):
         db = Database(self.database.db_name, autocreate=False)

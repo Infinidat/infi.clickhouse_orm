@@ -107,24 +107,26 @@ class NotOperator(Operator):
 
 _operators = {}
 
+
 def register_operator(name, sql):
     _operators[name] = sql
 
-register_operator('eq',          SimpleOperator('='))
-register_operator('ne',          SimpleOperator('!='))
-register_operator('gt',          SimpleOperator('>'))
-register_operator('gte',         SimpleOperator('>='))
-register_operator('lt',          SimpleOperator('<'))
-register_operator('lte',         SimpleOperator('<='))
-register_operator('in',          InOperator())
-register_operator('not_in',      NotOperator(InOperator()))
-register_operator('contains',    LikeOperator('%{}%'))
-register_operator('startswith',  LikeOperator('{}%'))
-register_operator('endswith',    LikeOperator('%{}'))
-register_operator('icontains',   LikeOperator('%{}%', False))
+
+register_operator('eq', SimpleOperator('='))
+register_operator('ne', SimpleOperator('!='))
+register_operator('gt', SimpleOperator('>'))
+register_operator('gte', SimpleOperator('>='))
+register_operator('lt', SimpleOperator('<'))
+register_operator('lte', SimpleOperator('<='))
+register_operator('in', InOperator())
+register_operator('not_in', NotOperator(InOperator()))
+register_operator('contains', LikeOperator('%{}%'))
+register_operator('startswith', LikeOperator('{}%'))
+register_operator('endswith', LikeOperator('%{}'))
+register_operator('icontains', LikeOperator('%{}%', False))
 register_operator('istartswith', LikeOperator('{}%', False))
-register_operator('iendswith',   LikeOperator('%{}', False))
-register_operator('iexact',      IExactOperator())
+register_operator('iendswith', LikeOperator('%{}', False))
+register_operator('iexact', IExactOperator())
 
 
 class FOV(object):
@@ -323,7 +325,7 @@ class QuerySet(object):
             raise ValueError('Invalid page number: %d' % page_num)
         offset = (page_num - 1) * page_size
         return Page(
-            objects=list(self[offset : offset + page_size]),
+            objects=list(self[offset: offset + page_size]),
             number_of_objects=count,
             pages_total=pages_total,
             number=page_num,
@@ -394,7 +396,7 @@ class AggregateQuerySet(QuerySet):
         """
         for name in args:
             assert name in self._fields or name in self._calculated_fields, \
-                   'Cannot group by `%s` since it is not included in the query' % name
+                'Cannot group by `%s` since it is not included in the query' % name
         qs = copy(self)
         qs._grouping_fields = args
         return qs
@@ -433,7 +435,7 @@ class AggregateQuerySet(QuerySet):
         return sql
 
     def __iter__(self):
-        return self._database.select(self.as_sql()) # using an ad-hoc model
+        return self._database.select(self.as_sql())  # using an ad-hoc model
 
     def count(self):
         """

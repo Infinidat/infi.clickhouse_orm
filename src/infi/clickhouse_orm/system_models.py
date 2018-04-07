@@ -6,7 +6,13 @@ from __future__ import unicode_literals
 from six import string_types
 
 from .database import Database
-from .fields import *
+from .fields import (
+    StringField,
+    UInt8Field,
+    UInt32Field,
+    UInt64Field,
+    DateTimeField,
+)
 from .models import Model
 from .utils import comma_join
 
@@ -68,7 +74,8 @@ class SystemPart(Model):
         """
         operation = operation.upper()
         assert operation in self.OPERATIONS, "operation must be in [%s]" % comma_join(self.OPERATIONS)
-        sql = "ALTER TABLE `%s`.`%s` %s PARTITION '%s'" % (self._database.db_name, self.table, operation, self.partition)
+        sql = "ALTER TABLE `%s`.`%s` %s PARTITION '%s'" % (
+            self._database.db_name, self.table, operation, self.partition)
         if from_part is not None:
             sql += " FROM %s" % from_part
         self._database.raw(sql, settings=settings, stream=False)
@@ -126,9 +133,9 @@ class SystemPart(Model):
         assert isinstance(conditions, string_types), "conditions must be a string"
         if conditions:
             conditions += " AND"
-        field_names = ','.join([f[0] for f in cls._fields])
+        field_names = ','.join(cls.fields())
         return database.select("SELECT %s FROM %s WHERE %s database='%s'" %
-                               (field_names,  cls.table_name(), conditions, database.db_name), model_class=cls)
+                               (field_names, cls.table_name(), conditions, database.db_name), model_class=cls)
 
     @classmethod
     def get_active(cls, database, conditions=""):
