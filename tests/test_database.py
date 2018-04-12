@@ -135,8 +135,8 @@ class DatabaseTestCase(TestCaseWithData):
             Database(self.database.db_name, username='default', password='wrong')
 
     def test_nonexisting_db(self):
-        db = Database('db_not_here', autocreate=False)
         with self.assertRaises(DatabaseException):
+            db = Database('db_not_here', autocreate=False)
             db.create_table(Person)
 
     def test_preexisting_db(self):

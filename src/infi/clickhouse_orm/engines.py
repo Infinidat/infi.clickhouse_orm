@@ -1,89 +1,141 @@
 from __future__ import unicode_literals
 
+import logging
 import six
 
 from .utils import comma_join
 
+logger = logging.getLogger('clickhouse_orm')
+
 
 class Engine(object):
 
-    def create_table_sql(self):
+    def create_table_sql(self, db):
         raise NotImplementedError()   # pragma: no cover
 
 
 class TinyLog(Engine):
 
-    def create_table_sql(self):
+    def create_table_sql(self, db):
         return 'TinyLog'
 
 
 class Log(Engine):
 
-    def create_table_sql(self):
+    def create_table_sql(self, db):
         return 'Log'
 
 
 class Memory(Engine):
 
-    def create_table_sql(self):
+    def create_table_sql(self, db):
         return 'Memory'
 
 
 class MergeTree(Engine):
 
-    def __init__(self, date_col, key_cols, sampling_expr=None,
-                 index_granularity=8192, replica_table_path=None, replica_name=None):
-        assert type(key_cols) in (list, tuple), 'key_cols must be a list or tuple'
+    def __init__(self, date_col=None, order_by=(), sampling_expr=None,
+                 index_granularity=8192, replica_table_path=None, replica_name=None, partition_key=None):
+        assert type(order_by) in (list, tuple), 'order_by must be a list or tuple'
+        assert date_col is None or isinstance(date_col, six.string_types), 'date_col must be string if present'
+        assert partition_key is None or type(partition_key) in (list, tuple),\
+            'partition_key must be tuple or list if present'
+
+        # These values conflict with each other (old and new syntax of table engines.
+        # So let's control only one of them is given.
+        assert date_col or partition_key, "You must set either date_col or partition_key"
         self.date_col = date_col
-        self.key_cols = key_cols
+        self.partition_key = partition_key if partition_key else ('toYYYYMM(`%s`)' % date_col,)
+
+        self.order_by = order_by
         self.sampling_expr = sampling_expr
         self.index_granularity = index_granularity
         self.replica_table_path = replica_table_path
         self.replica_name = replica_name
         # TODO verify that both replica fields are either present or missing
 
-    def create_table_sql(self):
+    # I changed field name for new reality and syntax
+    @property
+    def key_cols(self):
+        logger.warning('`key_cols` attribute is deprecated and may be removed in future. Use `order_by` attribute instead')
+        return self.order_by
+
+    @key_cols.setter
+    def key_cols(self, value):
+        logger.warning('`key_cols` attribute is deprecated and may be removed in future. Use `order_by` attribute instead')
+        self.order_by = value
+
+    def create_table_sql(self, db):
         name = self.__class__.__name__
         if self.replica_name:
             name = 'Replicated' + name
-        params = self._build_sql_params()
-        return '%s(%s)' % (name, comma_join(params))
 
-    def _build_sql_params(self):
+        # In ClickHouse 1.1.54310 custom partitioning key was introduced
+        # https://clickhouse.yandex/docs/en/table_engines/custom_partitioning_key/
+        # Let's check version and use new syntax if available
+        if db.server_version >= (1, 1, 54310):
+            partition_sql = "PARTITION BY %s ORDER BY %s" \
+                            % ('(%s)' % comma_join(self.partition_key), '(%s)' % comma_join(self.order_by))
+
+            if self.sampling_expr:
+                partition_sql += " SAMPLE BY %s" % self.sampling_expr
+
+            partition_sql += " SETTINGS index_granularity=%d" % self.index_granularity
+
+        elif not self.date_col:
+            # Can't import it globally due to circular import
+            from infi.clickhouse_orm.database import DatabaseException
+            raise DatabaseException("Custom partitioning is not supported before ClickHouse 1.1.54310. "
+                                    "Please update your server or use date_col syntax."
+                                    "https://clickhouse.yandex/docs/en/table_engines/custom_partitioning_key/")
+        else:
+            partition_sql = ''
+
+        params = self._build_sql_params(db)
+        return '%s(%s) %s' % (name, comma_join(params), partition_sql)
+
+    def _build_sql_params(self, db):
         params = []
         if self.replica_name:
             params += ["'%s'" % self.replica_table_path, "'%s'" % self.replica_name]
-        params.append(self.date_col)
-        if self.sampling_expr:
-            params.append(self.sampling_expr)
-        params.append('(%s)' % comma_join(self.key_cols))
-        params.append(str(self.index_granularity))
+
+        # In ClickHouse 1.1.54310 custom partitioning key was introduced
+        # https://clickhouse.yandex/docs/en/table_engines/custom_partitioning_key/
+        # These parameters are process in create_table_sql directly.
+        # In previous ClickHouse versions this this syntax does not work.
+        if db.server_version < (1, 1, 54310):
+            params.append(self.date_col)
+            if self.sampling_expr:
+                params.append(self.sampling_expr)
+            params.append('(%s)' % comma_join(self.order_by))
+            params.append(str(self.index_granularity))
+
         return params
 
 
 class CollapsingMergeTree(MergeTree):
 
-    def __init__(self, date_col, key_cols, sign_col, sampling_expr=None,
+    def __init__(self, date_col, order_by, sign_col, sampling_expr=None,
                  index_granularity=8192, replica_table_path=None, replica_name=None):
-        super(CollapsingMergeTree, self).__init__(date_col, key_cols, sampling_expr, index_granularity, replica_table_path, replica_name)
+        super(CollapsingMergeTree, self).__init__(date_col, order_by, sampling_expr, index_granularity, replica_table_path, replica_name)
         self.sign_col = sign_col
 
-    def _build_sql_params(self):
-        params = super(CollapsingMergeTree, self)._build_sql_params()
+    def _build_sql_params(self, db):
+        params = super(CollapsingMergeTree, self)._build_sql_params(db)
         params.append(self.sign_col)
         return params
 
 
 class SummingMergeTree(MergeTree):
 
-    def __init__(self, date_col, key_cols, summing_cols=None, sampling_expr=None,
+    def __init__(self, date_col, order_by, summing_cols=None, sampling_expr=None,
                  index_granularity=8192, replica_table_path=None, replica_name=None):
-        super(SummingMergeTree, self).__init__(date_col, key_cols, sampling_expr, index_granularity, replica_table_path, replica_name)
+        super(SummingMergeTree, self).__init__(date_col, order_by, sampling_expr, index_granularity, replica_table_path, replica_name)
         assert type is None or type(summing_cols) in (list, tuple), 'summing_cols must be a list or tuple'
         self.summing_cols = summing_cols
 
-    def _build_sql_params(self):
-        params = super(SummingMergeTree, self)._build_sql_params()
+    def _build_sql_params(self, db):
+        params = super(SummingMergeTree, self)._build_sql_params(db)
         if self.summing_cols:
             params.append('(%s)' % comma_join(self.summing_cols))
         return params
@@ -91,13 +143,13 @@ class SummingMergeTree(MergeTree):
 
 class ReplacingMergeTree(MergeTree):
 
-    def __init__(self, date_col, key_cols, ver_col=None, sampling_expr=None,
+    def __init__(self, date_col, order_by, ver_col=None, sampling_expr=None,
                  index_granularity=8192, replica_table_path=None, replica_name=None):
-        super(ReplacingMergeTree, self).__init__(date_col, key_cols, sampling_expr, index_granularity, replica_table_path, replica_name)
+        super(ReplacingMergeTree, self).__init__(date_col, order_by, sampling_expr, index_granularity, replica_table_path, replica_name)
         self.ver_col = ver_col
 
-    def _build_sql_params(self):
-        params = super(ReplacingMergeTree, self)._build_sql_params()
+    def _build_sql_params(self, db):
+        params = super(ReplacingMergeTree, self)._build_sql_params(db)
         if self.ver_col:
             params.append(self.ver_col)
         return params
@@ -121,11 +173,11 @@ class Buffer(Engine):
         self.min_bytes = min_bytes
         self.max_bytes = max_bytes
 
-    def create_table_sql(self, db_name):
+    def create_table_sql(self, db):
         # Overriden create_table_sql example:
-        #sql = 'ENGINE = Buffer(merge, hits, 16, 10, 100, 10000, 1000000, 10000000, 100000000)'
+        # sql = 'ENGINE = Buffer(merge, hits, 16, 10, 100, 10000, 1000000, 10000000, 100000000)'
         sql = 'ENGINE = Buffer(`%s`, `%s`, %d, %d, %d, %d, %d, %d, %d)' % (
-                   db_name, self.main_model.table_name(), self.num_layers,
+                   db.db_name, self.main_model.table_name(), self.num_layers,
                    self.min_time, self.max_time, self.min_rows,
                    self.max_rows, self.min_bytes, self.max_bytes
               )
@@ -145,13 +197,5 @@ class Merge(Engine):
 
         self.table_regex = table_regex
 
-        # Use current database as default
-        self.db_name = None
-
-    def create_table_sql(self):
-        db_name = ("`%s`" % self.db_name) if self.db_name else 'currentDatabase()'
-        return "Merge(%s, '%s')" % (db_name, self.table_regex)
-
-    def set_db_name(self, db_name):
-        assert isinstance(db_name, six.string_types), "'db_name' parameter must be string"
-        self.db_name = db_name
+    def create_table_sql(self, db):
+        return "Merge(`%s`, '%s')" % (db.db_name, self.table_regex)

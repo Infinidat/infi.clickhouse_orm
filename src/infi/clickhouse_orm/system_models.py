@@ -68,7 +68,8 @@ class SystemPart(Model):
         """
         operation = operation.upper()
         assert operation in self.OPERATIONS, "operation must be in [%s]" % comma_join(self.OPERATIONS)
-        sql = "ALTER TABLE `%s`.`%s` %s PARTITION '%s'" % (self._database.db_name, self.table, operation, self.partition)
+
+        sql = "ALTER TABLE `%s`.`%s` %s PARTITION %s" % (self._database.db_name, self.table, operation, self.partition)
         if from_part is not None:
             sql += " FROM %s" % from_part
         self._database.raw(sql, settings=settings, stream=False)

@@ -24,6 +24,18 @@ created on the ClickHouse server if it does not already exist.
 - `autocreate`: automatically create the database if does not exist (unless in readonly mode).
 
 
+#### server_timezone
+
+
+Contains [pytz](http://pytz.sourceforge.net/) timezone used on database server
+
+
+#### server_version
+
+
+Contains a version tuple of database server, for example (1, 1, 54310)
+
+
 #### count(model_class, conditions=None)
 
 
@@ -144,13 +156,13 @@ invalid values will cause a `ValueError` to be raised.
 Unrecognized field names will cause an `AttributeError`.
 
 
-#### Model.create_table_sql(db_name)
+#### Model.create_table_sql(db)
 
 
 Returns the SQL command for creating a table for this model.
 
 
-#### Model.drop_table_sql(db_name)
+#### Model.drop_table_sql(db)
 
 
 Returns the SQL command for deleting this model's table.
@@ -233,13 +245,13 @@ invalid values will cause a `ValueError` to be raised.
 Unrecognized field names will cause an `AttributeError`.
 
 
-#### BufferModel.create_table_sql(db_name)
+#### BufferModel.create_table_sql(db)
 
 
 Returns the SQL command for creating a table for this model.
 
 
-#### BufferModel.drop_table_sql(db_name)
+#### BufferModel.drop_table_sql(db)
 
 
 Returns the SQL command for deleting this model's table.
@@ -497,7 +509,7 @@ Extends Engine
 
 Extends Engine
 
-#### MergeTree(date_col, key_cols, sampling_expr=None, index_granularity=8192, replica_table_path=None, replica_name=None)
+#### MergeTree(date_col=None, order_by=(), sampling_expr=None, index_granularity=8192, replica_table_path=None, replica_name=None, partition_key=None)
 
 
 ### Buffer

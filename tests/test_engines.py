@@ -1,6 +1,8 @@
 from __future__ import unicode_literals
 import unittest
 
+from infi.clickhouse_orm.system_models import SystemPart
+
 from infi.clickhouse_orm.database import Database, DatabaseException
 from infi.clickhouse_orm.models import Model, MergeModel
 from infi.clickhouse_orm.fields import *
@@ -41,8 +43,12 @@ class EnginesTestCase(unittest.TestCase):
 
     def test_replicated_merge_tree(self):
         engine = MergeTree('date', ('date', 'event_id', 'event_group'), replica_table_path='/clickhouse/tables/{layer}-{shard}/hits', replica_name='{replica}')
-        expected = "ReplicatedMergeTree('/clickhouse/tables/{layer}-{shard}/hits', '{replica}', date, (date, event_id, event_group), 8192)"
-        self.assertEquals(engine.create_table_sql(), expected)
+        # In ClickHouse 1.1.54310 custom partitioning key was introduced and new syntax is used
+        if self.database.server_version >= (1, 1, 54310):
+            expected = "ReplicatedMergeTree('/clickhouse/tables/{layer}-{shard}/hits', '{replica}') PARTITION BY (toYYYYMM(`date`)) ORDER BY (date, event_id, event_group) SETTINGS index_granularity=8192"
+        else:
+            expected = "ReplicatedMergeTree('/clickhouse/tables/{layer}-{shard}/hits', '{replica}', date, (date, event_id, event_group), 8192)"
+        self.assertEquals(engine.create_table_sql(self.database), expected)
 
     def test_collapsing_merge_tree(self):
         class TestModel(SampleModel):
@@ -123,6 +129,17 @@ class EnginesTestCase(unittest.TestCase):
             'event_version': 2,
             'event_uversion': 2
         }, res[1].to_dict(include_readonly=True))
+
+    def test_custom_partitioning(self):
+        class TestModel(SampleModel):
+            engine = MergeTree(
+                order_by=('date', 'event_id', 'event_group'),
+                partition_key=('toYYYYMM(date)', 'event_group')
+            )
+        self._create_and_insert(TestModel)
+        parts = list(SystemPart.get(self.database))
+        self.assertEqual(1, len(parts))
+        self.assertEqual('(201701, 13)', parts[0].partition)
 
 
 class SampleModel(Model):

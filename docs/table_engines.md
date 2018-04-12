@@ -54,6 +54,23 @@ For a `ReplacingMergeTree` you can optionally specify the version column:
 
     engine = engines.ReplacingMergeTree('EventDate', ('OrderID', 'EventDate', 'BannerID'), ver_col='Version')
 
+### Custom partitioning
+
+ClickHouse supports [custom partitioning](https://clickhouse.yandex/docs/en/table_engines/custom_partitioning_key/) expressions since version 1.1.54310
+You can use custom partitioning with any MergeTree family engine.
+To set custom partitioning:
+* skip date_col (first) constructor parameter or fill it with None value
+* add name to order_by (second) constructor parameter
+* add partition_key parameter. It should be a tuple of expressions, by which partition are built.
+
+Standard partitioning by date column can be added using toYYYYMM(date) function.
+
+Example:
+ 
+    engine = engines.ReplacingMergeTree(order_by=('OrderID', 'EventDate', 'BannerID'), ver_col='Version',
+                                        partition_key=('toYYYYMM(EventDate)', 'BannerID'))
+
+
 ### Data Replication
 
 Any of the above engines can be converted to a replicated engine (e.g. `ReplicatedMergeTree`) by adding two parameters, `replica_table_path` and `replica_name`:
