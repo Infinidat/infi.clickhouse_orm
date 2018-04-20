@@ -57,6 +57,10 @@ class ModelBase(type):
         # Enums
         if db_type.startswith('Enum'):
             return orm_fields.BaseEnumField.create_ad_hoc_field(db_type)
+        # DateTime with timezone
+        if db_type.startswith('DateTime('):
+            # Some functions return DateTimeField with timezone in brackets
+            return orm_fields.DateTimeField()
         # Arrays
         if db_type.startswith('Array'):
             inner_field = cls.create_ad_hoc_field(db_type[6 : -1])
