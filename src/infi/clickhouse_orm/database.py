@@ -97,6 +97,7 @@ class Database(object):
             self.db_exists = False
             self.create_database()
         self.server_timezone = self._get_server_timezone()
+        self.server_version = self._get_server_version()
 
     def create_database(self):
         '''
@@ -118,7 +119,7 @@ class Database(object):
         # TODO check that model has an engine
         if model_class.system:
             raise DatabaseException("You can't create system table")
-        self._send(model_class.create_table_sql(self.db_name))
+        self._send(model_class.create_table_sql(self))
 
     def drop_table(self, model_class):
         '''
@@ -126,7 +127,7 @@ class Database(object):
         '''
         if model_class.system:
             raise DatabaseException("You can't drop system table")
-        self._send(model_class.drop_table_sql(self.db_name))
+        self._send(model_class.drop_table_sql(self))
 
     def insert(self, model_instances, batch_size=1000):
         '''
@@ -325,6 +326,15 @@ class Database(object):
         except ServerError as e:
             logger.exception('Cannot determine server timezone (%s), assuming UTC', e)
             return pytz.utc
+
+    def _get_server_version(self, as_tuple=True):
+        try:
+            r = self._send('SELECT version();')
+            ver = r.text
+        except ServerError as e:
+            logger.exception('Cannot determine server version (%s), assuming 1.1.0', e)
+            ver = '1.1.0'
+        return tuple(int(n) for n in ver.split('.')) if as_tuple else ver
 
     def _is_connection_readonly(self):
         r = self._send("SELECT value FROM system.settings WHERE name = 'readonly'")
