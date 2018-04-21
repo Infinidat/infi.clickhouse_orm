@@ -1,6 +1,8 @@
 Field Types
 ===========
 
+See: [ClickHouse Documentation](https://clickhouse.yandex/docs/en/data_types/)
+
 Currently the following field types are supported:
 
 | Class              | DB Type    | Pythonic Type       | Comments
@@ -85,7 +87,7 @@ Working with materialized and alias fields
 
 ClickHouse provides an opportunity to create MATERIALIZED and ALIAS Fields.
 
-See documentation [here](https://clickhouse.yandex/reference_en.html#Default%20values).
+See documentation [here](https://clickhouse.yandex/docs/en/query_language/queries/#default-values).
 
 Both field types can't be inserted into the database directly, so they are ignored when using the `Database.insert()` method. ClickHouse does not return the field values if you use `"SELECT * FROM ..."` - you have to list these field names explicitly in the query.
 

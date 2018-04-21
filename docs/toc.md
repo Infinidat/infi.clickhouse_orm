@@ -5,6 +5,10 @@
 
    * [Models and Databases](models_and_databases.md#models-and-databases)
       * [Defining Models](models_and_databases.md#defining-models)
+         * [Default values](models_and_databases.md#default-values)
+         * [Null values](models_and_databases.md#null-values)
+         * [Materialized fields](models_and_databases.md#materialized-fields)
+         * [Alias fields](models_and_databases.md#alias-fields)
          * [Table Names](models_and_databases.md#table-names)
       * [Using Models](models_and_databases.md#using-models)
       * [Inserting to the Database](models_and_databases.md#inserting-to-the-database)

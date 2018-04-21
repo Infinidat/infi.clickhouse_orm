@@ -159,7 +159,7 @@ class Buffer(Engine):
     """
     Buffers the data to write in RAM, periodically flushing it to another table.
     Must be used in conjuction with a `BufferModel`.
-    Read more [here](https://clickhouse.yandex/reference_en.html#Buffer).
+    Read more [here](https://clickhouse.yandex/docs/en/table_engines/buffer/).
     """
 
     #Buffer(database, table, num_layers, min_time, max_time, min_rows, max_rows, min_bytes, max_bytes)

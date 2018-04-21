@@ -1,6 +1,6 @@
 """
-This file contains system readonly models that can be got from database
-https://clickhouse.yandex/reference_en.html#System tables
+This file contains system readonly models that can be got from the database
+https://clickhouse.yandex/docs/en/system_tables/
 """
 from __future__ import unicode_literals
 from six import string_types
@@ -15,7 +15,7 @@ class SystemPart(Model):
     """
     Contains information about parts of a table in the MergeTree family.
     This model operates only fields, described in the reference. Other fields are ignored.
-    https://clickhouse.yandex/reference_en.html#system.parts
+    https://clickhouse.yandex/docs/en/system_tables/system.parts/
     """
     OPERATIONS = frozenset({'DETACH', 'DROP', 'ATTACH', 'FREEZE', 'FETCH'})
 
@@ -56,7 +56,7 @@ class SystemPart(Model):
 
     """
     Next methods return SQL for some operations, which can be done with partitions
-    https://clickhouse.yandex/reference_en.html#Manipulations with partitions and parts
+    https://clickhouse.yandex/docs/en/query_language/queries/#manipulations-with-partitions-and-parts
     """
     def _partition_operation_sql(self, operation, settings=None, from_part=None):
         """

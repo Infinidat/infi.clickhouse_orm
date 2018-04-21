@@ -1,7 +1,7 @@
 System Models
 =============
 
-[Clickhouse docs](https://clickhouse.yandex/reference_en.html#System%20tables).
+[Clickhouse docs](https://clickhouse.yandex/docs/en/system_tables/).
 
 System models are read only models for implementing part of the system's functionality, and for providing access to information about how the system is working.
 
@@ -14,7 +14,7 @@ Currently the following system models are supported:
 Partitions and Parts
 --------------------
 
-[ClickHouse docs](https://clickhouse.yandex/reference_en.html#Manipulations%20with%20partitions%20and%20parts).
+[ClickHouse docs](https://clickhouse.yandex/docs/en/query_language/queries/#manipulations-with-partitions-and-parts).
 
 A partition in a table is data for a single calendar month. Table "system.parts" contains information about each part.
 
