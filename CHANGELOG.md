@@ -8,6 +8,9 @@ Unreleased
 - Distributed engine support (tsionyx)
 - `_fields` and `_writable_fields` are OrderedDicts - note that this might break backwards compatibility (tsionyx)
 - Improve error messages returned from the database with the `ServerError` class (tsionyx)
+- Added support of custom partitioning (M1hacka)
+- Added attribute `server_version` to Database class (M1hacka)
+- Changed `Engine.create_table_sql()`, `Engine.drop_table_sql()`, `Model.create_table_sql()`, `Model.drop_table_sql()` parameter to db from db_name (M1hacka)
 
 v0.9.8
 ------

@@ -36,6 +36,7 @@
    * [Table Engines](table_engines.md#table-engines)
       * [Simple Engines](table_engines.md#simple-engines)
       * [Engines in the MergeTree Family](table_engines.md#engines-in-the-mergetree-family)
+         * [Custom partitioning](table_engines.md#custom-partitioning)
          * [Data Replication](table_engines.md#data-replication)
       * [Buffer Engine](table_engines.md#buffer-engine)
       * [Merge Engine](table_engines.md#merge-engine)

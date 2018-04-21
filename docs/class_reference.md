@@ -24,18 +24,6 @@ created on the ClickHouse server if it does not already exist.
 - `autocreate`: automatically create the database if does not exist (unless in readonly mode).
 
 
-#### server_timezone
-
-
-Contains [pytz](http://pytz.sourceforge.net/) timezone used on database server
-
-
-#### server_version
-
-
-Contains a version tuple of database server, for example (1, 1, 54310)
-
-
 #### count(model_class, conditions=None)
 
 
@@ -353,10 +341,10 @@ invalid values will cause a `ValueError` to be raised.
 Unrecognized field names will cause an `AttributeError`.
 
 
-#### DistributedModel.create_table_sql(db_name)
+#### DistributedModel.create_table_sql(db)
 
 
-#### DistributedModel.drop_table_sql(db_name)
+#### DistributedModel.drop_table_sql(db)
 
 
 Returns the SQL command for deleting this model's table.
@@ -692,15 +680,13 @@ During a read, the table indexes on remote servers are used, if there are any.
 See full documentation here
 https://clickhouse.yandex/docs/en/table_engines/distributed.html
 
-#### Distributed(cluster, table=None, db_name=None, sharding_key=None)
+#### Distributed(cluster, table=None, sharding_key=None)
 
 
 :param cluster: what cluster to access data from
 :param table: underlying table that actually stores data.
 If you are not specifying any table here, ensure that it can be inferred
 from your model's superclass (see models.DistributedModel.fix_engine_table)
-:param db_name: which database to access data from
-By default it is 'currentDatabase()'
 :param sharding_key: how to distribute data among shards when inserting
 straightly into Distributed table, optional
 
@@ -709,21 +695,21 @@ straightly into Distributed table, optional
 
 Extends MergeTree
 
-#### CollapsingMergeTree(date_col, key_cols, sign_col, sampling_expr=None, index_granularity=8192, replica_table_path=None, replica_name=None)
+#### CollapsingMergeTree(date_col, order_by, sign_col, sampling_expr=None, index_granularity=8192, replica_table_path=None, replica_name=None)
 
 
 ### SummingMergeTree
 
 Extends MergeTree
 
-#### SummingMergeTree(date_col, key_cols, summing_cols=None, sampling_expr=None, index_granularity=8192, replica_table_path=None, replica_name=None)
+#### SummingMergeTree(date_col, order_by, summing_cols=None, sampling_expr=None, index_granularity=8192, replica_table_path=None, replica_name=None)
 
 
 ### ReplacingMergeTree
 
 Extends MergeTree
 
-#### ReplacingMergeTree(date_col, key_cols, ver_col=None, sampling_expr=None, index_granularity=8192, replica_table_path=None, replica_name=None)
+#### ReplacingMergeTree(date_col, order_by, ver_col=None, sampling_expr=None, index_granularity=8192, replica_table_path=None, replica_name=None)
 
 
 infi.clickhouse_orm.query
