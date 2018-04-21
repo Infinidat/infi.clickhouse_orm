@@ -11,6 +11,7 @@ Unreleased
 - Added support of custom partitioning (M1hacka)
 - Added attribute `server_version` to Database class (M1hacka)
 - Changed `Engine.create_table_sql()`, `Engine.drop_table_sql()`, `Model.create_table_sql()`, `Model.drop_table_sql()` parameter to db from db_name (M1hacka)
+- Fix parsing of datetime column type when it includes a timezone (M1hacka)
 
 v0.9.8
 ------
