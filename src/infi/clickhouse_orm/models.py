@@ -253,6 +253,11 @@ class Model(with_metaclass(ModelBase)):
 
     @classmethod
     def fields(cls, writable=False):
+        '''
+        Returns an `OrderedDict` of the model's fields (from name to `Field` instance).
+        If `writable` is true, only writable fields are included.
+        Callers should not modify the dictionary.
+        '''
         # noinspection PyProtectedMember,PyUnresolvedReferences
         return cls._writable_fields if writable else cls._fields
 

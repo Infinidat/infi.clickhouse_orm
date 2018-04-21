@@ -156,6 +156,14 @@ Returns the SQL command for creating a table for this model.
 Returns the SQL command for deleting this model's table.
 
 
+#### Model.fields(writable=False)
+
+
+Returns an `OrderedDict` of the model's fields (from name to `Field` instance).
+If `writable` is true, only writable fields are included.
+Callers should not modify the dictionary.
+
+
 #### Model.from_tsv(line, field_names=None, timezone_in_use=UTC, database=None)
 
 
@@ -245,6 +253,14 @@ Returns the SQL command for creating a table for this model.
 Returns the SQL command for deleting this model's table.
 
 
+#### BufferModel.fields(writable=False)
+
+
+Returns an `OrderedDict` of the model's fields (from name to `Field` instance).
+If `writable` is true, only writable fields are included.
+Callers should not modify the dictionary.
+
+
 #### BufferModel.from_tsv(line, field_names=None, timezone_in_use=UTC, database=None)
 
 
@@ -285,6 +301,132 @@ This is done automatically when the instance is read from the database or writte
 
 
 #### BufferModel.table_name()
+
+
+Returns the model's database table name. By default this is the
+class name converted to lowercase. Override this if you want to use
+a different table name.
+
+
+#### to_dict(include_readonly=True, field_names=None)
+
+
+Returns the instance's column values as a dict.
+
+- `include_readonly`: if false, returns only fields that can be inserted into database.
+- `field_names`: an iterable of field names to return (optional)
+
+
+#### to_tsv(include_readonly=True)
+
+
+Returns the instance's column values as a tab-separated line. A newline is not included.
+
+- `include_readonly`: if false, returns only fields that can be inserted into database.
+
+
+### DistributedModel
+
+Extends Model
+
+
+Model for Distributed engine
+
+#### DistributedModel(**kwargs)
+
+
+Creates a model instance, using keyword arguments as field values.
+Since values are immediately converted to their Pythonic type,
+invalid values will cause a `ValueError` to be raised.
+Unrecognized field names will cause an `AttributeError`.
+
+
+#### DistributedModel.create_table_sql(db_name)
+
+
+#### DistributedModel.drop_table_sql(db_name)
+
+
+Returns the SQL command for deleting this model's table.
+
+
+#### DistributedModel.fields(writable=False)
+
+
+Returns an `OrderedDict` of the model's fields (from name to `Field` instance).
+If `writable` is true, only writable fields are included.
+Callers should not modify the dictionary.
+
+
+#### DistributedModel.fix_engine_table()
+
+
+Remember: Distributed table does not store any data, just provides distributed access to it.
+
+So if we define a model with engine that has no defined table for data storage
+(see FooDistributed below), that table cannot be successfully created.
+This routine can automatically fix engine's storage table by finding the first
+non-distributed model among your model's superclasses.
+
+>>> class Foo(Model):
+...     id = UInt8Field(1)
+...
+>>> class FooDistributed(Foo, DistributedModel):
+...     engine = Distributed('my_cluster')
+...
+>>> FooDistributed.engine.table
+None
+>>> FooDistributed.fix_engine()
+>>> FooDistributed.engine.table
+<class '__main__.Foo'>
+
+However if you prefer more explicit way of doing things,
+you can always mention the Foo model twice without bothering with any fixes:
+
+>>> class FooDistributedVerbose(Foo, DistributedModel):
+...     engine = Distributed('my_cluster', Foo)
+>>> FooDistributedVerbose.engine.table
+<class '__main__.Foo'>
+
+See tests.test_engines:DistributedTestCase for more examples
+
+
+#### DistributedModel.from_tsv(line, field_names=None, timezone_in_use=UTC, database=None)
+
+
+Create a model instance from a tab-separated line. The line may or may not include a newline.
+The `field_names` list must match the fields defined in the model, but does not have to include all of them.
+If omitted, it is assumed to be the names of all fields in the model, in order of definition.
+
+- `line`: the TSV-formatted data.
+- `field_names`: names of the model fields in the data.
+- `timezone_in_use`: the timezone to use when parsing dates and datetimes.
+- `database`: if given, sets the database that this instance belongs to.
+
+
+#### get_database()
+
+
+Gets the `Database` that this model instance belongs to.
+Returns `None` unless the instance was read from the database or written to it.
+
+
+#### get_field(name)
+
+
+Gets a `Field` instance given its name, or `None` if not found.
+
+
+#### DistributedModel.objects_in(database)
+
+
+Returns a `QuerySet` for selecting instances of this model class.
+
+
+#### set_database(db)
+
+
+#### DistributedModel.table_name()
 
 
 Returns the model's database table name. By default this is the
@@ -523,6 +665,32 @@ Writing to a table is not supported
 https://clickhouse.yandex/docs/en/single/index.html#document-table_engines/merge
 
 #### Merge(table_regex)
+
+
+### Distributed
+
+Extends Engine
+
+
+The Distributed engine by itself does not store data,
+but allows distributed query processing on multiple servers.
+Reading is automatically parallelized.
+During a read, the table indexes on remote servers are used, if there are any.
+
+See full documentation here
+https://clickhouse.yandex/docs/en/table_engines/distributed.html
+
+#### Distributed(cluster, table=None, db_name=None, sharding_key=None)
+
+
+:param cluster: what cluster to access data from
+:param table: underlying table that actually stores data.
+If you are not specifying any table here, ensure that it can be inferred
+from your model's superclass (see models.DistributedModel.fix_engine_table)
+:param db_name: which database to access data from
+By default it is 'currentDatabase()'
+:param sharding_key: how to distribute data among shards when inserting
+straightly into Distributed table, optional
 
 
 ### CollapsingMergeTree

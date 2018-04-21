@@ -5,6 +5,9 @@ Unreleased
 ----------
 - Add support for compound filters with Q objects (desile)
 - Add support for BETWEEN operator (desile)
+- Distributed engine support (tsionyx)
+- `_fields` and `_writable_fields` are OrderedDicts - note that this might break backwards compatibility (tsionyx)
+- Improve error messages returned from the database with the `ServerError` class (tsionyx)
 
 v0.9.8
 ------
