@@ -304,7 +304,6 @@ class DistributedModel(Model):
     def set_database(self, db):
         assert isinstance(self.engine, Distributed), "engine must be engines.Distributed instance"
         res = super(DistributedModel, self).set_database(db)
-        self.engine.set_db_name(db.db_name)
         return res
 
     @classmethod
@@ -359,16 +358,13 @@ class DistributedModel(Model):
         cls.engine.table = storage_models[0]
 
     @classmethod
-    def create_table_sql(cls, db_name):
+    def create_table_sql(cls, db):
         assert isinstance(cls.engine, Distributed), "engine must be engines.Distributed instance"
-        cls.engine.set_db_name(db_name)
 
         cls.fix_engine_table()
 
         parts = [
             'CREATE TABLE IF NOT EXISTS `{0}`.`{1}` AS `{0}`.`{2}`'.format(
-                db_name, cls.table_name(), cls.engine.table_name),
-            'ENGINE = ' + cls.engine.create_table_sql()]
+                db.db_name, cls.table_name(), cls.engine.table_name),
+            'ENGINE = ' + cls.engine.create_table_sql(db)]
         return '\n'.join(parts)
-        cls.engine.set_db_name(db_name)
-        return super(MergeModel, cls).create_table_sql(db_name)

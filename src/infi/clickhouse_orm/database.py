@@ -328,8 +328,12 @@ class Database(object):
             return pytz.utc
 
     def _get_server_version(self, as_tuple=True):
-        r = self._send('SELECT version();')
-        ver = r.text
+        try:
+            r = self._send('SELECT version();')
+            ver = r.text
+        except ServerError as e:
+            logger.exception('Cannot determine server version (%s), assuming 1.1.0', e)
+            ver = '1.1.0'
         return tuple(int(n) for n in ver.split('.')) if as_tuple else ver
 
     def _is_connection_readonly(self):

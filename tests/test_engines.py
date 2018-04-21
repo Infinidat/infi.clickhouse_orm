@@ -1,18 +1,9 @@
 from __future__ import unicode_literals
 import unittest
 
-<<<<<<< HEAD
+from infi.clickhouse_orm.system_models import SystemPart
 from infi.clickhouse_orm.database import Database, DatabaseException, ServerError
 from infi.clickhouse_orm.models import Model, MergeModel, DistributedModel
-||||||| merged common ancestors
-from infi.clickhouse_orm.database import Database, DatabaseException
-from infi.clickhouse_orm.models import Model, MergeModel
-=======
-from infi.clickhouse_orm.system_models import SystemPart
-
-from infi.clickhouse_orm.database import Database, DatabaseException
-from infi.clickhouse_orm.models import Model, MergeModel
->>>>>>> 7fb05896926acab163a1f373092bf22cc0f3cb4f
 from infi.clickhouse_orm.fields import *
 from infi.clickhouse_orm.engines import *
 
@@ -167,15 +158,15 @@ class DistributedTestCase(_EnginesHelperTestCase):
         engine = Distributed('my_cluster')
 
         with self.assertRaises(ValueError) as cm:
-            engine.create_table_sql()
+            engine.create_table_sql(self.database)
 
         exc = cm.exception
         self.assertEqual(str(exc), 'Cannot create Distributed engine: specify an underlying table')
 
     def test_with_table_name(self):
         engine = Distributed('my_cluster', 'foo')
-        sql = engine.create_table_sql()
-        self.assertEqual(sql, 'Distributed(my_cluster, currentDatabase(), foo)')
+        sql = engine.create_table_sql(self.database)
+        self.assertEqual(sql, 'Distributed(`my_cluster`, `test-db`, `foo`)')
 
     class TestModel(SampleModel):
         engine = TinyLog()
