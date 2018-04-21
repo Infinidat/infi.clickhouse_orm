@@ -119,12 +119,12 @@ invalid values will cause a `ValueError` to be raised.
 Unrecognized field names will cause an `AttributeError`.
 
 
-#### Model.create_table_sql(db_name)
+#### Model.create_table_sql(db)
 
 Returns the SQL command for creating a table for this model.
 
 
-#### Model.drop_table_sql(db_name)
+#### Model.drop_table_sql(db)
 
 Returns the SQL command for deleting this model's table.
 
@@ -197,12 +197,12 @@ invalid values will cause a `ValueError` to be raised.
 Unrecognized field names will cause an `AttributeError`.
 
 
-#### BufferModel.create_table_sql(db_name)
+#### BufferModel.create_table_sql(db)
 
 Returns the SQL command for creating a table for this model.
 
 
-#### BufferModel.drop_table_sql(db_name)
+#### BufferModel.drop_table_sql(db)
 
 Returns the SQL command for deleting this model's table.
 

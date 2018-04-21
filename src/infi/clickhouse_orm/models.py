@@ -173,25 +173,25 @@ class Model(with_metaclass(ModelBase)):
         return cls.__name__.lower()
 
     @classmethod
-    def create_table_sql(cls, db_name):
+    def create_table_sql(cls, db):
         '''
         Returns the SQL command for creating a table for this model.
         '''
-        parts = ['CREATE TABLE IF NOT EXISTS `%s`.`%s` (' % (db_name, cls.table_name())]
+        parts = ['CREATE TABLE IF NOT EXISTS `%s`.`%s` (' % (db.db_name, cls.table_name())]
         cols = []
         for name, field in iteritems(cls.fields()):
             cols.append('    %s %s' % (name, field.get_sql()))
         parts.append(',\n'.join(cols))
         parts.append(')')
-        parts.append('ENGINE = ' + cls.engine.create_table_sql())
+        parts.append('ENGINE = ' + cls.engine.create_table_sql(db))
         return '\n'.join(parts)
 
     @classmethod
-    def drop_table_sql(cls, db_name):
+    def drop_table_sql(cls, db):
         '''
         Returns the SQL command for deleting this model's table.
         '''
-        return 'DROP TABLE IF EXISTS `%s`.`%s`' % (db_name, cls.table_name())
+        return 'DROP TABLE IF EXISTS `%s`.`%s`' % (db.db_name, cls.table_name())
 
     @classmethod
     def from_tsv(cls, line, field_names=None, timezone_in_use=pytz.utc, database=None):
@@ -265,12 +265,13 @@ class Model(with_metaclass(ModelBase)):
 class BufferModel(Model):
 
     @classmethod
-    def create_table_sql(cls, db_name):
+    def create_table_sql(cls, db):
         '''
         Returns the SQL command for creating a table for this model.
         '''
-        parts = ['CREATE TABLE IF NOT EXISTS `%s`.`%s` AS `%s`.`%s`' % (db_name, cls.table_name(), db_name, cls.engine.main_model.table_name())]
-        engine_str = cls.engine.create_table_sql(db_name)
+        parts = ['CREATE TABLE IF NOT EXISTS `%s`.`%s` AS `%s`.`%s`' % (db.db_name, cls.table_name(), db.db_name,
+                                                                        cls.engine.main_model.table_name())]
+        engine_str = cls.engine.create_table_sql(db)
         parts.append(engine_str)
         return ' '.join(parts)
 
@@ -286,21 +287,10 @@ class MergeModel(Model):
     # Virtual fields can't be inserted into database
     _table = StringField(readonly=True)
 
-    def set_database(self, db):
-        '''
-        Gets the `Database` that this model instance belongs to.
-        Returns `None` unless the instance was read from the database or written to it.
-        '''
-        assert isinstance(self.engine, Merge), "engine must be engines.Merge instance"
-        res = super(MergeModel, self).set_database(db)
-        self.engine.set_db_name(db.db_name)
-        return res
-
     @classmethod
-    def create_table_sql(cls, db_name):
+    def create_table_sql(cls, db):
         assert isinstance(cls.engine, Merge), "engine must be engines.Merge instance"
-        cls.engine.set_db_name(db_name)
-        return super(MergeModel, cls).create_table_sql(db_name)
+        return super(MergeModel, cls).create_table_sql(db)
 
 
 # TODO: base class for models that require specific engine
@@ -380,3 +370,5 @@ class DistributedModel(Model):
                 db_name, cls.table_name(), cls.engine.table_name),
             'ENGINE = ' + cls.engine.create_table_sql()]
         return '\n'.join(parts)
+        cls.engine.set_db_name(db_name)
+        return super(MergeModel, cls).create_table_sql(db_name)

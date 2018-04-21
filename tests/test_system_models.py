@@ -1,7 +1,10 @@
 from __future__ import unicode_literals
+
 import unittest
 from datetime import date
+
 import os
+
 from infi.clickhouse_orm.database import Database, DatabaseException
 from infi.clickhouse_orm.engines import *
 from infi.clickhouse_orm.fields import *
@@ -37,7 +40,9 @@ class SystemPartTest(unittest.TestCase):
     def setUp(self):
         self.database = Database('test-db')
         self.database.create_table(TestTable)
+        self.database.create_table(CustomPartitionedTable)
         self.database.insert([TestTable(date_field=date.today())])
+        self.database.insert([CustomPartitionedTable(date_field=date.today(), group_field=13)])
 
     def tearDown(self):
         self.database.drop_database()
@@ -51,40 +56,46 @@ class SystemPartTest(unittest.TestCase):
 
     def test_get_all(self):
         parts = SystemPart.get(self.database)
-        self.assertEqual(len(list(parts)), 1)
+        self.assertEqual(len(list(parts)), 2)
 
     def test_get_active(self):
         parts = list(SystemPart.get_active(self.database))
-        self.assertEqual(len(parts), 1)
+        self.assertEqual(len(parts), 2)
         parts[0].detach()
-        self.assertEqual(len(list(SystemPart.get_active(self.database))), 0)
+        self.assertEqual(len(list(SystemPart.get_active(self.database))), 1)
 
     def test_get_conditions(self):
         parts = list(SystemPart.get(self.database, conditions="table='testtable'"))
         self.assertEqual(len(parts), 1)
-        parts = list(SystemPart.get(self.database, conditions=u"table='othertable'"))
+        parts = list(SystemPart.get(self.database, conditions=u"table='custompartitionedtable'"))
+        self.assertEqual(len(parts), 1)
+        parts = list(SystemPart.get(self.database, conditions=u"table='invalidtable'"))
         self.assertEqual(len(parts), 0)
 
     def test_attach_detach(self):
         parts = list(SystemPart.get_active(self.database))
-        self.assertEqual(len(parts), 1)
-        parts[0].detach()
+        self.assertEqual(len(parts), 2)
+        for p in parts:
+            p.detach()
         self.assertEqual(len(list(SystemPart.get_active(self.database))), 0)
-        parts[0].attach()
-        self.assertEqual(len(list(SystemPart.get_active(self.database))), 1)
+        for p in parts:
+            p.attach()
+        self.assertEqual(len(list(SystemPart.get_active(self.database))), 2)
 
     def test_drop(self):
         parts = list(SystemPart.get_active(self.database))
-        parts[0].drop()
+        for p in parts:
+            p.drop()
         self.assertEqual(len(list(SystemPart.get_active(self.database))), 0)
 
     def test_freeze(self):
         parts = list(SystemPart.get(self.database))
         # There can be other backups in the folder
         prev_backups = set(self._get_backups())
-        parts[0].freeze()
+        for p in parts:
+            p.freeze()
         backups = set(self._get_backups())
-        self.assertEqual(len(backups), len(prev_backups) + 1)
+        self.assertEqual(len(backups), len(prev_backups) + 2)
 
     def test_fetch(self):
         # TODO Not tested, as I have no replication set
@@ -95,6 +106,13 @@ class TestTable(Model):
     date_field = DateField()
 
     engine = MergeTree('date_field', ('date_field',))
+
+
+class CustomPartitionedTable(Model):
+    date_field = DateField()
+    group_field = UInt32Field()
+
+    engine = MergeTree(order_by=('date_field', 'group_field'), partition_key=('toYYYYMM(date_field)', 'group_field'))
 
 
 class SystemTestModel(Model):
