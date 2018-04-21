@@ -56,6 +56,7 @@ There are different operators that can be used, by passing `<fieldname>__<operat
 ### Using the `in` Operator
 
 The `in` and `not_in` operators expect one of three types of values:
+
 * A list or tuple of simple values
 * A string, which is used verbatim as the contents of the parentheses
 * Another queryset (subquery)
