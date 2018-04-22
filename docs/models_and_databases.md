@@ -8,7 +8,7 @@ Database instances connect to a specific ClickHouse database for running queries
 Defining Models
 ---------------
 
-Models are defined in a way reminiscent of Django's ORM:
+Models are defined in a way reminiscent of Django's ORM, by subclassing `Model`:
 
     from infi.clickhouse_orm import models, fields, engines
 
@@ -21,7 +21,7 @@ Models are defined in a way reminiscent of Django's ORM:
 
         engine = engines.MergeTree('birthday', ('first_name', 'last_name', 'birthday'))
 
-The database columns in the database table are represented by model fields. Each field has a type, which matches the type of the corresponding database column. You can see all the supported fields types [here](field_types.md).
+The columns in the database table are represented by model fields. Each field has a type, which matches the type of the corresponding database column. All the supported fields types are listed [here](field_types.md).
 
 A model must have an `engine`, which determines how its table is stored on disk (if at all), and what capabilities it has. For more details about table engines see [here](table_engines.md).
 
@@ -51,7 +51,7 @@ It is not possible to specify a default value for a materialized field.
 
 ### Alias fields
 
-An alias field is is simply a different way to call another field in the model. For example:
+An alias field is simply a different way to call another field in the model. For example:
 
         date_born = field.DateField(alias="birthday")
 
