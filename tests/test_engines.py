@@ -137,10 +137,27 @@ class EnginesTestCase(_EnginesHelperTestCase):
                 order_by=('date', 'event_id', 'event_group'),
                 partition_key=('toYYYYMM(date)', 'event_group')
             )
+
+        class TestCollapseModel(SampleModel):
+            sign = Int8Field()
+
+            engine = CollapsingMergeTree(
+                sign_col='sign',
+                order_by=('date', 'event_id', 'event_group'),
+                partition_key=('toYYYYMM(date)', 'event_group')
+            )
+
         self._create_and_insert(TestModel)
-        parts = list(SystemPart.get(self.database))
-        self.assertEqual(1, len(parts))
+        self._create_and_insert(TestCollapseModel)
+
+        # Result order may be different, lets sort manually
+        parts = sorted(list(SystemPart.get(self.database)), key=lambda x: x.table)
+
+        self.assertEqual(2, len(parts))
+        self.assertEqual('testcollapsemodel', parts[0].table)
         self.assertEqual('(201701, 13)', parts[0].partition)
+        self.assertEqual('testmodel', parts[1].table)
+        self.assertEqual('(201701, 13)', parts[1].partition)
 
 
 class SampleModel(Model):
