@@ -98,7 +98,7 @@ class Database(object):
             self.create_database()
         self.server_version = self._get_server_version()
         # Versions 1.1.53981 and below don't have timezone function
-        self.server_timezone = self._get_server_timezone() if self.server_version[2] > 53981 else pytz.utc
+        self.server_timezone = self._get_server_timezone() if self.server_version > (1, 1, 53981) else pytz.utc
 
     def create_database(self):
         '''
