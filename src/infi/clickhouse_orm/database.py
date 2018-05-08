@@ -72,7 +72,8 @@ class Database(object):
     '''
 
     def __init__(self, db_name, db_url='http://localhost:8123/',
-                 username=None, password=None, readonly=False, autocreate=True):
+                 username=None, password=None, readonly=False, autocreate=True,
+                 get_timezone=True):
         '''
         Initializes a database instance. Unless it's readonly, the database will be
         created on the ClickHouse server if it does not already exist.
@@ -83,6 +84,7 @@ class Database(object):
         - `password`: optional connection credentials.
         - `readonly`: use a read-only connection.
         - `autocreate`: automatically create the database if does not exist (unless in readonly mode).
+        - `get_timezone`: automatically detect the server timezone.
         '''
         self.db_name = db_name
         self.db_url = db_url
@@ -96,7 +98,8 @@ class Database(object):
         elif autocreate:
             self.db_exists = False
             self.create_database()
-        self.server_timezone = self._get_server_timezone()
+
+        self.server_timezone = self._get_server_timezone() if get_timezone else pytz.utc
         self.server_version = self._get_server_version()
 
     def create_database(self):
