@@ -63,6 +63,7 @@ class QuerySetTestCase(TestCaseWithData):
     def test_filter_with_q_objects(self):
         qs = Person.objects_in(self.database)
         self._test_qs(qs.filter(Q(first_name='Ciaran')), 2)
+        self._test_qs(qs.filter(Q(passport__serial='22 78')), 100)
         self._test_qs(qs.filter(Q(first_name='Ciaran') | Q(first_name='Chelsea')), 3)
         self._test_qs(qs.filter(Q(first_name__in=['Warren', 'Whilemina', 'Whitney']) & Q(height__gte=1.7)), 3)
         self._test_qs(qs.filter((Q(first_name__in=['Warren', 'Whilemina', 'Whitney']) & Q(height__gte=1.7) |
