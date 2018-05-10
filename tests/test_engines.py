@@ -51,6 +51,12 @@ class EnginesTestCase(_EnginesHelperTestCase):
             expected = "ReplicatedMergeTree('/clickhouse/tables/{layer}-{shard}/hits', '{replica}', date, (date, event_id, event_group), 8192)"
         self.assertEquals(engine.create_table_sql(self.database), expected)
 
+    def test_replicated_merge_tree_incomplete(self):
+        with self.assertRaises(AssertionError):
+            MergeTree('date', ('date', 'event_id', 'event_group'), replica_table_path='/clickhouse/tables/{layer}-{shard}/hits')
+        with self.assertRaises(AssertionError):
+            MergeTree('date', ('date', 'event_id', 'event_group'), replica_name='{replica}')
+
     def test_collapsing_merge_tree(self):
         class TestModel(SampleModel):
             engine = CollapsingMergeTree('date', ('date', 'event_id', 'event_group'), 'event_version')

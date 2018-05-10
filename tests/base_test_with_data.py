@@ -21,8 +21,8 @@ class TestCaseWithData(unittest.TestCase):
         self.database.drop_table(Person)
         self.database.drop_database()
 
-    def _insert_and_check(self, data, count):
-        self.database.insert(data)
+    def _insert_and_check(self, data, count, batch_size=1000):
+        self.database.insert(data, batch_size=batch_size)
         self.assertEquals(count, self.database.count(Person))
         for instance in data:
             self.assertEquals(self.database, instance.get_database())

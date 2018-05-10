@@ -40,6 +40,8 @@ class MergeTree(Engine):
         assert date_col is None or isinstance(date_col, six.string_types), 'date_col must be string if present'
         assert partition_key is None or type(partition_key) in (list, tuple),\
             'partition_key must be tuple or list if present'
+        assert (replica_table_path is None) == (replica_name == None), \
+            'both replica_table_path and replica_name must be specified'
 
         # These values conflict with each other (old and new syntax of table engines.
         # So let's control only one of them is given.
@@ -52,7 +54,6 @@ class MergeTree(Engine):
         self.index_granularity = index_granularity
         self.replica_table_path = replica_table_path
         self.replica_name = replica_name
-        # TODO verify that both replica fields are either present or missing
 
     # I changed field name for new reality and syntax
     @property

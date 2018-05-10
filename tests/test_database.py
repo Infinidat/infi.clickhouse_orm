@@ -2,7 +2,7 @@
 from __future__ import unicode_literals
 import unittest
 
-from infi.clickhouse_orm.database import ServerError
+from infi.clickhouse_orm.database import ServerError, DatabaseException
 from .base_test_with_data import *
 
 
@@ -19,6 +19,12 @@ class DatabaseTestCase(TestCaseWithData):
 
     def test_insert__empty(self):
         self._insert_and_check([], 0)
+
+    def test_insert__small_batches(self):
+        self._insert_and_check(self._sample_data(), len(data), batch_size=10)
+
+    def test_insert__medium_batches(self):
+        self._insert_and_check(self._sample_data(), len(data), batch_size=100)
 
     def test_count(self):
         self.database.insert(self._sample_data())
@@ -150,3 +156,11 @@ class DatabaseTestCase(TestCaseWithData):
     def test_preexisting_db(self):
         db = Database(self.database.db_name, autocreate=False)
         db.count(Person)
+
+    def test_missing_engine(self):
+        class EnginelessModel(Model):
+            float_field = Float32Field()
+        with self.assertRaises(DatabaseException) as cm:
+            self.database.create_table(EnginelessModel)
+        self.assertEqual(cm.exception.message, 'EnginelessModel class must define an engine')
+

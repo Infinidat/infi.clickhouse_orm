@@ -116,9 +116,10 @@ class Database(object):
         '''
         Creates a table for the given model class, if it does not exist already.
         '''
-        # TODO check that model has an engine
         if model_class.system:
             raise DatabaseException("You can't create system table")
+        if getattr(model_class, 'engine') is None:
+            raise DatabaseException("%s class must define an engine" % model_class.__name__)
         self._send(model_class.create_table_sql(self))
 
     def drop_table(self, model_class):
