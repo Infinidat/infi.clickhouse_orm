@@ -34,10 +34,14 @@ class ModelBase(type):
         fields.update({n: f for n, f in iteritems(attrs) if isinstance(f, Field)})
         fields = sorted(iteritems(fields), key=lambda item: item[1].creation_counter)
 
+        # Build a dictionary of default values
+        defaults = {n: f.to_python(f.default, pytz.UTC) for n, f in fields}
+
         attrs = dict(
             attrs,
             _fields=OrderedDict(fields),
             _writable_fields=OrderedDict([f for f in fields if not f[1].readonly]),
+            _defaults=defaults
         )
         return super(ModelBase, cls).__new__(cls, str(name), bases, attrs)
 
@@ -116,9 +120,8 @@ class Model(with_metaclass(ModelBase)):
         Unrecognized field names will cause an `AttributeError`.
         '''
         super(Model, self).__init__()
-
-        self._database = None
-
+        # Assign default values
+        self.__dict__.update(self._defaults)
         # Assign field values from keyword arguments
         for name, value in iteritems(kwargs):
             field = self.get_field(name)
@@ -126,10 +129,6 @@ class Model(with_metaclass(ModelBase)):
                 setattr(self, name, value)
             else:
                 raise AttributeError('%s does not have a field called %s' % (self.__class__.__name__, name))
-        # Assign default values for fields not included in the keyword arguments
-        for name, field in iteritems(self.fields()):
-            if name not in kwargs:
-                setattr(self, name, field.default)
 
     def __setattr__(self, name, value):
         '''
@@ -168,8 +167,7 @@ class Model(with_metaclass(ModelBase)):
         '''
         Gets a `Field` instance given its name, or `None` if not found.
         '''
-        field = getattr(self.__class__, name, None)
-        return field if isinstance(field, Field) else None
+        return self._fields.get(name)
 
     @classmethod
     def table_name(cls):

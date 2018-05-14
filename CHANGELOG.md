@@ -12,6 +12,10 @@ Unreleased
 - Added attribute `server_version` to Database class (M1hacka)
 - Changed `Engine.create_table_sql()`, `Engine.drop_table_sql()`, `Model.create_table_sql()`, `Model.drop_table_sql()` parameter to db from db_name (M1hacka)
 - Fix parsing of datetime column type when it includes a timezone (M1hacka)
+- Rename `Model.system` to `Model._system` to prevent collision with a column that has the same name
+- Rename `Model.readonly` to `Model._readonly` to prevent collision with a column that has the same name
+- The `field_names` argument to `Model.to_tsv` is now mandatory
+- Improve creation time of model instances by keeping a dictionary of default values
 
 v0.9.8
 ------
