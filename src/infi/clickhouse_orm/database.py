@@ -116,7 +116,7 @@ class Database(object):
         '''
         Creates a table for the given model class, if it does not exist already.
         '''
-        if model_class.system:
+        if model_class.is_system_model():
             raise DatabaseException("You can't create system table")
         if getattr(model_class, 'engine') is None:
             raise DatabaseException("%s class must define an engine" % model_class.__name__)
@@ -126,7 +126,7 @@ class Database(object):
         '''
         Drops the database table of the given model class, if it exists.
         '''
-        if model_class.system:
+        if model_class.is_system_model():
             raise DatabaseException("You can't drop system table")
         self._send(model_class.drop_table_sql(self))
 
@@ -146,7 +146,7 @@ class Database(object):
             return  # model_instances is empty
         model_class = first_instance.__class__
 
-        if first_instance.readonly or first_instance.system:
+        if first_instance.is_read_only() or first_instance.is_system_model():
             raise DatabaseException("You can't insert into read only and system tables")
 
         fields_list = ','.join(

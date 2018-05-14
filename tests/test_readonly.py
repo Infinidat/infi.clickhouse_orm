@@ -48,6 +48,7 @@ class ReadonlyTestCase(TestCaseWithData):
 
     def test_insert_readonly(self):
         m = ReadOnlyModel(name='readonly')
+        self.database.create_table(ReadOnlyModel)
         with self.assertRaises(DatabaseException):
             self.database.insert([m])
 
@@ -59,7 +60,7 @@ class ReadonlyTestCase(TestCaseWithData):
 
 
 class ReadOnlyModel(Model):
-    readonly = True
+    _readonly = True
 
     name = StringField()
     date = DateField()

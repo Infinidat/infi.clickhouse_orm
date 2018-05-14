@@ -164,3 +164,15 @@ class DatabaseTestCase(TestCaseWithData):
             self.database.create_table(EnginelessModel)
         self.assertEqual(cm.exception.message, 'EnginelessModel class must define an engine')
 
+    def test_potentially_problematic_field_names(self):
+        class Model1(Model):
+            system = StringField()
+            readonly = StringField()
+            engine = Memory()
+        instance = Model1(system='s', readonly='r')
+        self.assertEquals(instance.to_dict(), dict(system='s', readonly='r'))
+        self.database.create_table(Model1)
+        self.database.insert([instance])
+        instance = Model1.objects_in(self.database)[0]
+        self.assertEquals(instance.to_dict(), dict(system='s', readonly='r'))
+

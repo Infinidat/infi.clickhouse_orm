@@ -22,7 +22,6 @@ class ModelBase(type):
     ad_hoc_model_cache = {}
 
     def __new__(cls, name, bases, attrs):
-        new_cls = super(ModelBase, cls).__new__(cls, str(name), bases, attrs)
         # Collect fields from parent classes
         base_fields = dict()
         for base in bases:
@@ -35,9 +34,12 @@ class ModelBase(type):
         fields.update({n: f for n, f in iteritems(attrs) if isinstance(f, Field)})
         fields = sorted(iteritems(fields), key=lambda item: item[1].creation_counter)
 
-        setattr(new_cls, '_fields', OrderedDict(fields))
-        setattr(new_cls, '_writable_fields', OrderedDict([f for f in fields if not f[1].readonly]))
-        return new_cls
+        attrs = dict(
+            attrs,
+            _fields=OrderedDict(fields),
+            _writable_fields=OrderedDict([f for f in fields if not f[1].readonly]),
+        )
+        return super(ModelBase, cls).__new__(cls, str(name), bases, attrs)
 
     @classmethod
     def create_ad_hoc_model(cls, fields, model_name='AdHocModel'):
@@ -99,10 +101,12 @@ class Model(with_metaclass(ModelBase)):
     engine = None
 
     # Insert operations are restricted for read only models
-    readonly = False
+    _readonly = False
 
     # Create table, drop table, insert operations are restricted for system models
-    system = False
+    _system = False
+
+    _database = None
 
     def __init__(self, **kwargs):
         '''
@@ -198,11 +202,10 @@ class Model(with_metaclass(ModelBase)):
         return 'DROP TABLE IF EXISTS `%s`.`%s`' % (db.db_name, cls.table_name())
 
     @classmethod
-    def from_tsv(cls, line, field_names=None, timezone_in_use=pytz.utc, database=None):
+    def from_tsv(cls, line, field_names, timezone_in_use=pytz.utc, database=None):
         '''
         Create a model instance from a tab-separated line. The line may or may not include a newline.
         The `field_names` list must match the fields defined in the model, but does not have to include all of them.
-        If omitted, it is assumed to be the names of all fields in the model, in order of definition.
 
         - `line`: the TSV-formatted data.
         - `field_names`: names of the model fields in the data.
@@ -210,7 +213,6 @@ class Model(with_metaclass(ModelBase)):
         - `database`: if given, sets the database that this instance belongs to.
         '''
         from six import next
-        field_names = field_names or list(cls.fields())
         values = iter(parse_tsv(line))
         kwargs = {}
         for name in field_names:
@@ -264,6 +266,20 @@ class Model(with_metaclass(ModelBase)):
         '''
         # noinspection PyProtectedMember,PyUnresolvedReferences
         return cls._writable_fields if writable else cls._fields
+
+    @classmethod
+    def is_read_only(cls):
+        '''
+        Returns true if the model is marked as read only.
+        '''
+        return cls._readonly
+
+    @classmethod
+    def is_system_model(cls):
+        '''
+        Returns true if the model represents a system table.
+        '''
+        return cls._system
 
 
 class BufferModel(Model):

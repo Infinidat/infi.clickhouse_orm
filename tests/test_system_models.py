@@ -116,4 +116,4 @@ class CustomPartitionedTable(Model):
 
 
 class SystemTestModel(Model):
-    system = True
+    _system = True
