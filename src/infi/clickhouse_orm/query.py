@@ -157,7 +157,11 @@ class FOV(object):
 
     def __init__(self, field_name, operator, value):
         self._field_name = field_name
-        self._operator = _operators[operator]
+        self._operator = _operators.get(operator)
+        if self._operator is None:
+            # then our field name contains __ like my__field
+            self._field_name = field_name + '__' + operator
+            self._operator = _operators['eq']
         self._value = value
 
     def to_sql(self, model_cls):
