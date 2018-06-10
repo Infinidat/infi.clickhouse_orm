@@ -164,12 +164,11 @@ If `writable` is true, only writable fields are included.
 Callers should not modify the dictionary.
 
 
-#### Model.from_tsv(line, field_names=None, timezone_in_use=UTC, database=None)
+#### Model.from_tsv(line, field_names, timezone_in_use=UTC, database=None)
 
 
 Create a model instance from a tab-separated line. The line may or may not include a newline.
 The `field_names` list must match the fields defined in the model, but does not have to include all of them.
-If omitted, it is assumed to be the names of all fields in the model, in order of definition.
 
 - `line`: the TSV-formatted data.
 - `field_names`: names of the model fields in the data.
@@ -188,6 +187,18 @@ Returns `None` unless the instance was read from the database or written to it.
 
 
 Gets a `Field` instance given its name, or `None` if not found.
+
+
+#### Model.is_read_only()
+
+
+Returns true if the model is marked as read only.
+
+
+#### Model.is_system_model()
+
+
+Returns true if the model represents a system table.
 
 
 #### Model.objects_in(database)
@@ -261,12 +272,11 @@ If `writable` is true, only writable fields are included.
 Callers should not modify the dictionary.
 
 
-#### BufferModel.from_tsv(line, field_names=None, timezone_in_use=UTC, database=None)
+#### BufferModel.from_tsv(line, field_names, timezone_in_use=UTC, database=None)
 
 
 Create a model instance from a tab-separated line. The line may or may not include a newline.
 The `field_names` list must match the fields defined in the model, but does not have to include all of them.
-If omitted, it is assumed to be the names of all fields in the model, in order of definition.
 
 - `line`: the TSV-formatted data.
 - `field_names`: names of the model fields in the data.
@@ -285,6 +295,18 @@ Returns `None` unless the instance was read from the database or written to it.
 
 
 Gets a `Field` instance given its name, or `None` if not found.
+
+
+#### BufferModel.is_read_only()
+
+
+Returns true if the model is marked as read only.
+
+
+#### BufferModel.is_system_model()
+
+
+Returns true if the model represents a system table.
 
 
 #### BufferModel.objects_in(database)
@@ -391,12 +413,11 @@ you can always mention the Foo model twice without bothering with any fixes:
 See tests.test_engines:DistributedTestCase for more examples
 
 
-#### DistributedModel.from_tsv(line, field_names=None, timezone_in_use=UTC, database=None)
+#### DistributedModel.from_tsv(line, field_names, timezone_in_use=UTC, database=None)
 
 
 Create a model instance from a tab-separated line. The line may or may not include a newline.
 The `field_names` list must match the fields defined in the model, but does not have to include all of them.
-If omitted, it is assumed to be the names of all fields in the model, in order of definition.
 
 - `line`: the TSV-formatted data.
 - `field_names`: names of the model fields in the data.
@@ -415,6 +436,18 @@ Returns `None` unless the instance was read from the database or written to it.
 
 
 Gets a `Field` instance given its name, or `None` if not found.
+
+
+#### DistributedModel.is_read_only()
+
+
+Returns true if the model is marked as read only.
+
+
+#### DistributedModel.is_system_model()
+
+
+Returns true if the model represents a system table.
 
 
 #### DistributedModel.objects_in(database)

@@ -16,6 +16,8 @@ Unreleased
 - Rename `Model.readonly` to `Model._readonly` to prevent collision with a column that has the same name
 - The `field_names` argument to `Model.to_tsv` is now mandatory
 - Improve creation time of model instances by keeping a dictionary of default values
+- Fix queryset bug when field name contains double underscores (YouCanKeepSilence)
+- Prevent exception when determining timezone of old ClickHouse versions (vv-p)
 
 v0.9.8
 ------
