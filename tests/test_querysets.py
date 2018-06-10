@@ -334,6 +334,20 @@ class AggregateTestCase(TestCaseWithData):
         print(qs.as_sql())
         self.assertEquals(qs.count(), 1)
 
+    def test_double_underscore_field(self):
+        class Mdl(Model):
+            the__number = Int32Field()
+            the__next__number = Int32Field()
+            engine = Memory()
+        qs = Mdl.objects_in(self.database).filter(the__number=1)
+        self.assertEquals(qs.conditions_as_sql(), 'the__number = 1')
+        qs = Mdl.objects_in(self.database).filter(the__number__gt=1)
+        self.assertEquals(qs.conditions_as_sql(), 'the__number > 1')
+        qs = Mdl.objects_in(self.database).filter(the__next__number=1)
+        self.assertEquals(qs.conditions_as_sql(), 'the__next__number = 1')
+        qs = Mdl.objects_in(self.database).filter(the__next__number__gt=1)
+        self.assertEquals(qs.conditions_as_sql(), 'the__next__number > 1')
+
 
 Color = Enum('Color', u'red blue green yellow brown white black')
 
@@ -351,3 +365,5 @@ class SampleModel(Model):
 class Numbers(Model):
 
     number = UInt64Field()
+
+
