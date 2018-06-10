@@ -96,8 +96,9 @@ class Database(object):
         elif autocreate:
             self.db_exists = False
             self.create_database()
-        self.server_timezone = self._get_server_timezone()
         self.server_version = self._get_server_version()
+        # Versions 1.1.53981 and below don't have timezone function
+        self.server_timezone = self._get_server_timezone() if self.server_version > (1, 1, 53981) else pytz.utc
 
     def create_database(self):
         '''
