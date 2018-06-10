@@ -37,6 +37,7 @@ class ServerError(DatabaseException):
         else:
             # just skip custom init
             # if non-standard message format
+            self.message = message
             super(ServerError, self).__init__(message)
 
     ERROR_PATTERN = re.compile(r'''

@@ -162,7 +162,7 @@ class DatabaseTestCase(TestCaseWithData):
             float_field = Float32Field()
         with self.assertRaises(DatabaseException) as cm:
             self.database.create_table(EnginelessModel)
-        self.assertEqual(cm.exception.message, 'EnginelessModel class must define an engine')
+        self.assertEqual(str(cm.exception), 'EnginelessModel class must define an engine')
 
     def test_potentially_problematic_field_names(self):
         class Model1(Model):
