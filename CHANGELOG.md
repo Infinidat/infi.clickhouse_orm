@@ -1,8 +1,8 @@
 Change Log
 ==========
 
-Unreleased
-----------
+v1.0.0
+------
 - Add support for compound filters with Q objects (desile)
 - Add support for BETWEEN operator (desile)
 - Distributed engine support (tsionyx)
