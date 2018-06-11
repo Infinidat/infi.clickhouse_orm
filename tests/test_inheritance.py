@@ -3,6 +3,7 @@ import unittest
 import datetime
 import pytz
 
+from infi.clickhouse_orm.database import Database
 from infi.clickhouse_orm.models import Model
 from infi.clickhouse_orm.fields import *
 from infi.clickhouse_orm.engines import *
@@ -11,7 +12,7 @@ from infi.clickhouse_orm.engines import *
 class InheritanceTestCase(unittest.TestCase):
 
     def assertFieldNames(self, model_class, names):
-        self.assertEquals(names, [name for name, field in model_class._fields])
+        self.assertEquals(names, list(model_class.fields()))
 
     def test_field_inheritance(self):
         self.assertFieldNames(ParentModel, ['date_field', 'int_field'])
@@ -19,9 +20,10 @@ class InheritanceTestCase(unittest.TestCase):
         self.assertFieldNames(Model2, ['date_field', 'int_field', 'float_field'])
 
     def test_create_table_sql(self):
-        sql1 = ParentModel.create_table_sql('default')
-        sql2 = Model1.create_table_sql('default')
-        sql3 = Model2.create_table_sql('default')
+        default_db = Database('default')
+        sql1 = ParentModel.create_table_sql(default_db)
+        sql2 = Model1.create_table_sql(default_db)
+        sql3 = Model2.create_table_sql(default_db)
         self.assertNotEqual(sql1, sql2)
         self.assertNotEqual(sql1, sql3)
         self.assertNotEqual(sql2, sql3)

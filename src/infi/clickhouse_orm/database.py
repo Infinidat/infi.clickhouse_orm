@@ -1,5 +1,6 @@
 from __future__ import unicode_literals
 
+import re
 import requests
 from collections import namedtuple
 from .models import ModelBase
@@ -22,6 +23,47 @@ class DatabaseException(Exception):
     Raised when a database operation fails.
     '''
     pass
+
+
+class ServerError(DatabaseException):
+    """
+    Raised when a server returns an error.
+    """
+    def __init__(self, message):
+        self.code = None
+        processed = self.get_error_code_msg(message)
+        if processed:
+            self.code, self.message = processed
+        else:
+            # just skip custom init
+            # if non-standard message format
+            self.message = message
+            super(ServerError, self).__init__(message)
+
+    ERROR_PATTERN = re.compile(r'''
+        Code:\ (?P<code>\d+),
+        \ e\.displayText\(\)\ =\ (?P<type1>[^ \n]+):\ (?P<msg>.+?),
+        \ e.what\(\)\ =\ (?P<type2>[^ \n]+)
+    ''', re.VERBOSE | re.DOTALL)
+
+    @classmethod
+    def get_error_code_msg(cls, full_error_message):
+        """
+        Extract the code and message of the exception that clickhouse-server generated.
+
+        See the list of error codes here:
+        https://github.com/yandex/ClickHouse/blob/master/dbms/src/Common/ErrorCodes.cpp
+        """
+        match = cls.ERROR_PATTERN.match(full_error_message)
+        if match:
+            # assert match.group('type1') == match.group('type2')
+            return int(match.group('code')), match.group('msg')
+
+        return 0, full_error_message
+
+    def __str__(self):
+        if self.code is not None:
+            return "{} ({})".format(self.message, self.code)
 
 
 class Database(object):
@@ -55,7 +97,9 @@ class Database(object):
         elif autocreate:
             self.db_exists = False
             self.create_database()
-        self.server_timezone = self._get_server_timezone()
+        self.server_version = self._get_server_version()
+        # Versions 1.1.53981 and below don't have timezone function
+        self.server_timezone = self._get_server_timezone() if self.server_version > (1, 1, 53981) else pytz.utc
 
     def create_database(self):
         '''
@@ -74,18 +118,19 @@ class Database(object):
         '''
         Creates a table for the given model class, if it does not exist already.
         '''
-        # TODO check that model has an engine
-        if model_class.system:
+        if model_class.is_system_model():
             raise DatabaseException("You can't create system table")
-        self._send(model_class.create_table_sql(self.db_name))
+        if getattr(model_class, 'engine') is None:
+            raise DatabaseException("%s class must define an engine" % model_class.__name__)
+        self._send(model_class.create_table_sql(self))
 
     def drop_table(self, model_class):
         '''
         Drops the database table of the given model class, if it exists.
         '''
-        if model_class.system:
+        if model_class.is_system_model():
             raise DatabaseException("You can't drop system table")
-        self._send(model_class.drop_table_sql(self.db_name))
+        self._send(model_class.drop_table_sql(self))
 
     def insert(self, model_instances, batch_size=1000):
         '''
@@ -103,11 +148,11 @@ class Database(object):
             return  # model_instances is empty
         model_class = first_instance.__class__
 
-        if first_instance.readonly or first_instance.system:
+        if first_instance.is_read_only() or first_instance.is_system_model():
             raise DatabaseException("You can't insert into read only and system tables")
 
         fields_list = ','.join(
-            ['`%s`' % name for name, _ in first_instance._writable_fields])
+            ['`%s`' % name for name in first_instance.fields(writable=True)])
 
         def gen():
             buf = BytesIO()
@@ -250,7 +295,7 @@ class Database(object):
         params = self._build_params(settings)
         r = requests.post(self.db_url, params=params, data=data, stream=stream)
         if r.status_code != 200:
-            raise DatabaseException(r.text)
+            raise ServerError(r.text)
         return r
 
     def _build_params(self, settings):
@@ -281,9 +326,18 @@ class Database(object):
         try:
             r = self._send('SELECT timezone()')
             return pytz.timezone(r.text.strip())
-        except DatabaseException:
-            logger.exception('Cannot determine server timezone, assuming UTC')
+        except ServerError as e:
+            logger.exception('Cannot determine server timezone (%s), assuming UTC', e)
             return pytz.utc
+
+    def _get_server_version(self, as_tuple=True):
+        try:
+            r = self._send('SELECT version();')
+            ver = r.text
+        except ServerError as e:
+            logger.exception('Cannot determine server version (%s), assuming 1.1.0', e)
+            ver = '1.1.0'
+        return tuple(int(n) for n in ver.split('.')) if as_tuple else ver
 
     def _is_connection_readonly(self):
         r = self._send("SELECT value FROM system.settings WHERE name = 'readonly'")

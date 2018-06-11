@@ -1,6 +1,24 @@
 Change Log
 ==========
 
+v1.0.0
+------
+- Add support for compound filters with Q objects (desile)
+- Add support for BETWEEN operator (desile)
+- Distributed engine support (tsionyx)
+- `_fields` and `_writable_fields` are OrderedDicts - note that this might break backwards compatibility (tsionyx)
+- Improve error messages returned from the database with the `ServerError` class (tsionyx)
+- Added support for custom partitioning (M1hacka)
+- Added attribute `server_version` to Database class (M1hacka)
+- Changed `Engine.create_table_sql()`, `Engine.drop_table_sql()`, `Model.create_table_sql()`, `Model.drop_table_sql()` parameter to db from db_name (M1hacka)
+- Fix parsing of datetime column type when it includes a timezone (M1hacka)
+- Rename `Model.system` to `Model._system` to prevent collision with a column that has the same name
+- Rename `Model.readonly` to `Model._readonly` to prevent collision with a column that has the same name
+- The `field_names` argument to `Model.to_tsv` is now mandatory
+- Improve creation time of model instances by keeping a dictionary of default values
+- Fix queryset bug when field name contains double underscores (YouCanKeepSilence)
+- Prevent exception when determining timezone of old ClickHouse versions (vv-p)
+
 v0.9.8
 ------
 - Bug fix: add field names list explicitly to Database.insert method (anci)

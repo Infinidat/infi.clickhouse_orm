@@ -1,7 +1,7 @@
 Table Engines
 =============
 
-See: [ClickHouse Documentation](https://clickhouse.yandex/reference_en.html#Table+engines)
+See: [ClickHouse Documentation](https://clickhouse.yandex/docs/en/table_engines/)
 
 Each model must have an engine instance, used when creating the table in ClickHouse.
 
@@ -16,6 +16,7 @@ The following engines are supported by the ORM:
 - ReplacingMergeTree / ReplicatedReplacingMergeTree
 - Buffer
 - Merge
+- Distributed
 
 
 Simple Engines
@@ -26,7 +27,7 @@ Simple Engines
     engine = engines.TinyLog()
 
     engine = engines.Log()
-    
+
     engine = engines.Memory()
 
 
@@ -54,6 +55,24 @@ For a `ReplacingMergeTree` you can optionally specify the version column:
 
     engine = engines.ReplacingMergeTree('EventDate', ('OrderID', 'EventDate', 'BannerID'), ver_col='Version')
 
+### Custom partitioning
+
+ClickHouse supports [custom partitioning](https://clickhouse.yandex/docs/en/table_engines/custom_partitioning_key/) expressions since version 1.1.54310
+
+You can use custom partitioning with any `MergeTree` family engine.
+To set custom partitioning:
+
+* Instead of specifying the `date_col` (first) constructor parameter, pass a tuple of field names or expressions in the `order_by` (second) constructor parameter.
+* Add `partition_key` parameter. It should be a tuple of expressions, by which partitions are built.
+
+Standard monthly partitioning by date column can be specified using the `toYYYYMM(date)` function.
+
+Example:
+
+    engine = engines.ReplacingMergeTree(order_by=('OrderID', 'EventDate', 'BannerID'), ver_col='Version',
+                                        partition_key=('toYYYYMM(EventDate)', 'BannerID'))
+
+
 ### Data Replication
 
 Any of the above engines can be converted to a replicated engine (e.g. `ReplicatedMergeTree`) by adding two parameters, `replica_table_path` and `replica_name`:
@@ -67,7 +86,7 @@ Buffer Engine
 -------------
 
 A `Buffer` engine is only used in conjunction with a `BufferModel`.
-The model should be a subclass of both `models.BufferModel` and the main model. 
+The model should be a subclass of both `models.BufferModel` and the main model.
 The main model is also passed to the engine:
 
     class PersonBuffer(models.BufferModel, Person):
@@ -76,8 +95,8 @@ The main model is also passed to the engine:
 
 Additional buffer parameters can optionally be specified:
 
-        engine = engines.Buffer(Person, num_layers=16, min_time=10, 
-                                max_time=100, min_rows=10000, max_rows=1000000, 
+        engine = engines.Buffer(Person, num_layers=16, min_time=10,
+                                max_time=100, min_rows=10000, max_rows=1000000,
                                 min_bytes=10000000, max_bytes=100000000)
 
 Then you can insert objects into Buffer model and they will be handled by ClickHouse properly:
@@ -86,13 +105,14 @@ Then you can insert objects into Buffer model and they will be handled by ClickH
     suzy = PersonBuffer(first_name='Suzy', last_name='Jones')
     dan = PersonBuffer(first_name='Dan', last_name='Schwartz')
     db.insert([dan, suzy])
-    
-    
+
+
 Merge Engine
 -------------
 
-[ClickHouse docs](https://clickhouse.yandex/docs/en/single/index.html#merge)  
-A `Merge` engine is only used in conjunction with a `MergeModel`.   
+[ClickHouse docs](https://clickhouse.yandex/docs/en/table_engines/merge/)
+
+A `Merge` engine is only used in conjunction with a `MergeModel`.
 This table does not store data itself, but allows reading from any number of other tables simultaneously. So you can't insert in it.
 Engine parameter specifies re2 (similar to PCRE) regular expression, from which data is selected.
 

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-from infi.clickhouse_orm.database import DatabaseException
+from infi.clickhouse_orm.database import DatabaseException, ServerError
 from .base_test_with_data import *
 
 
@@ -12,21 +12,33 @@ class ReadonlyTestCase(TestCaseWithData):
         orig_database = self.database
         try:
             self.database = Database(orig_database.db_name, username=username, readonly=True)
-            with self.assertRaises(DatabaseException):
+            with self.assertRaises(ServerError) as cm:
                 self._insert_and_check(self._sample_data(), len(data))
+            self._check_db_readonly_err(cm.exception)
+
             self.assertEquals(self.database.count(Person), 100)
             list(self.database.select('SELECT * from $table', Person))
-            with self.assertRaises(DatabaseException):
+            with self.assertRaises(ServerError) as cm:
                 self.database.drop_table(Person)
-            with self.assertRaises(DatabaseException):
+            self._check_db_readonly_err(cm.exception, drop_table=True)
+
+            with self.assertRaises(ServerError) as cm:
                 self.database.drop_database()
-        except DatabaseException as e:
-            if 'Unknown user' in six.text_type(e):
+            self._check_db_readonly_err(cm.exception, drop_table=True)
+        except ServerError as e:
+            if e.code == 192 and e.message.startswith('Unknown user'):
                 raise unittest.SkipTest('Database user "%s" is not defined' % username)
             else:
                 raise
         finally:
             self.database = orig_database
+
+    def _check_db_readonly_err(self, exc, drop_table=None):
+        self.assertEqual(exc.code, 164)
+        if drop_table:
+            self.assertEqual(exc.message, 'Cannot drop table in readonly mode')
+        else:
+            self.assertEqual(exc.message, 'Cannot insert into table in readonly mode')
 
     def test_readonly_db_with_default_user(self):
         self._test_readonly_db('default')
@@ -36,6 +48,7 @@ class ReadonlyTestCase(TestCaseWithData):
 
     def test_insert_readonly(self):
         m = ReadOnlyModel(name='readonly')
+        self.database.create_table(ReadOnlyModel)
         with self.assertRaises(DatabaseException):
             self.database.insert([m])
 
@@ -47,7 +60,7 @@ class ReadonlyTestCase(TestCaseWithData):
 
 
 class ReadOnlyModel(Model):
-    readonly = True
+    _readonly = True
 
     name = StringField()
     date = DateField()

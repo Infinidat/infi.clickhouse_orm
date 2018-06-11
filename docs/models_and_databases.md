@@ -8,7 +8,7 @@ Database instances connect to a specific ClickHouse database for running queries
 Defining Models
 ---------------
 
-Models are defined in a way reminiscent of Django's ORM:
+Models are defined in a way reminiscent of Django's ORM, by subclassing `Model`:
 
     from infi.clickhouse_orm import models, fields, engines
 
@@ -21,9 +21,43 @@ Models are defined in a way reminiscent of Django's ORM:
 
         engine = engines.MergeTree('birthday', ('first_name', 'last_name', 'birthday'))
 
-It is possible to provide a default value for a field, instead of its "natural" default (empty string for string fields, zero for numeric fields etc.). Alternatively it is possible to pass alias or materialized parameters (see below for usage examples). Only one of `default`, `alias` and `materialized` parameters can be provided.
+The columns in the database table are represented by model fields. Each field has a type, which matches the type of the corresponding database column. All the supported fields types are listed [here](field_types.md).
 
-For more details see [Field Types](field_types.md) and [Table Engines](table_engines.md).
+A model must have an `engine`, which determines how its table is stored on disk (if at all), and what capabilities it has. For more details about table engines see [here](table_engines.md).
+
+### Default values
+
+Each field has a "natural" default value - empty string for string fields, zero for numeric fields etc. To specify a different value use the `default` parameter:
+
+        first_name = fields.StringField(default="anonymous")
+
+### Null values
+
+To allow null values in a field, wrap it inside a `NullableField`:
+
+        birthday = fields.NullableField(fields.DateField())
+
+In this case, the default value for that fields becomes `null` unless otherwide specified.
+
+### Materialized fields
+
+The value of a materialized field is calculated from other fields in the model. For example:
+
+        year_born = fields.Int16Field(materialized="toYear(birthday)")
+
+Materialized fields are read-only, meaning that their values are not sent to the database when inserting records.
+
+It is not possible to specify a default value for a materialized field.
+
+### Alias fields
+
+An alias field is simply a different way to call another field in the model. For example:
+
+        date_born = field.DateField(alias="birthday")
+
+Alias fields are read-only, meaning that their values are not sent to the database when inserting records.
+
+It is not possible to specify a default value for an alias field.
 
 ### Table Names
 

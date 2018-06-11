@@ -2,7 +2,7 @@
 from __future__ import unicode_literals
 import unittest
 
-from infi.clickhouse_orm.database import Database, DatabaseException
+from infi.clickhouse_orm.database import ServerError, DatabaseException
 from .base_test_with_data import *
 
 
@@ -19,6 +19,12 @@ class DatabaseTestCase(TestCaseWithData):
 
     def test_insert__empty(self):
         self._insert_and_check([], 0)
+
+    def test_insert__small_batches(self):
+        self._insert_and_check(self._sample_data(), len(data), batch_size=10)
+
+    def test_insert__medium_batches(self):
+        self._insert_and_check(self._sample_data(), len(data), batch_size=100)
 
     def test_count(self):
         self.database.insert(self._sample_data())
@@ -131,14 +137,42 @@ class DatabaseTestCase(TestCaseWithData):
         self.assertEqual(results, "Whitney\tDurham\t1977-09-15\t1.72\nWhitney\tScott\t1971-07-04\t1.7\n")
 
     def test_invalid_user(self):
-        with self.assertRaises(DatabaseException):
+        with self.assertRaises(ServerError) as cm:
             Database(self.database.db_name, username='default', password='wrong')
+
+        exc = cm.exception
+        self.assertEqual(exc.code, 193)
+        self.assertEqual(exc.message, 'Wrong password for user default')
 
     def test_nonexisting_db(self):
         db = Database('db_not_here', autocreate=False)
-        with self.assertRaises(DatabaseException):
+        with self.assertRaises(ServerError) as cm:
             db.create_table(Person)
+
+        exc = cm.exception
+        self.assertEqual(exc.code, 81)
+        self.assertEqual(exc.message, "Database db_not_here doesn't exist")
 
     def test_preexisting_db(self):
         db = Database(self.database.db_name, autocreate=False)
         db.count(Person)
+
+    def test_missing_engine(self):
+        class EnginelessModel(Model):
+            float_field = Float32Field()
+        with self.assertRaises(DatabaseException) as cm:
+            self.database.create_table(EnginelessModel)
+        self.assertEqual(str(cm.exception), 'EnginelessModel class must define an engine')
+
+    def test_potentially_problematic_field_names(self):
+        class Model1(Model):
+            system = StringField()
+            readonly = StringField()
+            engine = Memory()
+        instance = Model1(system='s', readonly='r')
+        self.assertEquals(instance.to_dict(), dict(system='s', readonly='r'))
+        self.database.create_table(Model1)
+        self.database.insert([instance])
+        instance = Model1.objects_in(self.database)[0]
+        self.assertEquals(instance.to_dict(), dict(system='s', readonly='r'))
+

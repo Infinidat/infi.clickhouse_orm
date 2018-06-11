@@ -1,14 +1,15 @@
 from __future__ import unicode_literals
 import sys
+from collections import OrderedDict
 from logging import getLogger
 
-from six import with_metaclass, reraise
+from six import with_metaclass, reraise, iteritems
 import pytz
 
 from .fields import Field, StringField
 from .utils import parse_tsv
 from .query import QuerySet
-from .engines import Merge
+from .engines import Merge, Distributed
 
 logger = getLogger('clickhouse_orm')
 
@@ -21,18 +22,28 @@ class ModelBase(type):
     ad_hoc_model_cache = {}
 
     def __new__(cls, name, bases, attrs):
-        new_cls = super(ModelBase, cls).__new__(cls, str(name), bases, attrs)
         # Collect fields from parent classes
-        base_fields = []
+        base_fields = dict()
         for base in bases:
             if isinstance(base, ModelBase):
-                base_fields += base._fields
+                base_fields.update(base._fields)
+
+        fields = base_fields
+
         # Build a list of fields, in the order they were listed in the class
-        fields = base_fields + [item for item in attrs.items() if isinstance(item[1], Field)]
-        fields.sort(key=lambda item: item[1].creation_counter)
-        setattr(new_cls, '_fields', fields)
-        setattr(new_cls, '_writable_fields', [f for f in fields if not f[1].readonly])
-        return new_cls
+        fields.update({n: f for n, f in iteritems(attrs) if isinstance(f, Field)})
+        fields = sorted(iteritems(fields), key=lambda item: item[1].creation_counter)
+
+        # Build a dictionary of default values
+        defaults = {n: f.to_python(f.default, pytz.UTC) for n, f in fields}
+
+        attrs = dict(
+            attrs,
+            _fields=OrderedDict(fields),
+            _writable_fields=OrderedDict([f for f in fields if not f[1].readonly]),
+            _defaults=defaults
+        )
+        return super(ModelBase, cls).__new__(cls, str(name), bases, attrs)
 
     @classmethod
     def create_ad_hoc_model(cls, fields, model_name='AdHocModel'):
@@ -57,6 +68,10 @@ class ModelBase(type):
         # Enums
         if db_type.startswith('Enum'):
             return orm_fields.BaseEnumField.create_ad_hoc_field(db_type)
+        # DateTime with timezone
+        if db_type.startswith('DateTime('):
+            # Some functions return DateTimeField with timezone in brackets
+            return orm_fields.DateTimeField()
         # Arrays
         if db_type.startswith('Array'):
             inner_field = cls.create_ad_hoc_field(db_type[6 : -1])
@@ -90,10 +105,12 @@ class Model(with_metaclass(ModelBase)):
     engine = None
 
     # Insert operations are restricted for read only models
-    readonly = False
+    _readonly = False
 
     # Create table, drop table, insert operations are restricted for system models
-    system = False
+    _system = False
+
+    _database = None
 
     def __init__(self, **kwargs):
         '''
@@ -103,20 +120,15 @@ class Model(with_metaclass(ModelBase)):
         Unrecognized field names will cause an `AttributeError`.
         '''
         super(Model, self).__init__()
-
-        self._database = None
-
+        # Assign default values
+        self.__dict__.update(self._defaults)
         # Assign field values from keyword arguments
-        for name, value in kwargs.items():
+        for name, value in iteritems(kwargs):
             field = self.get_field(name)
             if field:
                 setattr(self, name, value)
             else:
                 raise AttributeError('%s does not have a field called %s' % (self.__class__.__name__, name))
-        # Assign default values for fields not included in the keyword arguments
-        for name, field in self._fields:
-            if name not in kwargs:
-                setattr(self, name, field.default)
 
     def __setattr__(self, name, value):
         '''
@@ -155,8 +167,7 @@ class Model(with_metaclass(ModelBase)):
         '''
         Gets a `Field` instance given its name, or `None` if not found.
         '''
-        field = getattr(self.__class__, name, None)
-        return field if isinstance(field, Field) else None
+        return self._fields.get(name)
 
     @classmethod
     def table_name(cls):
@@ -168,32 +179,31 @@ class Model(with_metaclass(ModelBase)):
         return cls.__name__.lower()
 
     @classmethod
-    def create_table_sql(cls, db_name):
+    def create_table_sql(cls, db):
         '''
         Returns the SQL command for creating a table for this model.
         '''
-        parts = ['CREATE TABLE IF NOT EXISTS `%s`.`%s` (' % (db_name, cls.table_name())]
+        parts = ['CREATE TABLE IF NOT EXISTS `%s`.`%s` (' % (db.db_name, cls.table_name())]
         cols = []
-        for name, field in cls._fields:
+        for name, field in iteritems(cls.fields()):
             cols.append('    %s %s' % (name, field.get_sql()))
         parts.append(',\n'.join(cols))
         parts.append(')')
-        parts.append('ENGINE = ' + cls.engine.create_table_sql())
+        parts.append('ENGINE = ' + cls.engine.create_table_sql(db))
         return '\n'.join(parts)
 
     @classmethod
-    def drop_table_sql(cls, db_name):
+    def drop_table_sql(cls, db):
         '''
         Returns the SQL command for deleting this model's table.
         '''
-        return 'DROP TABLE IF EXISTS `%s`.`%s`' % (db_name, cls.table_name())
+        return 'DROP TABLE IF EXISTS `%s`.`%s`' % (db.db_name, cls.table_name())
 
     @classmethod
-    def from_tsv(cls, line, field_names=None, timezone_in_use=pytz.utc, database=None):
+    def from_tsv(cls, line, field_names, timezone_in_use=pytz.utc, database=None):
         '''
         Create a model instance from a tab-separated line. The line may or may not include a newline.
         The `field_names` list must match the fields defined in the model, but does not have to include all of them.
-        If omitted, it is assumed to be the names of all fields in the model, in order of definition.
 
         - `line`: the TSV-formatted data.
         - `field_names`: names of the model fields in the data.
@@ -201,7 +211,6 @@ class Model(with_metaclass(ModelBase)):
         - `database`: if given, sets the database that this instance belongs to.
         '''
         from six import next
-        field_names = field_names or [name for name, field in cls._fields]
         values = iter(parse_tsv(line))
         kwargs = {}
         for name in field_names:
@@ -221,8 +230,8 @@ class Model(with_metaclass(ModelBase)):
         - `include_readonly`: if false, returns only fields that can be inserted into database.
         '''
         data = self.__dict__
-        fields = self._fields if include_readonly else self._writable_fields
-        return '\t'.join(field.to_db_string(data[name], quote=False) for name, field in fields)
+        fields = self.fields(writable=not include_readonly)
+        return '\t'.join(field.to_db_string(data[name], quote=False) for name, field in iteritems(fields))
 
     def to_dict(self, include_readonly=True, field_names=None):
         '''
@@ -231,13 +240,13 @@ class Model(with_metaclass(ModelBase)):
         - `include_readonly`: if false, returns only fields that can be inserted into database.
         - `field_names`: an iterable of field names to return (optional)
         '''
-        fields = self._fields if include_readonly else self._writable_fields
+        fields = self.fields(writable=not include_readonly)
 
         if field_names is not None:
-            fields = [f for f in fields if f[0] in field_names]
+            fields = [f for f in fields if f in field_names]
 
         data = self.__dict__
-        return {name: data[name] for name, field in fields}
+        return {name: data[name] for name in fields}
 
     @classmethod
     def objects_in(cls, database):
@@ -246,16 +255,41 @@ class Model(with_metaclass(ModelBase)):
         '''
         return QuerySet(cls, database)
 
+    @classmethod
+    def fields(cls, writable=False):
+        '''
+        Returns an `OrderedDict` of the model's fields (from name to `Field` instance).
+        If `writable` is true, only writable fields are included.
+        Callers should not modify the dictionary.
+        '''
+        # noinspection PyProtectedMember,PyUnresolvedReferences
+        return cls._writable_fields if writable else cls._fields
+
+    @classmethod
+    def is_read_only(cls):
+        '''
+        Returns true if the model is marked as read only.
+        '''
+        return cls._readonly
+
+    @classmethod
+    def is_system_model(cls):
+        '''
+        Returns true if the model represents a system table.
+        '''
+        return cls._system
+
 
 class BufferModel(Model):
 
     @classmethod
-    def create_table_sql(cls, db_name):
+    def create_table_sql(cls, db):
         '''
         Returns the SQL command for creating a table for this model.
         '''
-        parts = ['CREATE TABLE IF NOT EXISTS `%s`.`%s` AS `%s`.`%s`' % (db_name, cls.table_name(), db_name, cls.engine.main_model.table_name())]
-        engine_str = cls.engine.create_table_sql(db_name)
+        parts = ['CREATE TABLE IF NOT EXISTS `%s`.`%s` AS `%s`.`%s`' % (db.db_name, cls.table_name(), db.db_name,
+                                                                        cls.engine.main_model.table_name())]
+        engine_str = cls.engine.create_table_sql(db)
         parts.append(engine_str)
         return ' '.join(parts)
 
@@ -271,18 +305,84 @@ class MergeModel(Model):
     # Virtual fields can't be inserted into database
     _table = StringField(readonly=True)
 
+    @classmethod
+    def create_table_sql(cls, db):
+        assert isinstance(cls.engine, Merge), "engine must be engines.Merge instance"
+        return super(MergeModel, cls).create_table_sql(db)
+
+
+# TODO: base class for models that require specific engine
+
+
+class DistributedModel(Model):
+    """
+    Model for Distributed engine
+    """
+
     def set_database(self, db):
-        '''
-        Gets the `Database` that this model instance belongs to.
-        Returns `None` unless the instance was read from the database or written to it.
-        '''
-        assert isinstance(self.engine, Merge), "engine must be engines.Merge instance"
-        res = super(MergeModel, self).set_database(db)
-        self.engine.set_db_name(db.db_name)
+        assert isinstance(self.engine, Distributed), "engine must be engines.Distributed instance"
+        res = super(DistributedModel, self).set_database(db)
         return res
 
     @classmethod
-    def create_table_sql(cls, db_name):
-        assert isinstance(cls.engine, Merge), "engine must be engines.Merge instance"
-        cls.engine.set_db_name(db_name)
-        return super(MergeModel, cls).create_table_sql(db_name)
+    def fix_engine_table(cls):
+        """
+        Remember: Distributed table does not store any data, just provides distributed access to it.
+
+        So if we define a model with engine that has no defined table for data storage
+        (see FooDistributed below), that table cannot be successfully created.
+        This routine can automatically fix engine's storage table by finding the first
+        non-distributed model among your model's superclasses.
+
+        >>> class Foo(Model):
+        ...     id = UInt8Field(1)
+        ...
+        >>> class FooDistributed(Foo, DistributedModel):
+        ...     engine = Distributed('my_cluster')
+        ...
+        >>> FooDistributed.engine.table
+        None
+        >>> FooDistributed.fix_engine()
+        >>> FooDistributed.engine.table
+        <class '__main__.Foo'>
+
+        However if you prefer more explicit way of doing things,
+        you can always mention the Foo model twice without bothering with any fixes:
+
+        >>> class FooDistributedVerbose(Foo, DistributedModel):
+        ...     engine = Distributed('my_cluster', Foo)
+        >>> FooDistributedVerbose.engine.table
+        <class '__main__.Foo'>
+
+        See tests.test_engines:DistributedTestCase for more examples
+        """
+
+        # apply only when engine has no table defined
+        if cls.engine.table_name:
+            return
+
+        # find out all the superclasses of the Model that store any data
+        storage_models = [b for b in cls.__bases__ if issubclass(b, Model)
+                          and not issubclass(b, DistributedModel)]
+        if not storage_models:
+            raise TypeError("When defining Distributed engine without the table_name "
+                            "ensure that your model has a parent model")
+
+        if len(storage_models) > 1:
+            raise TypeError("When defining Distributed engine without the table_name "
+                            "ensure that your model has exactly one non-distributed superclass")
+
+        # enable correct SQL for engine
+        cls.engine.table = storage_models[0]
+
+    @classmethod
+    def create_table_sql(cls, db):
+        assert isinstance(cls.engine, Distributed), "engine must be engines.Distributed instance"
+
+        cls.fix_engine_table()
+
+        parts = [
+            'CREATE TABLE IF NOT EXISTS `{0}`.`{1}` AS `{0}`.`{2}`'.format(
+                db.db_name, cls.table_name(), cls.engine.table_name),
+            'ENGINE = ' + cls.engine.create_table_sql(db)]
+        return '\n'.join(parts)

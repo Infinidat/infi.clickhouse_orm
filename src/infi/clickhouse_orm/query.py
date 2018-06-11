@@ -7,7 +7,6 @@ from .utils import comma_join
 
 
 # TODO
-# - and/or between Q objects
 # - check that field names are valid
 # - operators for arrays: length, has, empty
 
@@ -103,6 +102,29 @@ class NotOperator(Operator):
         return 'NOT (%s)' % self._base_operator.to_sql(model_cls, field_name, value)
 
 
+class BetweenOperator(Operator):
+    """
+    An operator that implements BETWEEN.
+    Accepts list or tuple of two elements and generates sql condition:
+    - 'BETWEEN value[0] AND value[1]' if value[0] and value[1] are not None and not empty
+    Then imitations of BETWEEN, where one of two limits is missing
+    - '>= value[0]' if value[1] is None or empty
+    - '<= value[1]' if value[0] is None or empty
+    """
+
+    def to_sql(self, model_cls, field_name, value):
+        field = getattr(model_cls, field_name)
+        value0 = field.to_db_string(
+                field.to_python(value[0], pytz.utc)) if value[0] is not None or len(str(value[0])) > 0 else None
+        value1 = field.to_db_string(
+                field.to_python(value[1], pytz.utc)) if value[1] is not None or len(str(value[1])) > 0 else None
+        if value0 and value1:
+            return '%s BETWEEN %s AND %s' % (field_name, value0, value1)
+        if value0 and not value1:
+            return ' '.join([field_name, '>=', value0])
+        if value1 and not value0:
+            return ' '.join([field_name, '<=', value1])
+
 # Define the set of builtin operators
 
 _operators = {}
@@ -116,6 +138,7 @@ register_operator('gt',          SimpleOperator('>'))
 register_operator('gte',         SimpleOperator('>='))
 register_operator('lt',          SimpleOperator('<'))
 register_operator('lte',         SimpleOperator('<='))
+register_operator('between',     BetweenOperator())
 register_operator('in',          InOperator())
 register_operator('not_in',      NotOperator(InOperator()))
 register_operator('contains',    LikeOperator('%{}%'))
@@ -134,7 +157,11 @@ class FOV(object):
 
     def __init__(self, field_name, operator, value):
         self._field_name = field_name
-        self._operator = _operators[operator]
+        self._operator = _operators.get(operator)
+        if self._operator is None:
+            # The field name contains __ like my__field
+            self._field_name = field_name + '__' + operator
+            self._operator = _operators['eq']
         self._value = value
 
     def to_sql(self, model_cls):
@@ -143,9 +170,23 @@ class FOV(object):
 
 class Q(object):
 
-    def __init__(self, **kwargs):
-        self._fovs = [self._build_fov(k, v) for k, v in six.iteritems(kwargs)]
+    AND_MODE = 'AND'
+    OR_MODE = 'OR'
+
+    def __init__(self, **filter_fields):
+        self._fovs = [self._build_fov(k, v) for k, v in six.iteritems(filter_fields)]
+        self._l_child = None
+        self._r_child = None
         self._negate = False
+        self._mode = self.AND_MODE
+
+    @classmethod
+    def _construct_from(cls, l_child, r_child, mode):
+        q = Q()
+        q._l_child = l_child
+        q._r_child = r_child
+        q._mode = mode
+        return q
 
     def _build_fov(self, key, value):
         if '__' in key:
@@ -155,12 +196,23 @@ class Q(object):
         return FOV(field_name, operator, value)
 
     def to_sql(self, model_cls):
-        if not self._fovs:
-            return '1'
-        sql = ' AND '.join(fov.to_sql(model_cls) for fov in self._fovs)
+        if self._fovs:
+            sql = ' {} '.format(self._mode).join(fov.to_sql(model_cls) for fov in self._fovs)
+        else:
+            if self._l_child and self._r_child:
+                sql = '({}) {} ({})'.format(
+                        self._l_child.to_sql(model_cls), self._mode, self._r_child.to_sql(model_cls))
+            else:
+                return '1'
         if self._negate:
             sql = 'NOT (%s)' % sql
         return sql
+
+    def __or__(self, other):
+        return Q._construct_from(self, other, self.OR_MODE)
+
+    def __and__(self, other):
+        return Q._construct_from(self, other, self.AND_MODE)
 
     def __invert__(self):
         q = copy(self)
@@ -286,20 +338,24 @@ class QuerySet(object):
         qs._fields = field_names
         return qs
 
-    def filter(self, **kwargs):
+    def filter(self, *q, **filter_fields):
         """
         Returns a copy of this queryset that includes only rows matching the conditions.
+        Add q object to query if it specified.
         """
         qs = copy(self)
-        qs._q = list(self._q) + [Q(**kwargs)]
+        if q:
+            qs._q = list(self._q) + list(q)
+        else:
+            qs._q = list(self._q) + [Q(**filter_fields)]
         return qs
 
-    def exclude(self, **kwargs):
+    def exclude(self, **filter_fields):
         """
         Returns a copy of this queryset that excludes all rows matching the conditions.
         """
         qs = copy(self)
-        qs._q = list(self._q) + [~Q(**kwargs)]
+        qs._q = list(self._q) + [~Q(**filter_fields)]
         return qs
 
     def paginate(self, page_num=1, page_size=100):

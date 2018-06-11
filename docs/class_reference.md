@@ -144,24 +144,31 @@ invalid values will cause a `ValueError` to be raised.
 Unrecognized field names will cause an `AttributeError`.
 
 
-#### Model.create_table_sql(db_name)
+#### Model.create_table_sql(db)
 
 
 Returns the SQL command for creating a table for this model.
 
 
-#### Model.drop_table_sql(db_name)
+#### Model.drop_table_sql(db)
 
 
 Returns the SQL command for deleting this model's table.
 
 
-#### Model.from_tsv(line, field_names=None, timezone_in_use=UTC, database=None)
+#### Model.fields(writable=False)
+
+
+Returns an `OrderedDict` of the model's fields (from name to `Field` instance).
+If `writable` is true, only writable fields are included.
+Callers should not modify the dictionary.
+
+
+#### Model.from_tsv(line, field_names, timezone_in_use=UTC, database=None)
 
 
 Create a model instance from a tab-separated line. The line may or may not include a newline.
 The `field_names` list must match the fields defined in the model, but does not have to include all of them.
-If omitted, it is assumed to be the names of all fields in the model, in order of definition.
 
 - `line`: the TSV-formatted data.
 - `field_names`: names of the model fields in the data.
@@ -180,6 +187,18 @@ Returns `None` unless the instance was read from the database or written to it.
 
 
 Gets a `Field` instance given its name, or `None` if not found.
+
+
+#### Model.is_read_only()
+
+
+Returns true if the model is marked as read only.
+
+
+#### Model.is_system_model()
+
+
+Returns true if the model represents a system table.
 
 
 #### Model.objects_in(database)
@@ -233,24 +252,31 @@ invalid values will cause a `ValueError` to be raised.
 Unrecognized field names will cause an `AttributeError`.
 
 
-#### BufferModel.create_table_sql(db_name)
+#### BufferModel.create_table_sql(db)
 
 
 Returns the SQL command for creating a table for this model.
 
 
-#### BufferModel.drop_table_sql(db_name)
+#### BufferModel.drop_table_sql(db)
 
 
 Returns the SQL command for deleting this model's table.
 
 
-#### BufferModel.from_tsv(line, field_names=None, timezone_in_use=UTC, database=None)
+#### BufferModel.fields(writable=False)
+
+
+Returns an `OrderedDict` of the model's fields (from name to `Field` instance).
+If `writable` is true, only writable fields are included.
+Callers should not modify the dictionary.
+
+
+#### BufferModel.from_tsv(line, field_names, timezone_in_use=UTC, database=None)
 
 
 Create a model instance from a tab-separated line. The line may or may not include a newline.
 The `field_names` list must match the fields defined in the model, but does not have to include all of them.
-If omitted, it is assumed to be the names of all fields in the model, in order of definition.
 
 - `line`: the TSV-formatted data.
 - `field_names`: names of the model fields in the data.
@@ -271,6 +297,18 @@ Returns `None` unless the instance was read from the database or written to it.
 Gets a `Field` instance given its name, or `None` if not found.
 
 
+#### BufferModel.is_read_only()
+
+
+Returns true if the model is marked as read only.
+
+
+#### BufferModel.is_system_model()
+
+
+Returns true if the model represents a system table.
+
+
 #### BufferModel.objects_in(database)
 
 
@@ -285,6 +323,143 @@ This is done automatically when the instance is read from the database or writte
 
 
 #### BufferModel.table_name()
+
+
+Returns the model's database table name. By default this is the
+class name converted to lowercase. Override this if you want to use
+a different table name.
+
+
+#### to_dict(include_readonly=True, field_names=None)
+
+
+Returns the instance's column values as a dict.
+
+- `include_readonly`: if false, returns only fields that can be inserted into database.
+- `field_names`: an iterable of field names to return (optional)
+
+
+#### to_tsv(include_readonly=True)
+
+
+Returns the instance's column values as a tab-separated line. A newline is not included.
+
+- `include_readonly`: if false, returns only fields that can be inserted into database.
+
+
+### DistributedModel
+
+Extends Model
+
+
+Model for Distributed engine
+
+#### DistributedModel(**kwargs)
+
+
+Creates a model instance, using keyword arguments as field values.
+Since values are immediately converted to their Pythonic type,
+invalid values will cause a `ValueError` to be raised.
+Unrecognized field names will cause an `AttributeError`.
+
+
+#### DistributedModel.create_table_sql(db)
+
+
+#### DistributedModel.drop_table_sql(db)
+
+
+Returns the SQL command for deleting this model's table.
+
+
+#### DistributedModel.fields(writable=False)
+
+
+Returns an `OrderedDict` of the model's fields (from name to `Field` instance).
+If `writable` is true, only writable fields are included.
+Callers should not modify the dictionary.
+
+
+#### DistributedModel.fix_engine_table()
+
+
+Remember: Distributed table does not store any data, just provides distributed access to it.
+
+So if we define a model with engine that has no defined table for data storage
+(see FooDistributed below), that table cannot be successfully created.
+This routine can automatically fix engine's storage table by finding the first
+non-distributed model among your model's superclasses.
+
+>>> class Foo(Model):
+...     id = UInt8Field(1)
+...
+>>> class FooDistributed(Foo, DistributedModel):
+...     engine = Distributed('my_cluster')
+...
+>>> FooDistributed.engine.table
+None
+>>> FooDistributed.fix_engine()
+>>> FooDistributed.engine.table
+<class '__main__.Foo'>
+
+However if you prefer more explicit way of doing things,
+you can always mention the Foo model twice without bothering with any fixes:
+
+>>> class FooDistributedVerbose(Foo, DistributedModel):
+...     engine = Distributed('my_cluster', Foo)
+>>> FooDistributedVerbose.engine.table
+<class '__main__.Foo'>
+
+See tests.test_engines:DistributedTestCase for more examples
+
+
+#### DistributedModel.from_tsv(line, field_names, timezone_in_use=UTC, database=None)
+
+
+Create a model instance from a tab-separated line. The line may or may not include a newline.
+The `field_names` list must match the fields defined in the model, but does not have to include all of them.
+
+- `line`: the TSV-formatted data.
+- `field_names`: names of the model fields in the data.
+- `timezone_in_use`: the timezone to use when parsing dates and datetimes.
+- `database`: if given, sets the database that this instance belongs to.
+
+
+#### get_database()
+
+
+Gets the `Database` that this model instance belongs to.
+Returns `None` unless the instance was read from the database or written to it.
+
+
+#### get_field(name)
+
+
+Gets a `Field` instance given its name, or `None` if not found.
+
+
+#### DistributedModel.is_read_only()
+
+
+Returns true if the model is marked as read only.
+
+
+#### DistributedModel.is_system_model()
+
+
+Returns true if the model represents a system table.
+
+
+#### DistributedModel.objects_in(database)
+
+
+Returns a `QuerySet` for selecting instances of this model class.
+
+
+#### set_database(db)
+
+
+#### DistributedModel.table_name()
 
 
 Returns the model's database table name. By default this is the
@@ -497,7 +672,7 @@ Extends Engine
 
 Extends Engine
 
-#### MergeTree(date_col, key_cols, sampling_expr=None, index_granularity=8192, replica_table_path=None, replica_name=None)
+#### MergeTree(date_col=None, order_by=(), sampling_expr=None, index_granularity=8192, replica_table_path=None, replica_name=None, partition_key=None)
 
 
 ### Buffer
@@ -507,7 +682,7 @@ Extends Engine
 
 Buffers the data to write in RAM, periodically flushing it to another table.
 Must be used in conjuction with a `BufferModel`.
-Read more [here](https://clickhouse.yandex/reference_en.html#Buffer).
+Read more [here](https://clickhouse.yandex/docs/en/table_engines/buffer/).
 
 #### Buffer(main_model, num_layers=16, min_time=10, max_time=100, min_rows=10000, max_rows=1000000, min_bytes=10000000, max_bytes=100000000)
 
@@ -525,25 +700,49 @@ https://clickhouse.yandex/docs/en/single/index.html#document-table_engines/merge
 #### Merge(table_regex)
 
 
+### Distributed
+
+Extends Engine
+
+
+The Distributed engine by itself does not store data,
+but allows distributed query processing on multiple servers.
+Reading is automatically parallelized.
+During a read, the table indexes on remote servers are used, if there are any.
+
+See full documentation here
+https://clickhouse.yandex/docs/en/table_engines/distributed.html
+
+#### Distributed(cluster, table=None, sharding_key=None)
+
+
+:param cluster: what cluster to access data from
+:param table: underlying table that actually stores data.
+If you are not specifying any table here, ensure that it can be inferred
+from your model's superclass (see models.DistributedModel.fix_engine_table)
+:param sharding_key: how to distribute data among shards when inserting
+straightly into Distributed table, optional
+
+
 ### CollapsingMergeTree
 
 Extends MergeTree
 
-#### CollapsingMergeTree(date_col, key_cols, sign_col, sampling_expr=None, index_granularity=8192, replica_table_path=None, replica_name=None)
+#### CollapsingMergeTree(date_col=None, order_by=(), sign_col="sign", sampling_expr=None, index_granularity=8192, replica_table_path=None, replica_name=None, partition_key=None)
 
 
 ### SummingMergeTree
 
 Extends MergeTree
 
-#### SummingMergeTree(date_col, key_cols, summing_cols=None, sampling_expr=None, index_granularity=8192, replica_table_path=None, replica_name=None)
+#### SummingMergeTree(date_col=None, order_by=(), summing_cols=None, sampling_expr=None, index_granularity=8192, replica_table_path=None, replica_name=None, partition_key=None)
 
 
 ### ReplacingMergeTree
 
 Extends MergeTree
 
-#### ReplacingMergeTree(date_col, key_cols, ver_col=None, sampling_expr=None, index_granularity=8192, replica_table_path=None, replica_name=None)
+#### ReplacingMergeTree(date_col=None, order_by=(), ver_col=None, sampling_expr=None, index_granularity=8192, replica_table_path=None, replica_name=None, partition_key=None)
 
 
 infi.clickhouse_orm.query
@@ -605,16 +804,17 @@ Adds a DISTINCT clause to the query, meaning that any duplicate rows
 in the results will be omitted.
 
 
-#### exclude(**kwargs)
+#### exclude(**filter_fields)
 
 
 Returns a copy of this queryset that excludes all rows matching the conditions.
 
 
-#### filter(**kwargs)
+#### filter(*q, **filter_fields)
 
 
 Returns a copy of this queryset that includes only rows matching the conditions.
+Add q object to query if it specified.
 
 
 #### only(*field_names)
@@ -705,16 +905,17 @@ Adds a DISTINCT clause to the query, meaning that any duplicate rows
 in the results will be omitted.
 
 
-#### exclude(**kwargs)
+#### exclude(**filter_fields)
 
 
 Returns a copy of this queryset that excludes all rows matching the conditions.
 
 
-#### filter(**kwargs)
+#### filter(*q, **filter_fields)
 
 
 Returns a copy of this queryset that includes only rows matching the conditions.
+Add q object to query if it specified.
 
 
 #### group_by(*args)

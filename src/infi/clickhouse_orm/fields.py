@@ -39,7 +39,7 @@ class Field(object):
         data can't be converted. Returns the converted value. Subclasses should override this.
         The timezone_in_use parameter should be consulted when parsing datetime fields.
         '''
-        return value
+        return value   # pragma: no cover
 
     def validate(self, value):
         '''
