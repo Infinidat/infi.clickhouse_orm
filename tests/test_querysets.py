@@ -38,6 +38,13 @@ class QuerySetTestCase(TestCaseWithData):
         self.assertTrue(qs.filter(first_name='Connor'))
         self.assertFalse(qs.filter(first_name='Willy'))
 
+    def test_filter_null_value(self):
+        qs = Person.objects_in(self.database)
+        self._test_qs(qs.filter(passport=None), 98)
+        self._test_qs(qs.exclude(passport=None), 2)
+        self._test_qs(qs.filter(passport__ne=None), 2)
+        self._test_qs(qs.exclude(passport__ne=None), 98)
+
     def test_filter_string_field(self):
         qs = Person.objects_in(self.database)
         self._test_qs(qs.filter(first_name='Ciaran'), 2)
