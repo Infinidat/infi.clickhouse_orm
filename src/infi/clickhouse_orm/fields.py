@@ -385,12 +385,12 @@ class NullableField(Field):
         super(NullableField, self).__init__(default, alias, materialized, readonly=None)
 
     def to_python(self, value, timezone_in_use):
-        if value == '\\N' or value is None:
+        if value == '\\N' or value in self._null_values:
             return None
         return self.inner_field.to_python(value, timezone_in_use)
 
     def validate(self, value):
-        value is None or self.inner_field.validate(value)
+        value in self._null_values or self.inner_field.validate(value)
 
     def to_db_string(self, value, quote=True):
         if value in self._null_values:
@@ -398,5 +398,4 @@ class NullableField(Field):
         return self.inner_field.to_db_string(value, quote=quote)
 
     def get_sql(self, with_default_expression=True):
-        from .utils import escape
         return 'Nullable(%s)' % self.inner_field.get_sql(with_default_expression=False)
