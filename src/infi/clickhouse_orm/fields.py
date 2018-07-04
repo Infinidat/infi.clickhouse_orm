@@ -79,6 +79,22 @@ class Field(object):
         else:
             return self.db_type
 
+    def isinstance(self, types):
+        """
+        Checks if the instance if one of the types provided or if any of the inner_field child is one of the types
+        provided, returns True if field or any inner_field is one of ths provided, False otherwise
+        :param types: Iterable of types to check inclusion of instance
+        :return: Boolean
+        """
+        if isinstance(self, types):
+            return True
+        inner_field = getattr(self, 'inner_field', None)
+        while inner_field:
+            if isinstance(inner_field, types):
+                return True
+            inner_field = getattr(self, 'inner_field', None)
+        return False
+
 
 class StringField(Field):
 
