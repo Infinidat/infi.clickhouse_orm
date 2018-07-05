@@ -73,6 +73,22 @@ class NullableFieldsTest(unittest.TestCase):
             else:
                 self.assertEquals(python_value, value)
 
+    def test_isinstance(self):
+        for field in (StringField, UInt8Field, Float32Field, DateTimeField):
+            f = NullableField(field())
+            self.assertTrue(f.isinstance(field))
+            self.assertTrue(f.isinstance(NullableField))
+        for field in (Int8Field, Int16Field, Int32Field, Int64Field, UInt8Field, UInt16Field, UInt32Field, UInt64Field):
+            f = NullableField(field())
+            self.assertTrue(f.isinstance(BaseIntField))
+        for field in (Float32Field, Float64Field):
+            f = NullableField(field())
+            self.assertTrue(f.isinstance(BaseFloatField))
+        f = NullableField(NullableField(UInt32Field()))
+        self.assertTrue(f.isinstance(BaseIntField))
+        self.assertTrue(f.isinstance(NullableField))
+        self.assertFalse(f.isinstance(BaseFloatField))
+
     def _insert_sample_data(self):
         dt = date(1970, 1, 1)
         self.database.insert([

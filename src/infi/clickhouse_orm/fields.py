@@ -92,7 +92,7 @@ class Field(object):
         while inner_field:
             if isinstance(inner_field, types):
                 return True
-            inner_field = getattr(self, 'inner_field', None)
+            inner_field = getattr(inner_field, 'inner_field', None)
         return False
 
 
