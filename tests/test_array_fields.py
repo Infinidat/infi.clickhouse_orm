@@ -21,7 +21,7 @@ class ArrayFieldsTest(unittest.TestCase):
         instance = ModelWithArrays(
             date_field='2016-08-30',
             arr_str=['goodbye,', 'cruel', 'world', 'special chars: ,"\\\'` \n\t\\[]'],
-            arr_date=['2010-01-01']
+            arr_date=['2010-01-01'],
         )
         self.database.insert([instance])
         query = 'SELECT * from $db.modelwitharrays ORDER BY date_field'
@@ -61,6 +61,11 @@ class ArrayFieldsTest(unittest.TestCase):
                   "['aaa', 'aaa]"):
             with self.assertRaises(ValueError):
                 parse_array(s)
+
+    def test_invalid_inner_field(self):
+        for x in (DateField, None, "", ArrayField(Int32Field())):
+            with self.assertRaises(AssertionError):
+                ArrayField(x)
 
 
 class ModelWithArrays(Model):

@@ -79,6 +79,22 @@ class Field(object):
         else:
             return self.db_type
 
+    def isinstance(self, types):
+        """
+        Checks if the instance if one of the types provided or if any of the inner_field child is one of the types
+        provided, returns True if field or any inner_field is one of ths provided, False otherwise
+        :param types: Iterable of types to check inclusion of instance
+        :return: Boolean
+        """
+        if isinstance(self, types):
+            return True
+        inner_field = getattr(self, 'inner_field', None)
+        while inner_field:
+            if isinstance(inner_field, types):
+                return True
+            inner_field = getattr(inner_field, 'inner_field', None)
+        return False
+
 
 class StringField(Field):
 
@@ -347,6 +363,8 @@ class ArrayField(Field):
     class_default = []
 
     def __init__(self, inner_field, default=None, alias=None, materialized=None, readonly=None):
+        assert isinstance(inner_field, Field), "The first argument of ArrayField must be a Field instance"
+        assert not isinstance(inner_field, ArrayField), "Multidimensional array fields are not supported by the ORM"
         self.inner_field = inner_field
         super(ArrayField, self).__init__(default, alias, materialized, readonly)
 
@@ -385,12 +403,12 @@ class NullableField(Field):
         super(NullableField, self).__init__(default, alias, materialized, readonly=None)
 
     def to_python(self, value, timezone_in_use):
-        if value == '\\N' or value is None:
+        if value == '\\N' or value in self._null_values:
             return None
         return self.inner_field.to_python(value, timezone_in_use)
 
     def validate(self, value):
-        value is None or self.inner_field.validate(value)
+        value in self._null_values or self.inner_field.validate(value)
 
     def to_db_string(self, value, quote=True):
         if value in self._null_values:
@@ -398,5 +416,4 @@ class NullableField(Field):
         return self.inner_field.to_db_string(value, quote=quote)
 
     def get_sql(self, with_default_expression=True):
-        from .utils import escape
         return 'Nullable(%s)' % self.inner_field.get_sql(with_default_expression=False)

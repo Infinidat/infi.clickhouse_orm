@@ -1,6 +1,12 @@
 Change Log
 ==========
 
+v1.0.1
+------
+- NullableField: take extra_null_values into account in `validate` and `to_python`
+- Added `Field.isinstance` method
+- Validate the inner field passed to `ArrayField`
+
 v1.0.0
 ------
 - Add support for compound filters with Q objects (desile)
