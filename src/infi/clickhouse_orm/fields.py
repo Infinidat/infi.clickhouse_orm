@@ -363,6 +363,8 @@ class ArrayField(Field):
     class_default = []
 
     def __init__(self, inner_field, default=None, alias=None, materialized=None, readonly=None):
+        assert isinstance(inner_field, Field), "The first argument of ArrayField must be a Field instance"
+        assert not isinstance(inner_field, ArrayField), "Multidimensional array fields are not supported by the ORM"
         self.inner_field = inner_field
         super(ArrayField, self).__init__(default, alias, materialized, readonly)
 
