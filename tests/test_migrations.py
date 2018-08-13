@@ -49,7 +49,7 @@ class MigrationsTestCase(unittest.TestCase):
         # Adding, removing and altering simple fields
         self.assertEquals(self.getTableFields(Model1), [('date', 'Date'), ('f1', 'Int32'), ('f2', 'String')])
         self.database.migrate('tests.sample_migrations', 4)
-        self.assertEquals(self.getTableFields(Model2), [('date', 'Date'), ('f1', 'Int32'), ('f3', 'Float32'), ('f2', 'String'), ('f4', 'String')])
+        self.assertEquals(self.getTableFields(Model2), [('date', 'Date'), ('f1', 'Int32'), ('f3', 'Float32'), ('f2', 'String'), ('f4', 'String'), ('f5', 'Array(UInt64)')])
         self.database.migrate('tests.sample_migrations', 5)
         self.assertEquals(self.getTableFields(Model3), [('date', 'Date'), ('f1', 'Int64'), ('f3', 'Float64'), ('f4', 'String')])
         # Altering enum fields
@@ -121,6 +121,7 @@ class Model2(Model):
     f3 = Float32Field()
     f2 = StringField()
     f4 = StringField()
+    f5 = ArrayField(UInt64Field()) # addition of an array field
 
     engine = MergeTree('date', ('date',))
 
