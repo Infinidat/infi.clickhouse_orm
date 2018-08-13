@@ -82,6 +82,8 @@ class SensorData(models.Model):
 data = SensorData(date=date.today(), temperatures=[25.5, 31.2, 28.7], humidity_levels=[41, 39, 66])
 ```
 
+Note that multidimensional arrays are not supported yet by the ORM.
+
 Working with materialized and alias fields
 ------------------------------------------
 
