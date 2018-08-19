@@ -179,3 +179,8 @@ class DatabaseTestCase(TestCaseWithData):
         instance = Model1.objects_in(self.database)[0]
         self.assertEquals(instance.to_dict(), dict(system='s', readonly='r'))
 
+    def test_does_table_exist(self):
+        class Person2(Person):
+            pass
+        self.assertTrue(self.database.does_table_exist(Person))
+        self.assertFalse(self.database.does_table_exist(Person2))

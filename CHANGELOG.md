@@ -5,6 +5,7 @@ Unreleased
 ----------
 - Include alias and materialized fields in queryset results
 - Check for database existence, to allow delayed creation
+- Added `Database.does_table_exist` method
 
 v1.0.1
 ------

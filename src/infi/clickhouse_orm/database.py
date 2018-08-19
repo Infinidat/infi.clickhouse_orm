@@ -134,6 +134,15 @@ class Database(object):
             raise DatabaseException("You can't drop system table")
         self._send(model_class.drop_table_sql(self))
 
+    def does_table_exist(self, model_class):
+        '''
+        Checks whether a table for the given model class already exists.
+        Note that this only checks for existence of a table with the expected name.
+        '''
+        sql = "SELECT count() FROM system.tables WHERE database = '%s' AND name = '%s'"
+        r = self._send(sql % (self.db_name, model_class.table_name()))
+        return r.text.strip() == '1'
+
     def insert(self, model_instances, batch_size=1000):
         '''
         Insert records into the database.
