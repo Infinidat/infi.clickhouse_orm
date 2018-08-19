@@ -134,7 +134,7 @@ class DatabaseTestCase(TestCaseWithData):
         self._insert_and_check(self._sample_data(), len(data))
         query = "SELECT * FROM `test-db`.person WHERE first_name = 'Whitney' ORDER BY last_name"
         results = self.database.raw(query)
-        self.assertEqual(results, "Whitney\tDurham\t1977-09-15\t1.72\nWhitney\tScott\t1971-07-04\t1.7\n")
+        self.assertEqual(results, "Whitney\tDurham\t1977-09-15\t1.72\t\\N\nWhitney\tScott\t1971-07-04\t1.7\t\\N\n")
 
     def test_invalid_user(self):
         with self.assertRaises(ServerError) as cm:
