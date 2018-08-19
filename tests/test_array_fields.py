@@ -27,19 +27,19 @@ class ArrayFieldsTest(unittest.TestCase):
         query = 'SELECT * from $db.modelwitharrays ORDER BY date_field'
         for model_cls in (ModelWithArrays, None):
             results = list(self.database.select(query, model_cls))
-            self.assertEquals(len(results), 1)
-            self.assertEquals(results[0].arr_str, instance.arr_str)
-            self.assertEquals(results[0].arr_int, instance.arr_int)
-            self.assertEquals(results[0].arr_date, instance.arr_date)
+            self.assertEqual(len(results), 1)
+            self.assertEqual(results[0].arr_str, instance.arr_str)
+            self.assertEqual(results[0].arr_int, instance.arr_int)
+            self.assertEqual(results[0].arr_date, instance.arr_date)
 
     def test_conversion(self):
         instance = ModelWithArrays(
             arr_int=('1', '2', '3'),
             arr_date=['2010-01-01']
         )
-        self.assertEquals(instance.arr_str, [])
-        self.assertEquals(instance.arr_int, [1, 2, 3])
-        self.assertEquals(instance.arr_date, [date(2010, 1, 1)])
+        self.assertEqual(instance.arr_str, [])
+        self.assertEqual(instance.arr_int, [1, 2, 3])
+        self.assertEqual(instance.arr_date, [date(2010, 1, 1)])
 
     def test_assignment_error(self):
         instance = ModelWithArrays()
@@ -49,10 +49,10 @@ class ArrayFieldsTest(unittest.TestCase):
 
     def test_parse_array(self):
         from infi.clickhouse_orm.utils import parse_array, unescape
-        self.assertEquals(parse_array("[]"), [])
-        self.assertEquals(parse_array("[1, 2, 395, -44]"), ["1", "2", "395", "-44"])
-        self.assertEquals(parse_array("['big','mouse','','!']"), ["big", "mouse", "", "!"])
-        self.assertEquals(parse_array(unescape("['\\r\\n\\0\\t\\b']")), ["\r\n\0\t\b"])
+        self.assertEqual(parse_array("[]"), [])
+        self.assertEqual(parse_array("[1, 2, 395, -44]"), ["1", "2", "395", "-44"])
+        self.assertEqual(parse_array("['big','mouse','','!']"), ["big", "mouse", "", "!"])
+        self.assertEqual(parse_array(unescape("['\\r\\n\\0\\t\\b']")), ["\r\n\0\t\b"])
         for s in ("",
                   "[",
                   "]",

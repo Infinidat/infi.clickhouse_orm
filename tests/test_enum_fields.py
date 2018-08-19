@@ -29,9 +29,9 @@ class EnumFieldsTest(unittest.TestCase):
         ])
         query = 'SELECT * from $table ORDER BY date_field'
         results = list(self.database.select(query, ModelWithEnum))
-        self.assertEquals(len(results), 2)
-        self.assertEquals(results[0].enum_field, Fruit.apple)
-        self.assertEquals(results[1].enum_field, Fruit.orange)
+        self.assertEqual(len(results), 2)
+        self.assertEqual(results[0].enum_field, Fruit.apple)
+        self.assertEqual(results[1].enum_field, Fruit.orange)
 
     def test_ad_hoc_model(self):
         self.database.insert([
@@ -40,16 +40,16 @@ class EnumFieldsTest(unittest.TestCase):
         ])
         query = 'SELECT * from $db.modelwithenum ORDER BY date_field'
         results = list(self.database.select(query))
-        self.assertEquals(len(results), 2)
-        self.assertEquals(results[0].enum_field.name, Fruit.apple.name)
-        self.assertEquals(results[0].enum_field.value, Fruit.apple.value)
-        self.assertEquals(results[1].enum_field.name, Fruit.orange.name)
-        self.assertEquals(results[1].enum_field.value, Fruit.orange.value)
+        self.assertEqual(len(results), 2)
+        self.assertEqual(results[0].enum_field.name, Fruit.apple.name)
+        self.assertEqual(results[0].enum_field.value, Fruit.apple.value)
+        self.assertEqual(results[1].enum_field.name, Fruit.orange.name)
+        self.assertEqual(results[1].enum_field.value, Fruit.orange.value)
 
     def test_conversion(self):
-        self.assertEquals(ModelWithEnum(enum_field=3).enum_field, Fruit.orange)
-        self.assertEquals(ModelWithEnum(enum_field='apple').enum_field, Fruit.apple)
-        self.assertEquals(ModelWithEnum(enum_field=Fruit.banana).enum_field, Fruit.banana)
+        self.assertEqual(ModelWithEnum(enum_field=3).enum_field, Fruit.orange)
+        self.assertEqual(ModelWithEnum(enum_field='apple').enum_field, Fruit.apple)
+        self.assertEqual(ModelWithEnum(enum_field=Fruit.banana).enum_field, Fruit.banana)
 
     def test_assignment_error(self):
         for value in (0, 17, 'pear', '', None, 99.9):
@@ -58,15 +58,15 @@ class EnumFieldsTest(unittest.TestCase):
 
     def test_default_value(self):
         instance = ModelWithEnum()
-        self.assertEquals(instance.enum_field, Fruit.apple)
+        self.assertEqual(instance.enum_field, Fruit.apple)
 
     def test_enum_array(self):
         instance = ModelWithEnumArray(date_field='2016-08-30', enum_array=[Fruit.apple, Fruit.apple, Fruit.orange])
         self.database.insert([instance])
         query = 'SELECT * from $table ORDER BY date_field'
         results = list(self.database.select(query, ModelWithEnumArray))
-        self.assertEquals(len(results), 1)
-        self.assertEquals(results[0].enum_array, instance.enum_array)
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0].enum_array, instance.enum_array)
 
 
 Fruit = Enum('Fruit', u'apple banana orange')

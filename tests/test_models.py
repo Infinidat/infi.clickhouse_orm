@@ -13,11 +13,11 @@ class ModelTestCase(unittest.TestCase):
     def test_defaults(self):
         # Check that all fields have their explicit or implicit defaults
         instance = SimpleModel()
-        self.assertEquals(instance.date_field, datetime.date(1970, 1, 1))
-        self.assertEquals(instance.datetime_field, datetime.datetime(1970, 1, 1, tzinfo=pytz.utc))
-        self.assertEquals(instance.str_field, 'dozo')
-        self.assertEquals(instance.int_field, 17)
-        self.assertEquals(instance.float_field, 0)
+        self.assertEqual(instance.date_field, datetime.date(1970, 1, 1))
+        self.assertEqual(instance.datetime_field, datetime.datetime(1970, 1, 1, tzinfo=pytz.utc))
+        self.assertEqual(instance.str_field, 'dozo')
+        self.assertEqual(instance.int_field, 17)
+        self.assertEqual(instance.float_field, 0)
 
     def test_assignment(self):
         # Check that all fields are assigned during construction
@@ -30,7 +30,7 @@ class ModelTestCase(unittest.TestCase):
         )
         instance = SimpleModel(**kwargs)
         for name, value in kwargs.items():
-            self.assertEquals(kwargs[name], getattr(instance, name))
+            self.assertEqual(kwargs[name], getattr(instance, name))
 
     def test_assignment_error(self):
         # Check non-existing field during construction
@@ -49,12 +49,12 @@ class ModelTestCase(unittest.TestCase):
     def test_string_conversion(self):
         # Check field conversion from string during construction
         instance = SimpleModel(date_field='1973-12-06', int_field='100', float_field='7')
-        self.assertEquals(instance.date_field, datetime.date(1973, 12, 6))
-        self.assertEquals(instance.int_field, 100)
-        self.assertEquals(instance.float_field, 7)
+        self.assertEqual(instance.date_field, datetime.date(1973, 12, 6))
+        self.assertEqual(instance.int_field, 100)
+        self.assertEqual(instance.float_field, 7)
         # Check field conversion from string during assignment
         instance.int_field = '99'
-        self.assertEquals(instance.int_field, 99)
+        self.assertEqual(instance.int_field, 99)
 
     def test_to_dict(self):
         instance = SimpleModel(date_field='1973-12-06', int_field='100', float_field='7')

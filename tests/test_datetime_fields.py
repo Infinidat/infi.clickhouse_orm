@@ -25,13 +25,13 @@ class DateFieldsTest(unittest.TestCase):
         # toStartOfHour returns DateTime('Asia/Yekaterinburg') in my case, so I test it here to
         query = 'SELECT toStartOfHour(datetime_field) as hour_start, * from $db.modelwithdate ORDER BY date_field'
         results = list(self.database.select(query))
-        self.assertEquals(len(results), 2)
-        self.assertEquals(results[0].date_field, datetime.date(2016, 8, 30))
-        self.assertEquals(results[0].datetime_field, datetime.datetime(2016, 8, 30, 3, 50, 0, tzinfo=pytz.UTC))
-        self.assertEquals(results[0].hour_start, datetime.datetime(2016, 8, 30, 3, 0, 0, tzinfo=pytz.UTC))
-        self.assertEquals(results[1].date_field, datetime.date(2016, 8, 31))
-        self.assertEquals(results[1].datetime_field, datetime.datetime(2016, 8, 31, 1, 30, 0, tzinfo=pytz.UTC))
-        self.assertEquals(results[1].hour_start, datetime.datetime(2016, 8, 31, 1, 0, 0, tzinfo=pytz.UTC))
+        self.assertEqual(len(results), 2)
+        self.assertEqual(results[0].date_field, datetime.date(2016, 8, 30))
+        self.assertEqual(results[0].datetime_field, datetime.datetime(2016, 8, 30, 3, 50, 0, tzinfo=pytz.UTC))
+        self.assertEqual(results[0].hour_start, datetime.datetime(2016, 8, 30, 3, 0, 0, tzinfo=pytz.UTC))
+        self.assertEqual(results[1].date_field, datetime.date(2016, 8, 31))
+        self.assertEqual(results[1].datetime_field, datetime.datetime(2016, 8, 31, 1, 30, 0, tzinfo=pytz.UTC))
+        self.assertEqual(results[1].hour_start, datetime.datetime(2016, 8, 31, 1, 0, 0, tzinfo=pytz.UTC))
 
 
 class ModelWithDate(Model):

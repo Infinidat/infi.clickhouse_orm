@@ -23,9 +23,9 @@ class TestCaseWithData(unittest.TestCase):
 
     def _insert_and_check(self, data, count, batch_size=1000):
         self.database.insert(data, batch_size=batch_size)
-        self.assertEquals(count, self.database.count(Person))
+        self.assertEqual(count, self.database.count(Person))
         for instance in data:
-            self.assertEquals(self.database, instance.get_database())
+            self.assertEqual(self.database, instance.get_database())
 
     def _sample_data(self):
         for entry in data:

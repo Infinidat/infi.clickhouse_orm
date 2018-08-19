@@ -16,7 +16,7 @@ class ReadonlyTestCase(TestCaseWithData):
                 self._insert_and_check(self._sample_data(), len(data))
             self._check_db_readonly_err(cm.exception)
 
-            self.assertEquals(self.database.count(Person), 100)
+            self.assertEqual(self.database.count(Person), 100)
             list(self.database.select('SELECT * from $table', Person))
             with self.assertRaises(ServerError) as cm:
                 self.database.drop_table(Person)

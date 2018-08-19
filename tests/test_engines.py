@@ -49,7 +49,7 @@ class EnginesTestCase(_EnginesHelperTestCase):
             expected = "ReplicatedMergeTree('/clickhouse/tables/{layer}-{shard}/hits', '{replica}') PARTITION BY (toYYYYMM(`date`)) ORDER BY (date, event_id, event_group) SETTINGS index_granularity=8192"
         else:
             expected = "ReplicatedMergeTree('/clickhouse/tables/{layer}-{shard}/hits', '{replica}', date, (date, event_id, event_group), 8192)"
-        self.assertEquals(engine.create_table_sql(self.database), expected)
+        self.assertEqual(engine.create_table_sql(self.database), expected)
 
     def test_replicated_merge_tree_incomplete(self):
         with self.assertRaises(AssertionError):
