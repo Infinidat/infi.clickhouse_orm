@@ -1,6 +1,10 @@
 Change Log
 ==========
 
+Unreleased
+----------
+- Include alias and materialized fields in queryset results
+
 v1.0.1
 ------
 - NullableField: take extra_null_values into account in `validate` and `to_python`

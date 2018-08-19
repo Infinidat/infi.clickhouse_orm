@@ -220,6 +220,18 @@ class QuerySetTestCase(TestCaseWithData):
         self._test_qs(qs, 100)
         self._test_qs(qs.only('first_name'), 94)
 
+    def test_materialized_field(self):
+        self._insert_sample_model()
+        qs = SampleModel.objects_in(self.database)
+        for obj in qs:
+            self.assertTrue(obj.materialized_date != DateField.min_value)
+
+    def test_alias_field(self):
+        self._insert_sample_model()
+        qs = SampleModel.objects_in(self.database)
+        for obj in qs:
+            self.assertTrue(obj.num_squared == obj.num ** 2)
+
 
 class AggregateTestCase(TestCaseWithData):
 
@@ -358,6 +370,7 @@ class SampleModel(Model):
     materialized_date = DateField(materialized='toDate(timestamp)')
     num = Int32Field()
     color = Enum8Field(Color)
+    num_squared = Int32Field(alias='num*num')
 
     engine = MergeTree('materialized_date', ('materialized_date',))
 

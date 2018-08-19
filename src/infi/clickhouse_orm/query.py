@@ -237,7 +237,7 @@ class QuerySet(object):
         self._database = database
         self._order_by = []
         self._q = []
-        self._fields = []
+        self._fields = model_cls.fields().keys()
         self._limits = None
         self._distinct = False
 
