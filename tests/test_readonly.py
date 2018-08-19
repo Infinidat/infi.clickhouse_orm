@@ -58,6 +58,11 @@ class ReadonlyTestCase(TestCaseWithData):
     def test_drop_readonly_table(self):
         self.database.drop_table(ReadOnlyModel)
 
+    def test_nonexisting_readonly_database(self):
+        with self.assertRaises(DatabaseException) as cm:
+            db = Database('dummy', readonly=True)
+        self.assertEqual(cm.exception.message, 'Database does not exist, and cannot be created under readonly connection')
+
 
 class ReadOnlyModel(Model):
     _readonly = True

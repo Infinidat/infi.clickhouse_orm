@@ -90,12 +90,14 @@ class Database(object):
         self.username = username
         self.password = password
         self.readonly = False
-        self.db_exists = True
+        self.db_exists = False
+        self.db_exists = self._is_existing_database()
         if readonly:
+            if not self.db_exists:
+                raise DatabaseException('Database does not exist, and cannot be created under readonly connection')
             self.connection_readonly = self._is_connection_readonly()
             self.readonly = True
-        elif autocreate:
-            self.db_exists = False
+        elif autocreate and not self.db_exists:
             self.create_database()
         self.server_version = self._get_server_version()
         # Versions 1.1.53981 and below don't have timezone function
@@ -338,6 +340,10 @@ class Database(object):
             logger.exception('Cannot determine server version (%s), assuming 1.1.0', e)
             ver = '1.1.0'
         return tuple(int(n) for n in ver.split('.')) if as_tuple else ver
+
+    def _is_existing_database(self):
+        r = self._send("SELECT count() FROM system.databases WHERE name = '%s'" % self.db_name)
+        return r.text.strip() == '1'
 
     def _is_connection_readonly(self):
         r = self._send("SELECT value FROM system.settings WHERE name = 'readonly'")

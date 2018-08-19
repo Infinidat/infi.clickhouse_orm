@@ -4,6 +4,7 @@ Change Log
 Unreleased
 ----------
 - Include alias and materialized fields in queryset results
+- Check for database existence, to allow delayed creation
 
 v1.0.1
 ------

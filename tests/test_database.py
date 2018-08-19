@@ -148,10 +148,13 @@ class DatabaseTestCase(TestCaseWithData):
         db = Database('db_not_here', autocreate=False)
         with self.assertRaises(ServerError) as cm:
             db.create_table(Person)
-
         exc = cm.exception
         self.assertEqual(exc.code, 81)
         self.assertEqual(exc.message, "Database db_not_here doesn't exist")
+        # Now create the database - should succeed
+        db.create_database()
+        db.create_table(Person)
+        db.drop_database()
 
     def test_preexisting_db(self):
         db = Database(self.database.db_name, autocreate=False)
