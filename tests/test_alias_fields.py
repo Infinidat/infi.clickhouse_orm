@@ -29,13 +29,13 @@ class MaterializedFieldsTest(unittest.TestCase):
                 ' FROM $db.%s ORDER BY alias_date' % ModelWithAliasFields.table_name()
         for model_cls in (ModelWithAliasFields, None):
             results = list(self.database.select(query, model_cls))
-            self.assertEquals(len(results), 1)
-            self.assertEquals(results[0].date_field, instance.date_field)
-            self.assertEquals(results[0].int_field, instance.int_field)
-            self.assertEquals(results[0].str_field, instance.str_field)
-            self.assertEquals(results[0].alias_int, instance.int_field)
-            self.assertEquals(results[0].alias_str, instance.str_field)
-            self.assertEquals(results[0].alias_date, instance.date_field)
+            self.assertEqual(len(results), 1)
+            self.assertEqual(results[0].date_field, instance.date_field)
+            self.assertEqual(results[0].int_field, instance.int_field)
+            self.assertEqual(results[0].str_field, instance.str_field)
+            self.assertEqual(results[0].alias_int, instance.int_field)
+            self.assertEqual(results[0].alias_str, instance.str_field)
+            self.assertEqual(results[0].alias_date, instance.date_field)
 
     def test_assignment_error(self):
         # I can't prevent assigning at all, in case db.select statements with model provided sets model fields.

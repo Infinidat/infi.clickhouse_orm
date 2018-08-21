@@ -23,9 +23,9 @@ class TestCaseWithData(unittest.TestCase):
 
     def _insert_and_check(self, data, count, batch_size=1000):
         self.database.insert(data, batch_size=batch_size)
-        self.assertEquals(count, self.database.count(Person))
+        self.assertEqual(count, self.database.count(Person))
         for instance in data:
-            self.assertEquals(self.database, instance.get_database())
+            self.assertEqual(self.database, instance.get_database())
 
     def _sample_data(self):
         for entry in data:
@@ -38,13 +38,18 @@ class Person(Model):
     last_name = StringField()
     birthday = DateField()
     height = Float32Field()
+    passport = NullableField(UInt32Field())
 
     engine = MergeTree('birthday', ('first_name', 'last_name', 'birthday'))
 
 
 data = [
-    {"first_name": "Abdul", "last_name": "Hester", "birthday": "1970-12-02", "height": "1.63"},
-    {"first_name": "Adam", "last_name": "Goodman", "birthday": "1986-01-07", "height": "1.74"},
+    {"first_name": "Abdul", "last_name": "Hester", "birthday": "1970-12-02", "height": "1.63",
+     "passport": 35052255},
+    
+    {"first_name": "Adam", "last_name": "Goodman", "birthday": "1986-01-07", "height": "1.74",
+     "passport": 36052255},
+
     {"first_name": "Adena", "last_name": "Norman", "birthday": "1979-05-14", "height": "1.66"},
     {"first_name": "Aline", "last_name": "Crane", "birthday": "1988-05-01", "height": "1.62"},
     {"first_name": "Althea", "last_name": "Barrett", "birthday": "2004-07-28", "height": "1.71"},

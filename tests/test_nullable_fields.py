@@ -37,10 +37,10 @@ class NullableFieldsTest(unittest.TestCase):
             if value == '\\N':
                 self.assertIsNone(dt)
             else:
-                self.assertEquals(dt.tzinfo, pytz.utc)
+                self.assertEqual(dt.tzinfo, pytz.utc)
             # Verify that conversion to and from db string does not change value
             dt2 = f.to_python(f.to_db_string(dt, quote=False), pytz.utc)
-            self.assertEquals(dt, dt2)
+            self.assertEqual(dt, dt2)
         # Invalid values
         for value in ('nope', '21/7/1999', 0.5):
             with self.assertRaises(ValueError):
@@ -55,7 +55,7 @@ class NullableFieldsTest(unittest.TestCase):
                 self.assertIsNone(python_value)
                 self.assertEqual(value, f.to_db_string(python_value))
             else:
-                self.assertEquals(python_value, 17)
+                self.assertEqual(python_value, 17)
 
         # Invalid values
         for value in ('nope', date.today()):
@@ -71,7 +71,7 @@ class NullableFieldsTest(unittest.TestCase):
                 self.assertIsNone(python_value)
                 self.assertEqual(value, f.to_db_string(python_value))
             else:
-                self.assertEquals(python_value, value)
+                self.assertEqual(python_value, value)
 
     def test_isinstance(self):
         for field in (StringField, UInt8Field, Float32Field, DateTimeField):
@@ -100,16 +100,16 @@ class NullableFieldsTest(unittest.TestCase):
 
     def _assert_sample_data(self, results):
         dt = date(1970, 1, 1)
-        self.assertEquals(len(results), 4)
+        self.assertEqual(len(results), 4)
         self.assertIsNone(results[0].null_str)
-        self.assertEquals(results[0].null_int, 42)
-        self.assertEquals(results[0].null_date, dt)
+        self.assertEqual(results[0].null_int, 42)
+        self.assertEqual(results[0].null_date, dt)
         self.assertIsNone(results[1].null_date)
-        self.assertEquals(results[1].null_str, 'nothing')
+        self.assertEqual(results[1].null_str, 'nothing')
         self.assertIsNone(results[1].null_date)
         self.assertIsNone(results[2].null_str)
-        self.assertEquals(results[2].null_date, dt)
-        self.assertEquals(results[2].null_int, 42)
+        self.assertEqual(results[2].null_date, dt)
+        self.assertEqual(results[2].null_int, 42)
         self.assertIsNone(results[3].null_int)
         self.assertIsNone(results[3].null_str)
         self.assertIsNone(results[3].null_date)

@@ -47,38 +47,38 @@ class MigrationsTestCase(unittest.TestCase):
         self.database.migrate('tests.sample_migrations', 3)
         self.assertTrue(self.tableExists(Model1))
         # Adding, removing and altering simple fields
-        self.assertEquals(self.getTableFields(Model1), [('date', 'Date'), ('f1', 'Int32'), ('f2', 'String')])
+        self.assertEqual(self.getTableFields(Model1), [('date', 'Date'), ('f1', 'Int32'), ('f2', 'String')])
         self.database.migrate('tests.sample_migrations', 4)
-        self.assertEquals(self.getTableFields(Model2), [('date', 'Date'), ('f1', 'Int32'), ('f3', 'Float32'), ('f2', 'String'), ('f4', 'String'), ('f5', 'Array(UInt64)')])
+        self.assertEqual(self.getTableFields(Model2), [('date', 'Date'), ('f1', 'Int32'), ('f3', 'Float32'), ('f2', 'String'), ('f4', 'String'), ('f5', 'Array(UInt64)')])
         self.database.migrate('tests.sample_migrations', 5)
-        self.assertEquals(self.getTableFields(Model3), [('date', 'Date'), ('f1', 'Int64'), ('f3', 'Float64'), ('f4', 'String')])
+        self.assertEqual(self.getTableFields(Model3), [('date', 'Date'), ('f1', 'Int64'), ('f3', 'Float64'), ('f4', 'String')])
         # Altering enum fields
         self.database.migrate('tests.sample_migrations', 6)
         self.assertTrue(self.tableExists(EnumModel1))
-        self.assertEquals(self.getTableFields(EnumModel1),
+        self.assertEqual(self.getTableFields(EnumModel1),
                           [('date', 'Date'), ('f1', "Enum8('dog' = 1, 'cat' = 2, 'cow' = 3)")])
         self.database.migrate('tests.sample_migrations', 7)
         self.assertTrue(self.tableExists(EnumModel1))
-        self.assertEquals(self.getTableFields(EnumModel2),
+        self.assertEqual(self.getTableFields(EnumModel2),
                           [('date', 'Date'), ('f1', "Enum16('dog' = 1, 'cat' = 2, 'horse' = 3, 'pig' = 4)")])
         # Materialized fields and alias fields
         self.database.migrate('tests.sample_migrations', 8)
         self.assertTrue(self.tableExists(MaterializedModel))
-        self.assertEquals(self.getTableFields(MaterializedModel),
+        self.assertEqual(self.getTableFields(MaterializedModel),
                           [('date_time', "DateTime"), ('date', 'Date')])
         self.database.migrate('tests.sample_migrations', 9)
         self.assertTrue(self.tableExists(AliasModel))
-        self.assertEquals(self.getTableFields(AliasModel),
+        self.assertEqual(self.getTableFields(AliasModel),
                           [('date', 'Date'), ('date_alias', "Date")])
         # Buffer models creation and alteration
         self.database.migrate('tests.sample_migrations', 10)
         self.assertTrue(self.tableExists(Model4))
         self.assertTrue(self.tableExists(Model4Buffer))
-        self.assertEquals(self.getTableFields(Model4), [('date', 'Date'), ('f1', 'Int32'), ('f2', 'String')])
-        self.assertEquals(self.getTableFields(Model4Buffer), [('date', 'Date'), ('f1', 'Int32'), ('f2', 'String')])
+        self.assertEqual(self.getTableFields(Model4), [('date', 'Date'), ('f1', 'Int32'), ('f2', 'String')])
+        self.assertEqual(self.getTableFields(Model4Buffer), [('date', 'Date'), ('f1', 'Int32'), ('f2', 'String')])
         self.database.migrate('tests.sample_migrations', 11)
-        self.assertEquals(self.getTableFields(Model4), [('date', 'Date'), ('f3', 'DateTime'), ('f2', 'String')])
-        self.assertEquals(self.getTableFields(Model4Buffer), [('date', 'Date'), ('f3', 'DateTime'), ('f2', 'String')])
+        self.assertEqual(self.getTableFields(Model4), [('date', 'Date'), ('f3', 'DateTime'), ('f2', 'String')])
+        self.assertEqual(self.getTableFields(Model4Buffer), [('date', 'Date'), ('f3', 'DateTime'), ('f2', 'String')])
 
         self.database.migrate('tests.sample_migrations', 12)
         self.assertEqual(self.database.count(Model3), 3)
@@ -92,10 +92,10 @@ class MigrationsTestCase(unittest.TestCase):
 
         self.database.migrate('tests.sample_migrations', 14)
         self.assertTrue(self.tableExists(MaterializedModel1))
-        self.assertEquals(self.getTableFields(MaterializedModel1),
+        self.assertEqual(self.getTableFields(MaterializedModel1),
                           [('date_time', "DateTime"), ('int_field', 'Int8'), ('date', 'Date')])
         self.assertTrue(self.tableExists(AliasModel1))
-        self.assertEquals(self.getTableFields(AliasModel1),
+        self.assertEqual(self.getTableFields(AliasModel1),
                           [('date', 'Date'), ('int_field', 'Int8'), ('date_alias', "Date")])
 
 

@@ -28,7 +28,7 @@ class CustomFieldsTest(unittest.TestCase):
         for index, value in enumerate([1, '1', True, 0, '0', False]):
             rec = TestModel(i=index, f=value)
             self.database.insert([rec])
-        self.assertEquals([rec.f for rec in TestModel.objects_in(self.database).order_by('i')],
+        self.assertEqual([rec.f for rec in TestModel.objects_in(self.database).order_by('i')],
                           [True, True, True, False, False, False])
         # Check invalid values
         for value in [None, 'zzz', -5, 7]:
@@ -55,12 +55,12 @@ class CustomFieldsTest(unittest.TestCase):
             rec = TestModel(i=index, f=value)
             self.database.insert([rec])
         for rec in TestModel.objects_in(self.database):
-            self.assertEquals(rec.f, UUID(values[0]))
+            self.assertEqual(rec.f, UUID(values[0]))
         # Check that ClickHouse encoding functions are supported
         for rec in self.database.select("SELECT i, UUIDNumToString(f) AS f FROM testmodel", TestModel):
-            self.assertEquals(rec.f, UUID(values[0]))
+            self.assertEqual(rec.f, UUID(values[0]))
         for rec in self.database.select("SELECT 1 as i, UUIDStringToNum('12345678-1234-5678-1234-567812345678') AS f", TestModel):
-            self.assertEquals(rec.f, UUID(values[0]))
+            self.assertEqual(rec.f, UUID(values[0]))
         # Check invalid values
         for value in [None, 'zzz', -1, '123']:
             with self.assertRaises(ValueError):

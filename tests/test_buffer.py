@@ -11,7 +11,7 @@ class BufferTestCase(TestCaseWithData):
 
     def _insert_and_check_buffer(self, data, count):
         self.database.insert(data)
-        self.assertEquals(count, self.database.count(PersonBuffer))
+        self.assertEqual(count, self.database.count(PersonBuffer))
 
     def _sample_buffer_data(self):
         for entry in data:

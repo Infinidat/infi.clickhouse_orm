@@ -90,12 +90,14 @@ class Database(object):
         self.username = username
         self.password = password
         self.readonly = False
-        self.db_exists = True
+        self.db_exists = False
+        self.db_exists = self._is_existing_database()
         if readonly:
+            if not self.db_exists:
+                raise DatabaseException('Database does not exist, and cannot be created under readonly connection')
             self.connection_readonly = self._is_connection_readonly()
             self.readonly = True
-        elif autocreate:
-            self.db_exists = False
+        elif autocreate and not self.db_exists:
             self.create_database()
         self.server_version = self._get_server_version()
         # Versions 1.1.53981 and below don't have timezone function
@@ -131,6 +133,15 @@ class Database(object):
         if model_class.is_system_model():
             raise DatabaseException("You can't drop system table")
         self._send(model_class.drop_table_sql(self))
+
+    def does_table_exist(self, model_class):
+        '''
+        Checks whether a table for the given model class already exists.
+        Note that this only checks for existence of a table with the expected name.
+        '''
+        sql = "SELECT count() FROM system.tables WHERE database = '%s' AND name = '%s'"
+        r = self._send(sql % (self.db_name, model_class.table_name()))
+        return r.text.strip() == '1'
 
     def insert(self, model_instances, batch_size=1000):
         '''
@@ -338,6 +349,10 @@ class Database(object):
             logger.exception('Cannot determine server version (%s), assuming 1.1.0', e)
             ver = '1.1.0'
         return tuple(int(n) for n in ver.split('.')) if as_tuple else ver
+
+    def _is_existing_database(self):
+        r = self._send("SELECT count() FROM system.databases WHERE name = '%s'" % self.db_name)
+        return r.text.strip() == '1'
 
     def _is_connection_readonly(self):
         r = self._send("SELECT value FROM system.settings WHERE name = 'readonly'")

@@ -45,6 +45,13 @@ Creates the database on the ClickHouse server if it does not already exist.
 Creates a table for the given model class, if it does not exist already.
 
 
+#### does_table_exist(model_class)
+
+
+Checks whether a table for the given model class already exists.
+Note that this only checks for existence of a table with the expected name.
+
+
 #### drop_database()
 
 

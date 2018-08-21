@@ -26,11 +26,11 @@ class FixedStringFieldsTest(unittest.TestCase):
         ])
 
     def _assert_sample_data(self, results):
-        self.assertEquals(len(results), 4)
-        self.assertEquals(results[0].fstr_field, '')
-        self.assertEquals(results[1].fstr_field, 'ABCDEFGHIJK')
-        self.assertEquals(results[2].fstr_field, 'foo')
-        self.assertEquals(results[3].fstr_field, u'לילה')
+        self.assertEqual(len(results), 4)
+        self.assertEqual(results[0].fstr_field, '')
+        self.assertEqual(results[1].fstr_field, 'ABCDEFGHIJK')
+        self.assertEqual(results[2].fstr_field, 'foo')
+        self.assertEqual(results[3].fstr_field, u'לילה')
 
     def test_insert_and_select(self):
         self._insert_sample_data()

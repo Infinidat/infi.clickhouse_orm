@@ -26,8 +26,8 @@ class QuerySetTestCase(TestCaseWithData):
         for instance in qs:
             count += 1
             logging.info('\t[%d]\t%s' % (count, instance.to_dict()))
-        self.assertEquals(count, expected_count)
-        self.assertEquals(qs.count(), expected_count)
+        self.assertEqual(count, expected_count)
+        self.assertEqual(qs.count(), expected_count)
 
     def test_no_filtering(self):
         qs = Person.objects_in(self.database)
@@ -37,6 +37,13 @@ class QuerySetTestCase(TestCaseWithData):
         qs = Person.objects_in(self.database)
         self.assertTrue(qs.filter(first_name='Connor'))
         self.assertFalse(qs.filter(first_name='Willy'))
+
+    def test_filter_null_value(self):
+        qs = Person.objects_in(self.database)
+        self._test_qs(qs.filter(passport=None), 98)
+        self._test_qs(qs.exclude(passport=None), 2)
+        self._test_qs(qs.filter(passport__ne=None), 2)
+        self._test_qs(qs.exclude(passport__ne=None), 98)
 
     def test_filter_string_field(self):
         qs = Person.objects_in(self.database)
@@ -99,20 +106,20 @@ class QuerySetTestCase(TestCaseWithData):
             self.assertTrue(person.first_name)
             self.assertTrue(person.last_name)
             self.assertFalse(person.height)
-            self.assertEquals(person.birthday, date(1970, 1, 1))
+            self.assertEqual(person.birthday, date(1970, 1, 1))
 
     def test_order_by(self):
         qs = Person.objects_in(self.database)
         self.assertFalse('ORDER BY' in qs.as_sql())
         self.assertFalse(qs.order_by_as_sql())
         person = list(qs.order_by('first_name', 'last_name'))[0]
-        self.assertEquals(person.first_name, 'Abdul')
+        self.assertEqual(person.first_name, 'Abdul')
         person = list(qs.order_by('-first_name', '-last_name'))[0]
-        self.assertEquals(person.first_name, 'Yolanda')
+        self.assertEqual(person.first_name, 'Yolanda')
         person = list(qs.order_by('height'))[0]
-        self.assertEquals(person.height, 1.59)
+        self.assertEqual(person.height, 1.59)
         person = list(qs.order_by('-height'))[0]
-        self.assertEquals(person.height, 1.8)
+        self.assertEqual(person.height, 1.8)
 
     def test_in_subquery(self):
         qs = Person.objects_in(self.database)
@@ -155,13 +162,13 @@ class QuerySetTestCase(TestCaseWithData):
         db = Database('system')
         numbers = list(range(100))
         qs = Numbers.objects_in(db)
-        self.assertEquals(qs[0].number, numbers[0])
-        self.assertEquals(qs[5].number, numbers[5])
-        self.assertEquals([row.number for row in qs[:1]], numbers[:1])
-        self.assertEquals([row.number for row in qs[:10]], numbers[:10])
-        self.assertEquals([row.number for row in qs[3:10]], numbers[3:10])
-        self.assertEquals([row.number for row in qs[9:10]], numbers[9:10])
-        self.assertEquals([row.number for row in qs[10:10]], numbers[10:10])
+        self.assertEqual(qs[0].number, numbers[0])
+        self.assertEqual(qs[5].number, numbers[5])
+        self.assertEqual([row.number for row in qs[:1]], numbers[:1])
+        self.assertEqual([row.number for row in qs[:10]], numbers[:10])
+        self.assertEqual([row.number for row in qs[3:10]], numbers[3:10])
+        self.assertEqual([row.number for row in qs[9:10]], numbers[9:10])
+        self.assertEqual([row.number for row in qs[10:10]], numbers[10:10])
 
     def test_invalid_slicing(self):
         db = Database('system')
@@ -184,14 +191,14 @@ class QuerySetTestCase(TestCaseWithData):
             instances = set()
             while True:
                 page = qs.paginate(page_num, page_size)
-                self.assertEquals(page.number_of_objects, len(data))
+                self.assertEqual(page.number_of_objects, len(data))
                 self.assertGreater(page.pages_total, 0)
                 [instances.add(obj.to_tsv()) for obj in page.objects]
                 if page.pages_total == page_num:
                     break
                 page_num += 1
             # Verify that all instances were returned
-            self.assertEquals(len(instances), len(data))
+            self.assertEqual(len(instances), len(data))
 
     def test_pagination_last_page(self):
         qs = Person.objects_in(self.database).order_by('first_name', 'last_name')
@@ -200,8 +207,8 @@ class QuerySetTestCase(TestCaseWithData):
             # Ask for the last page in two different ways and verify equality
             page_a = qs.paginate(-1, page_size)
             page_b = qs.paginate(page_a.pages_total, page_size)
-            self.assertEquals(page_a[1:], page_b[1:])
-            self.assertEquals([obj.to_tsv() for obj in page_a.objects],
+            self.assertEqual(page_a[1:], page_b[1:])
+            self.assertEqual([obj.to_tsv() for obj in page_a.objects],
                               [obj.to_tsv() for obj in page_b.objects])
 
     def test_pagination_invalid_page(self):
@@ -213,12 +220,24 @@ class QuerySetTestCase(TestCaseWithData):
     def test_pagination_with_conditions(self):
         qs = Person.objects_in(self.database).order_by('first_name', 'last_name').filter(first_name__lt='Ava')
         page = qs.paginate(1, 100)
-        self.assertEquals(page.number_of_objects, 10)
+        self.assertEqual(page.number_of_objects, 10)
 
     def test_distinct(self):
         qs = Person.objects_in(self.database).distinct()
         self._test_qs(qs, 100)
         self._test_qs(qs.only('first_name'), 94)
+
+    def test_materialized_field(self):
+        self._insert_sample_model()
+        qs = SampleModel.objects_in(self.database)
+        for obj in qs:
+            self.assertTrue(obj.materialized_date != DateField.min_value)
+
+    def test_alias_field(self):
+        self._insert_sample_model()
+        qs = SampleModel.objects_in(self.database)
+        for obj in qs:
+            self.assertTrue(obj.num_squared == obj.num ** 2)
 
 
 class AggregateTestCase(TestCaseWithData):
@@ -230,63 +249,63 @@ class AggregateTestCase(TestCaseWithData):
     def test_aggregate_no_grouping(self):
         qs = Person.objects_in(self.database).aggregate(average_height='avg(height)', count='count()')
         print(qs.as_sql())
-        self.assertEquals(qs.count(), 1)
+        self.assertEqual(qs.count(), 1)
         for row in qs:
             self.assertAlmostEqual(row.average_height, 1.6923, places=4)
-            self.assertEquals(row.count, 100)
+            self.assertEqual(row.count, 100)
 
     def test_aggregate_with_filter(self):
         # When filter comes before aggregate
         qs = Person.objects_in(self.database).filter(first_name='Warren').aggregate(average_height='avg(height)', count='count()')
         print(qs.as_sql())
-        self.assertEquals(qs.count(), 1)
+        self.assertEqual(qs.count(), 1)
         for row in qs:
             self.assertAlmostEqual(row.average_height, 1.675, places=4)
-            self.assertEquals(row.count, 2)
+            self.assertEqual(row.count, 2)
         # When filter comes after aggregate
         qs = Person.objects_in(self.database).aggregate(average_height='avg(height)', count='count()').filter(first_name='Warren')
         print(qs.as_sql())
-        self.assertEquals(qs.count(), 1)
+        self.assertEqual(qs.count(), 1)
         for row in qs:
             self.assertAlmostEqual(row.average_height, 1.675, places=4)
-            self.assertEquals(row.count, 2)
+            self.assertEqual(row.count, 2)
 
     def test_aggregate_with_implicit_grouping(self):
         qs = Person.objects_in(self.database).aggregate('first_name', average_height='avg(height)', count='count()')
         print(qs.as_sql())
-        self.assertEquals(qs.count(), 94)
+        self.assertEqual(qs.count(), 94)
         total = 0
         for row in qs:
             self.assertTrue(1.5 < row.average_height < 2)
             self.assertTrue(0 < row.count < 3)
             total += row.count
-        self.assertEquals(total, 100)
+        self.assertEqual(total, 100)
 
     def test_aggregate_with_explicit_grouping(self):
         qs = Person.objects_in(self.database).aggregate(weekday='toDayOfWeek(birthday)', count='count()').group_by('weekday')
         print(qs.as_sql())
-        self.assertEquals(qs.count(), 7)
+        self.assertEqual(qs.count(), 7)
         total = 0
         for row in qs:
             total += row.count
-        self.assertEquals(total, 100)
+        self.assertEqual(total, 100)
 
     def test_aggregate_with_order_by(self):
         qs = Person.objects_in(self.database).aggregate(weekday='toDayOfWeek(birthday)', count='count()').group_by('weekday')
         days = [row.weekday for row in qs.order_by('weekday')]
-        self.assertEquals(days, list(range(1, 8)))
+        self.assertEqual(days, list(range(1, 8)))
 
     def test_aggregate_with_indexing(self):
         qs = Person.objects_in(self.database).aggregate(weekday='toDayOfWeek(birthday)', count='count()').group_by('weekday')
         total = 0
         for i in range(7):
             total += qs[i].count
-        self.assertEquals(total, 100)
+        self.assertEqual(total, 100)
 
     def test_aggregate_with_slicing(self):
         qs = Person.objects_in(self.database).aggregate(weekday='toDayOfWeek(birthday)', count='count()').group_by('weekday')
         total = sum(row.count for row in qs[:3]) + sum(row.count for row in qs[3:])
-        self.assertEquals(total, 100)
+        self.assertEqual(total, 100)
 
     def test_aggregate_with_pagination(self):
         qs = Person.objects_in(self.database).aggregate(weekday='toDayOfWeek(birthday)', count='count()').group_by('weekday')
@@ -294,12 +313,12 @@ class AggregateTestCase(TestCaseWithData):
         page_num = 1
         while True:
             page = qs.paginate(page_num, page_size=3)
-            self.assertEquals(page.number_of_objects, 7)
+            self.assertEqual(page.number_of_objects, 7)
             total += sum(row.count for row in page.objects)
             if page.pages_total == page_num:
                 break
             page_num += 1
-        self.assertEquals(total, 100)
+        self.assertEqual(total, 100)
 
     def test_aggregate_with_wrong_grouping(self):
         with self.assertRaises(AssertionError):
@@ -326,13 +345,13 @@ class AggregateTestCase(TestCaseWithData):
         with self.assertRaises(AttributeError):
             qs = Person.objects_in(self.database).aggregate(weekday='toDayOfWeek(birthday)', count='count()').group_by('weekday')
             qs = qs.filter(weekday=1)
-            self.assertEquals(qs.count(), 1)
+            self.assertEqual(qs.count(), 1)
 
     def test_aggregate_with_distinct(self):
         # In this case distinct has no effect
         qs = Person.objects_in(self.database).aggregate(average_height='avg(height)').distinct()
         print(qs.as_sql())
-        self.assertEquals(qs.count(), 1)
+        self.assertEqual(qs.count(), 1)
 
     def test_double_underscore_field(self):
         class Mdl(Model):
@@ -340,13 +359,13 @@ class AggregateTestCase(TestCaseWithData):
             the__next__number = Int32Field()
             engine = Memory()
         qs = Mdl.objects_in(self.database).filter(the__number=1)
-        self.assertEquals(qs.conditions_as_sql(), 'the__number = 1')
+        self.assertEqual(qs.conditions_as_sql(), 'the__number = 1')
         qs = Mdl.objects_in(self.database).filter(the__number__gt=1)
-        self.assertEquals(qs.conditions_as_sql(), 'the__number > 1')
+        self.assertEqual(qs.conditions_as_sql(), 'the__number > 1')
         qs = Mdl.objects_in(self.database).filter(the__next__number=1)
-        self.assertEquals(qs.conditions_as_sql(), 'the__next__number = 1')
+        self.assertEqual(qs.conditions_as_sql(), 'the__next__number = 1')
         qs = Mdl.objects_in(self.database).filter(the__next__number__gt=1)
-        self.assertEquals(qs.conditions_as_sql(), 'the__next__number > 1')
+        self.assertEqual(qs.conditions_as_sql(), 'the__next__number > 1')
 
 
 Color = Enum('Color', u'red blue green yellow brown white black')
@@ -358,6 +377,7 @@ class SampleModel(Model):
     materialized_date = DateField(materialized='toDate(timestamp)')
     num = Int32Field()
     color = Enum8Field(Color)
+    num_squared = Int32Field(alias='num*num')
 
     engine = MergeTree('materialized_date', ('materialized_date',))
 

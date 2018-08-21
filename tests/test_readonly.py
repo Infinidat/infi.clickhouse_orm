@@ -16,7 +16,7 @@ class ReadonlyTestCase(TestCaseWithData):
                 self._insert_and_check(self._sample_data(), len(data))
             self._check_db_readonly_err(cm.exception)
 
-            self.assertEquals(self.database.count(Person), 100)
+            self.assertEqual(self.database.count(Person), 100)
             list(self.database.select('SELECT * from $table', Person))
             with self.assertRaises(ServerError) as cm:
                 self.database.drop_table(Person)
@@ -57,6 +57,11 @@ class ReadonlyTestCase(TestCaseWithData):
 
     def test_drop_readonly_table(self):
         self.database.drop_table(ReadOnlyModel)
+
+    def test_nonexisting_readonly_database(self):
+        with self.assertRaises(DatabaseException) as cm:
+            db = Database('dummy', readonly=True)
+        self.assertEqual(str(cm.exception), 'Database does not exist, and cannot be created under readonly connection')
 
 
 class ReadOnlyModel(Model):

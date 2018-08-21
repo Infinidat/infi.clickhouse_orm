@@ -28,20 +28,20 @@ class DatabaseTestCase(TestCaseWithData):
 
     def test_count(self):
         self.database.insert(self._sample_data())
-        self.assertEquals(self.database.count(Person), 100)
-        self.assertEquals(self.database.count(Person, "first_name = 'Courtney'"), 2)
-        self.assertEquals(self.database.count(Person, "birthday > '2000-01-01'"), 22)
-        self.assertEquals(self.database.count(Person, "birthday < '1970-03-01'"), 0)
+        self.assertEqual(self.database.count(Person), 100)
+        self.assertEqual(self.database.count(Person, "first_name = 'Courtney'"), 2)
+        self.assertEqual(self.database.count(Person, "birthday > '2000-01-01'"), 22)
+        self.assertEqual(self.database.count(Person, "birthday < '1970-03-01'"), 0)
 
     def test_select(self):
         self._insert_and_check(self._sample_data(), len(data))
         query = "SELECT * FROM `test-db`.person WHERE first_name = 'Whitney' ORDER BY last_name"
         results = list(self.database.select(query, Person))
-        self.assertEquals(len(results), 2)
-        self.assertEquals(results[0].last_name, 'Durham')
-        self.assertEquals(results[0].height, 1.72)
-        self.assertEquals(results[1].last_name, 'Scott')
-        self.assertEquals(results[1].height, 1.70)
+        self.assertEqual(len(results), 2)
+        self.assertEqual(results[0].last_name, 'Durham')
+        self.assertEqual(results[0].height, 1.72)
+        self.assertEqual(results[1].last_name, 'Scott')
+        self.assertEqual(results[1].height, 1.70)
         self.assertEqual(results[0].get_database(), self.database)
         self.assertEqual(results[1].get_database(), self.database)
 
@@ -53,11 +53,11 @@ class DatabaseTestCase(TestCaseWithData):
         self._insert_and_check(self._sample_data(), len(data))
         query = "SELECT first_name, last_name FROM `test-db`.person WHERE first_name = 'Whitney' ORDER BY last_name"
         results = list(self.database.select(query, Person))
-        self.assertEquals(len(results), 2)
-        self.assertEquals(results[0].last_name, 'Durham')
-        self.assertEquals(results[0].height, 0) # default value
-        self.assertEquals(results[1].last_name, 'Scott')
-        self.assertEquals(results[1].height, 0) # default value
+        self.assertEqual(len(results), 2)
+        self.assertEqual(results[0].last_name, 'Durham')
+        self.assertEqual(results[0].height, 0) # default value
+        self.assertEqual(results[1].last_name, 'Scott')
+        self.assertEqual(results[1].height, 0) # default value
         self.assertEqual(results[0].get_database(), self.database)
         self.assertEqual(results[1].get_database(), self.database)
 
@@ -65,12 +65,12 @@ class DatabaseTestCase(TestCaseWithData):
         self._insert_and_check(self._sample_data(), len(data))
         query = "SELECT * FROM `test-db`.person WHERE first_name = 'Whitney' ORDER BY last_name"
         results = list(self.database.select(query))
-        self.assertEquals(len(results), 2)
-        self.assertEquals(results[0].__class__.__name__, 'AdHocModel')
-        self.assertEquals(results[0].last_name, 'Durham')
-        self.assertEquals(results[0].height, 1.72)
-        self.assertEquals(results[1].last_name, 'Scott')
-        self.assertEquals(results[1].height, 1.70)
+        self.assertEqual(len(results), 2)
+        self.assertEqual(results[0].__class__.__name__, 'AdHocModel')
+        self.assertEqual(results[0].last_name, 'Durham')
+        self.assertEqual(results[0].height, 1.72)
+        self.assertEqual(results[1].last_name, 'Scott')
+        self.assertEqual(results[1].height, 1.70)
         self.assertEqual(results[0].get_database(), self.database)
         self.assertEqual(results[1].get_database(), self.database)
 
@@ -81,7 +81,7 @@ class DatabaseTestCase(TestCaseWithData):
         total = sum(r.height for r in results[:-1])
         # Last line has an empty last name, and total of all heights
         self.assertFalse(results[-1].last_name)
-        self.assertEquals(total, results[-1].height)
+        self.assertEqual(total, results[-1].height)
 
     def test_pagination(self):
         self._insert_and_check(self._sample_data(), len(data))
@@ -92,14 +92,14 @@ class DatabaseTestCase(TestCaseWithData):
             instances = set()
             while True:
                 page = self.database.paginate(Person, 'first_name, last_name', page_num, page_size)
-                self.assertEquals(page.number_of_objects, len(data))
+                self.assertEqual(page.number_of_objects, len(data))
                 self.assertGreater(page.pages_total, 0)
                 [instances.add(obj.to_tsv()) for obj in page.objects]
                 if page.pages_total == page_num:
                     break
                 page_num += 1
             # Verify that all instances were returned
-            self.assertEquals(len(instances), len(data))
+            self.assertEqual(len(instances), len(data))
 
     def test_pagination_last_page(self):
         self._insert_and_check(self._sample_data(), len(data))
@@ -108,8 +108,8 @@ class DatabaseTestCase(TestCaseWithData):
             # Ask for the last page in two different ways and verify equality
             page_a = self.database.paginate(Person, 'first_name, last_name', -1, page_size)
             page_b = self.database.paginate(Person, 'first_name, last_name', page_a.pages_total, page_size)
-            self.assertEquals(page_a[1:], page_b[1:])
-            self.assertEquals([obj.to_tsv() for obj in page_a.objects],
+            self.assertEqual(page_a[1:], page_b[1:])
+            self.assertEqual([obj.to_tsv() for obj in page_a.objects],
                               [obj.to_tsv() for obj in page_b.objects])
 
     def test_pagination_invalid_page(self):
@@ -121,20 +121,20 @@ class DatabaseTestCase(TestCaseWithData):
     def test_pagination_with_conditions(self):
         self._insert_and_check(self._sample_data(), len(data))
         page = self.database.paginate(Person, 'first_name, last_name', 1, 100, conditions="first_name < 'Ava'")
-        self.assertEquals(page.number_of_objects, 10)
+        self.assertEqual(page.number_of_objects, 10)
 
     def test_special_chars(self):
         s = u'אבגד \\\'"`,.;éåäöšž\n\t\0\b\r'
         p = Person(first_name=s)
         self.database.insert([p])
         p = list(self.database.select("SELECT * from $table", Person))[0]
-        self.assertEquals(p.first_name, s)
+        self.assertEqual(p.first_name, s)
 
     def test_raw(self):
         self._insert_and_check(self._sample_data(), len(data))
         query = "SELECT * FROM `test-db`.person WHERE first_name = 'Whitney' ORDER BY last_name"
         results = self.database.raw(query)
-        self.assertEqual(results, "Whitney\tDurham\t1977-09-15\t1.72\nWhitney\tScott\t1971-07-04\t1.7\n")
+        self.assertEqual(results, "Whitney\tDurham\t1977-09-15\t1.72\t\\N\nWhitney\tScott\t1971-07-04\t1.7\t\\N\n")
 
     def test_invalid_user(self):
         with self.assertRaises(ServerError) as cm:
@@ -148,10 +148,13 @@ class DatabaseTestCase(TestCaseWithData):
         db = Database('db_not_here', autocreate=False)
         with self.assertRaises(ServerError) as cm:
             db.create_table(Person)
-
         exc = cm.exception
         self.assertEqual(exc.code, 81)
         self.assertEqual(exc.message, "Database db_not_here doesn't exist")
+        # Now create the database - should succeed
+        db.create_database()
+        db.create_table(Person)
+        db.drop_database()
 
     def test_preexisting_db(self):
         db = Database(self.database.db_name, autocreate=False)
@@ -170,9 +173,14 @@ class DatabaseTestCase(TestCaseWithData):
             readonly = StringField()
             engine = Memory()
         instance = Model1(system='s', readonly='r')
-        self.assertEquals(instance.to_dict(), dict(system='s', readonly='r'))
+        self.assertEqual(instance.to_dict(), dict(system='s', readonly='r'))
         self.database.create_table(Model1)
         self.database.insert([instance])
         instance = Model1.objects_in(self.database)[0]
-        self.assertEquals(instance.to_dict(), dict(system='s', readonly='r'))
+        self.assertEqual(instance.to_dict(), dict(system='s', readonly='r'))
 
+    def test_does_table_exist(self):
+        class Person2(Person):
+            pass
+        self.assertTrue(self.database.does_table_exist(Person))
+        self.assertFalse(self.database.does_table_exist(Person2))

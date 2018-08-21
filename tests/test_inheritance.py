@@ -12,7 +12,7 @@ from infi.clickhouse_orm.engines import *
 class InheritanceTestCase(unittest.TestCase):
 
     def assertFieldNames(self, model_class, names):
-        self.assertEquals(names, list(model_class.fields()))
+        self.assertEqual(names, list(model_class.fields()))
 
     def test_field_inheritance(self):
         self.assertFieldNames(ParentModel, ['date_field', 'int_field'])

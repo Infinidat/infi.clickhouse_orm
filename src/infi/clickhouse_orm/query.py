@@ -28,12 +28,15 @@ class SimpleOperator(Operator):
     A simple binary operator such as a=b, a<b, a>b etc.
     """
 
-    def __init__(self, sql_operator):
+    def __init__(self, sql_operator, sql_for_null=None):
         self._sql_operator = sql_operator
+        self._sql_for_null = sql_for_null
 
     def to_sql(self, model_cls, field_name, value):
         field = getattr(model_cls, field_name)
         value = field.to_db_string(field.to_python(value, pytz.utc))
+        if value == '\\N' and self._sql_for_null is not None:
+            return ' '.join([field_name, self._sql_for_null])
         return ' '.join([field_name, self._sql_operator, value])
 
 
@@ -132,8 +135,8 @@ _operators = {}
 def register_operator(name, sql):
     _operators[name] = sql
 
-register_operator('eq',          SimpleOperator('='))
-register_operator('ne',          SimpleOperator('!='))
+register_operator('eq',          SimpleOperator('=', 'IS NULL'))
+register_operator('ne',          SimpleOperator('!=', 'IS NOT NULL'))
 register_operator('gt',          SimpleOperator('>'))
 register_operator('gte',         SimpleOperator('>='))
 register_operator('lt',          SimpleOperator('<'))
@@ -237,7 +240,7 @@ class QuerySet(object):
         self._database = database
         self._order_by = []
         self._q = []
-        self._fields = []
+        self._fields = model_cls.fields().keys()
         self._limits = None
         self._distinct = False
 
