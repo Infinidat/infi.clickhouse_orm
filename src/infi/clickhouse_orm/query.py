@@ -316,11 +316,12 @@ class QuerySet(object):
         """
         Returns the number of matching model instances.
         """
-        if self._distinct:
+        if self._distinct or self._limits:
             # Use a subquery, since a simple count won't be accurate
             sql = u'SELECT count() FROM (%s)' % self.as_sql()
             raw = self._database.raw(sql)
             return int(raw) if raw else 0
+        # Simple case
         return self._database.count(self._model_cls, self.conditions_as_sql())
 
     def order_by(self, *field_names):

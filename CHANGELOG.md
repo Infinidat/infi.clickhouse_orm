@@ -1,6 +1,10 @@
 Change Log
 ==========
 
+Unreleased
+----------
+- Bug fix: `QuerySet.count()` ignores slicing
+
 v1.0.2
 ----------
 - Include alias and materialized fields in queryset results

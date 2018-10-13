@@ -239,6 +239,12 @@ class QuerySetTestCase(TestCaseWithData):
         for obj in qs:
             self.assertTrue(obj.num_squared == obj.num ** 2)
 
+    def test_count_of_slice(self):
+        qs = Person.objects_in(self.database)
+        self._test_qs(qs[:70], 70)
+        self._test_qs(qs[70:80], 10)
+        self._test_qs(qs[80:], 20)
+
 
 class AggregateTestCase(TestCaseWithData):
 
