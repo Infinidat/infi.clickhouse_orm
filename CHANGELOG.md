@@ -4,6 +4,7 @@ Change Log
 Unreleased
 ----------
 - Bug fix: `QuerySet.count()` ignores slicing
+- Bug fix: wrong parentheses when building queries using Q objects
 
 v1.0.2
 ----------
