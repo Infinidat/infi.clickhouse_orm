@@ -24,6 +24,16 @@ created on the ClickHouse server if it does not already exist.
 - `autocreate`: automatically create the database if does not exist (unless in readonly mode).
 
 
+#### add_setting(name, value)
+
+
+Add a database setting that will be sent with every request.
+For example, `db.add_setting("max_execution_time", 10)` will
+limit query execution time to 10 seconds.
+The name must be string, and the value is converted to string in case
+it isn't. To remove a setting, pass `None` as the value.
+
+
 #### count(model_class, conditions=None)
 
 
@@ -494,19 +504,41 @@ Returns the instance's column values as a tab-separated line. A newline is not i
 infi.clickhouse_orm.fields
 --------------------------
 
-### Field
-
-
-Abstract base class for all field types.
-
-#### Field(default=None, alias=None, materialized=None, readonly=None)
-
-
-### StringField
+### ArrayField
 
 Extends Field
 
-#### StringField(default=None, alias=None, materialized=None, readonly=None)
+#### ArrayField(inner_field, default=None, alias=None, materialized=None, readonly=None)
+
+
+### BaseEnumField
+
+Extends Field
+
+
+Abstract base class for all enum-type fields.
+
+#### BaseEnumField(enum_cls, default=None, alias=None, materialized=None, readonly=None)
+
+
+### BaseFloatField
+
+Extends Field
+
+
+Abstract base class for all float-type fields.
+
+#### BaseFloatField(default=None, alias=None, materialized=None, readonly=None)
+
+
+### BaseIntField
+
+Extends Field
+
+
+Abstract base class for all integer-type fields.
+
+#### BaseIntField(default=None, alias=None, materialized=None, readonly=None)
 
 
 ### DateField
@@ -523,48 +555,57 @@ Extends Field
 #### DateTimeField(default=None, alias=None, materialized=None, readonly=None)
 
 
-### BaseIntField
+### Decimal128Field
+
+Extends DecimalField
+
+#### Decimal128Field(scale, default=None, alias=None, materialized=None, readonly=None)
+
+
+### Decimal32Field
+
+Extends DecimalField
+
+#### Decimal32Field(scale, default=None, alias=None, materialized=None, readonly=None)
+
+
+### Decimal64Field
+
+Extends DecimalField
+
+#### Decimal64Field(scale, default=None, alias=None, materialized=None, readonly=None)
+
+
+### DecimalField
 
 Extends Field
 
 
-Abstract base class for all integer-type fields.
+Base class for all decimal fields. Can also be used directly.
 
-#### BaseIntField(default=None, alias=None, materialized=None, readonly=None)
-
-
-### BaseFloatField
-
-Extends Field
+#### DecimalField(precision, scale, default=None, alias=None, materialized=None, readonly=None)
 
 
-Abstract base class for all float-type fields.
+### Enum16Field
 
-#### BaseFloatField(default=None, alias=None, materialized=None, readonly=None)
+Extends BaseEnumField
 
-
-### BaseEnumField
-
-Extends Field
+#### Enum16Field(enum_cls, default=None, alias=None, materialized=None, readonly=None)
 
 
-Abstract base class for all enum-type fields.
+### Enum8Field
 
-#### BaseEnumField(enum_cls, default=None, alias=None, materialized=None, readonly=None)
+Extends BaseEnumField
 
-
-### ArrayField
-
-Extends Field
-
-#### ArrayField(inner_field, default=None, alias=None, materialized=None, readonly=None)
+#### Enum8Field(enum_cls, default=None, alias=None, materialized=None, readonly=None)
 
 
-### NullableField
+### Field
 
-Extends Field
 
-#### NullableField(inner_field, default=None, alias=None, materialized=None, extra_null_values=None)
+Abstract base class for all field types.
+
+#### Field(default=None, alias=None, materialized=None, readonly=None)
 
 
 ### FixedStringField
@@ -574,39 +615,18 @@ Extends StringField
 #### FixedStringField(length, default=None, alias=None, materialized=None, readonly=None)
 
 
-### UInt8Field
+### Float32Field
 
-Extends BaseIntField
+Extends BaseFloatField
 
-#### UInt8Field(default=None, alias=None, materialized=None, readonly=None)
-
-
-### UInt16Field
-
-Extends BaseIntField
-
-#### UInt16Field(default=None, alias=None, materialized=None, readonly=None)
+#### Float32Field(default=None, alias=None, materialized=None, readonly=None)
 
 
-### UInt32Field
+### Float64Field
 
-Extends BaseIntField
+Extends BaseFloatField
 
-#### UInt32Field(default=None, alias=None, materialized=None, readonly=None)
-
-
-### UInt64Field
-
-Extends BaseIntField
-
-#### UInt64Field(default=None, alias=None, materialized=None, readonly=None)
-
-
-### Int8Field
-
-Extends BaseIntField
-
-#### Int8Field(default=None, alias=None, materialized=None, readonly=None)
+#### Float64Field(default=None, alias=None, materialized=None, readonly=None)
 
 
 ### Int16Field
@@ -630,32 +650,53 @@ Extends BaseIntField
 #### Int64Field(default=None, alias=None, materialized=None, readonly=None)
 
 
-### Float32Field
+### Int8Field
 
-Extends BaseFloatField
+Extends BaseIntField
 
-#### Float32Field(default=None, alias=None, materialized=None, readonly=None)
-
-
-### Float64Field
-
-Extends BaseFloatField
-
-#### Float64Field(default=None, alias=None, materialized=None, readonly=None)
+#### Int8Field(default=None, alias=None, materialized=None, readonly=None)
 
 
-### Enum8Field
+### NullableField
 
-Extends BaseEnumField
+Extends Field
 
-#### Enum8Field(enum_cls, default=None, alias=None, materialized=None, readonly=None)
+#### NullableField(inner_field, default=None, alias=None, materialized=None, extra_null_values=None)
 
 
-### Enum16Field
+### StringField
 
-Extends BaseEnumField
+Extends Field
 
-#### Enum16Field(enum_cls, default=None, alias=None, materialized=None, readonly=None)
+#### StringField(default=None, alias=None, materialized=None, readonly=None)
+
+
+### UInt16Field
+
+Extends BaseIntField
+
+#### UInt16Field(default=None, alias=None, materialized=None, readonly=None)
+
+
+### UInt32Field
+
+Extends BaseIntField
+
+#### UInt32Field(default=None, alias=None, materialized=None, readonly=None)
+
+
+### UInt64Field
+
+Extends BaseIntField
+
+#### UInt64Field(default=None, alias=None, materialized=None, readonly=None)
+
+
+### UInt8Field
+
+Extends BaseIntField
+
+#### UInt8Field(default=None, alias=None, materialized=None, readonly=None)
 
 
 infi.clickhouse_orm.engines

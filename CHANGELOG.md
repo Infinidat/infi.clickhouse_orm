@@ -5,6 +5,8 @@ Unreleased
 ----------
 - Bug fix: `QuerySet.count()` ignores slicing
 - Bug fix: wrong parentheses when building queries using Q objects
+- Support Decimal fields
+- Added `Database.add_setting` method
 
 v1.0.2
 ----------

@@ -80,6 +80,10 @@ class ModelBase(type):
         if db_type.startswith('FixedString'):
             length = int(db_type[12 : -1])
             return orm_fields.FixedStringField(length)
+        # Decimal
+        if db_type.startswith('Decimal'):
+            precision, scale = [int(n.strip()) for n in db_type[8 : -1].split(',')]
+            return orm_fields.DecimalField(precision, scale)
         # Nullable
         if db_type.startswith('Nullable'):
             inner_field = cls.create_ad_hoc_field(db_type[9 : -1])
