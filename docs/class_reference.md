@@ -27,7 +27,7 @@ created on the ClickHouse server if it does not already exist.
 #### add_setting(name, value)
 
 
-Add a database setting that will be sent with every request.
+Adds a database setting that will be sent with every request.
 For example, `db.add_setting("max_execution_time", 10)` will
 limit query execution time to 10 seconds.
 The name must be string, and the value is converted to string in case
