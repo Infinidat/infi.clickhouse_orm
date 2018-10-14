@@ -3,7 +3,7 @@ from __future__ import unicode_literals
 import unittest
 from decimal import Decimal
 
-from infi.clickhouse_orm.database import Database
+from infi.clickhouse_orm.database import Database, ServerError
 from infi.clickhouse_orm.models import Model
 from infi.clickhouse_orm.fields import *
 from infi.clickhouse_orm.engines import *
@@ -13,8 +13,15 @@ class DecimalFieldsTest(unittest.TestCase):
 
     def setUp(self):
         self.database = Database('test-db')
-        self.database.add_setting('allow_experimental_decimal_type', 1)
-        self.database.create_table(DecimalModel)
+        self.database.add_setting('allow_experimental_decimal_typez', 1)
+        try:
+            self.database.create_table(DecimalModel)
+        except ServerError as e:
+            if 'Unknown setting' in e.message:
+                # This ClickHouse version does not support decimals yet
+                raise unittest.SkipTest(e.message)
+            else:
+                raise
 
     def tearDown(self):
         self.database.drop_database()
