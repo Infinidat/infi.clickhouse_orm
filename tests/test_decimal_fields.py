@@ -13,7 +13,7 @@ class DecimalFieldsTest(unittest.TestCase):
 
     def setUp(self):
         self.database = Database('test-db')
-        self.database.add_setting('allow_experimental_decimal_typez', 1)
+        self.database.add_setting('allow_experimental_decimal_type', 1)
         try:
             self.database.create_table(DecimalModel)
         except ServerError as e:
