@@ -3,7 +3,8 @@ import six
 import pytz
 from copy import copy
 from math import ceil
-from .utils import comma_join
+from datetime import date, datetime
+from .utils import comma_join, is_iterable
 
 
 # TODO
@@ -22,6 +23,11 @@ class Operator(object):
         """
         raise NotImplementedError   # pragma: no cover
 
+    def _value_to_sql(self, field, value, quote=True):
+        if isinstance(value, F):
+            return value.to_sql()
+        return field.to_db_string(field.to_python(value, pytz.utc), quote)
+
 
 class SimpleOperator(Operator):
     """
@@ -34,7 +40,7 @@ class SimpleOperator(Operator):
 
     def to_sql(self, model_cls, field_name, value):
         field = getattr(model_cls, field_name)
-        value = field.to_db_string(field.to_python(value, pytz.utc))
+        value = self._value_to_sql(field, value)
         if value == '\\N' and self._sql_for_null is not None:
             return ' '.join([field_name, self._sql_for_null])
         return ' '.join([field_name, self._sql_operator, value])
@@ -56,7 +62,7 @@ class InOperator(Operator):
         elif isinstance(value, six.string_types):
             pass
         else:
-            value = comma_join([field.to_db_string(field.to_python(v, pytz.utc)) for v in value])
+            value = comma_join([self._value_to_sql(field, v) for v in value])
         return '%s IN (%s)' % (field_name, value)
 
 
@@ -72,7 +78,7 @@ class LikeOperator(Operator):
 
     def to_sql(self, model_cls, field_name, value):
         field = getattr(model_cls, field_name)
-        value = field.to_db_string(field.to_python(value, pytz.utc), quote=False)
+        value = self._value_to_sql(field, value, quote=False)
         value = value.replace('\\', '\\\\').replace('%', '\\\\%').replace('_', '\\\\_')
         pattern = self._pattern.format(value)
         if self._case_sensitive:
@@ -88,7 +94,7 @@ class IExactOperator(Operator):
 
     def to_sql(self, model_cls, field_name, value):
         field = getattr(model_cls, field_name)
-        value = field.to_db_string(field.to_python(value, pytz.utc))
+        value = self._value_to_sql(field, value)
         return 'lowerUTF8(%s) = lowerUTF8(%s)' % (field_name, value)
 
 
@@ -117,10 +123,8 @@ class BetweenOperator(Operator):
 
     def to_sql(self, model_cls, field_name, value):
         field = getattr(model_cls, field_name)
-        value0 = field.to_db_string(
-                field.to_python(value[0], pytz.utc)) if value[0] is not None or len(str(value[0])) > 0 else None
-        value1 = field.to_db_string(
-                field.to_python(value[1], pytz.utc)) if value[1] is not None or len(str(value[1])) > 0 else None
+        value0 = self._value_to_sql(field, value[0]) if value[0] is not None or len(str(value[0])) > 0 else None
+        value1 = self._value_to_sql(field, value[1]) if value[1] is not None or len(str(value[1])) > 0 else None
         if value0 and value1:
             return '%s BETWEEN %s AND %s' % (field_name, value0, value1)
         if value0 and not value1:
@@ -153,11 +157,19 @@ register_operator('iendswith',   LikeOperator('%{}', False))
 register_operator('iexact',      IExactOperator())
 
 
-class FOV(object):
+class Cond(object):
     """
-    An object for storing Field + Operator + Value.
+    An abstract object for storing a single query condition Field + Operator + Value.
     """
 
+    def to_sql(self, model_cls):
+        raise NotImplementedError
+
+
+class FieldCond(Cond):
+    """
+    A single query condition made up of Field + Operator + Value.
+    """
     def __init__(self, field_name, operator, value):
         self._field_name = field_name
         self._operator = _operators.get(operator)
@@ -171,13 +183,300 @@ class FOV(object):
         return self._operator.to_sql(model_cls, self._field_name, self._value)
 
 
+class F(Cond):
+    """
+    Represents a database function call and its arguments.
+    It doubles as a query condition when the function returns a boolean result.
+    """
+
+    def __init__(self, name, *args):
+        self.name = name
+        self.args = args
+
+    def to_sql(self, *args):
+        args_sql = comma_join(self.arg_to_sql(arg) for arg in self.args)
+        return self.name + '(' + args_sql + ')'
+
+    def arg_to_sql(self, arg):
+        from .fields import Field, StringField, DateTimeField, DateField
+        if isinstance(arg, F):
+            return arg.to_sql()
+        if isinstance(arg, Field):
+            return "`%s`" % arg.name
+        if isinstance(arg, six.string_types):
+            return StringField().to_db_string(arg)
+        if isinstance(arg, datetime):
+            return DateTimeField().to_db_string(arg)
+        if isinstance(arg, date):
+            return DateField().to_db_string(arg)
+        if isinstance(arg, bool):
+            return six.text_type(int(arg))
+        if arg is None:
+            return 'NULL'
+        if is_iterable(arg):
+            return '[' + comma_join(self.arg_to_sql(x) for x in arg) + ']'
+        return six.text_type(arg)
+
+    # Support comparison operators with F objects
+
+    def __lt__(self, other):
+        return F.less(self, other)
+
+    def __le__(self, other):
+        return F.lessOrEquals(self, other)
+
+    def __eq__(self, other):
+        return F.equals(self, other)
+
+    def __ne__(self, other):
+        return F.notEquals(self, other)
+
+    def __gt__(self, other):
+        return F.greater(self, other)
+
+    def __ge__(self, other):
+        return F.greaterOrEquals(self, other)
+
+    # Support arithmetic operations on F objects
+
+    def __add__(self, other):
+        return F.plus(self, other)
+
+    def __radd__(self, other):
+        return F.plus(other, self)
+
+    def __sub__(self, other):
+        return F.minus(self, other)
+
+    def __rsub__(self, other):
+        return F.minus(other, self)
+
+    def __mul__(self, other):
+        return F.multiply(self, other)
+
+    def __rmul__(self, other):
+        return F.multiply(other, self)
+
+    def __div__(self, other):
+        return F.divide(self, other)
+
+    def __rdiv__(self, other):
+        return F.divide(other, self)
+
+    def __mod__(self, other):
+        return F.modulo(self, other)
+
+    def __rmod__(self, other):
+        return F.modulo(other, self)
+
+    def __neg__(self):
+        return F.negate(self)
+
+    def __pos__(self):
+        return self
+
+    # Arithmetic functions
+
+    @staticmethod
+    def plus(a, b):
+        return F('plus', a, b)
+
+    @staticmethod
+    def minus(a, b):
+        return F('minus', a, b)
+
+    @staticmethod
+    def multiply(a, b):
+        return F('multiply', a, b)
+
+    @staticmethod
+    def divide(a, b):
+        return F('divide', a, b)
+
+    @staticmethod
+    def intDiv(a, b):
+        return F('intDiv', a, b)
+
+    @staticmethod
+    def intDivOrZero(a, b):
+        return F('intDivOrZero', a, b)
+
+    @staticmethod
+    def modulo(a, b):
+        return F('modulo', a, b)
+
+    @staticmethod
+    def negate(a):
+        return F('negate', a)
+
+    @staticmethod
+    def abs(a):
+        return F('abs', a)
+
+    @staticmethod
+    def gcd(a, b):
+        return F('gcd',a, b)
+
+    @staticmethod
+    def lcm(a, b):
+        return F('lcm', a, b)
+
+    # Comparison functions
+
+    @staticmethod
+    def equals(a, b):
+        return F('equals', a, b)
+
+    @staticmethod
+    def notEquals(a, b):
+        return F('notEquals', a, b)
+
+    @staticmethod
+    def less(a, b):
+        return F('less', a, b)
+
+    @staticmethod
+    def greater(a, b):
+        return F('greater', a, b)
+
+    @staticmethod
+    def lessOrEquals(a, b):
+        return F('lessOrEquals', a, b)
+
+    @staticmethod
+    def greaterOrEquals(a, b):
+        return F('greaterOrEquals', a, b)
+
+    # Functions for working with dates and times
+
+    @staticmethod
+    def toYear(d):
+        return F('toYear', d)
+
+    @staticmethod
+    def toMonth(d):
+        return F('toMonth', d)
+
+    @staticmethod
+    def toDayOfMonth(d):
+        return F('toDayOfMonth', d)
+
+    @staticmethod
+    def toDayOfWeek(d):
+        return F('toDayOfWeek', d)
+
+    @staticmethod
+    def toHour(d):
+        return F('toHour', d)
+
+    @staticmethod
+    def toMinute(d):
+        return F('toMinute', d)
+
+    @staticmethod
+    def toSecond(d):
+        return F('toSecond', d)
+
+    @staticmethod
+    def toMonday(d):
+        return F('toMonday', d)
+
+    @staticmethod
+    def toStartOfMonth(d):
+        return F('toStartOfMonth', d)
+
+    @staticmethod
+    def toStartOfQuarter(d):
+        return F('toStartOfQuarter', d)
+
+    @staticmethod
+    def toStartOfYear(d):
+        return F('toStartOfYear', d)
+
+    @staticmethod
+    def toStartOfMinute(d):
+        return F('toStartOfMinute', d)
+
+    @staticmethod
+    def toStartOfFiveMinute(d):
+        return F('toStartOfFiveMinute', d)
+
+    @staticmethod
+    def toStartOfFifteenMinutes(d):
+        return F('toStartOfFifteenMinutes', d)
+
+    @staticmethod
+    def toStartOfHour(d):
+        return F('toStartOfHour', d)
+
+    @staticmethod
+    def toStartOfDay(d):
+        return F('toStartOfDay', d)
+
+    @staticmethod
+    def toTime(d):
+        return F('toTime', d)
+
+    @staticmethod
+    def toRelativeYearNum(d, timezone=''):
+        return F('toRelativeYearNum', d, timezone)
+
+    @staticmethod
+    def toRelativeMonthNum(d, timezone=''):
+        return F('toRelativeMonthNum', d, timezone)
+
+    @staticmethod
+    def toRelativeWeekNum(d, timezone=''):
+        return F('toRelativeWeekNum', d, timezone)
+
+    @staticmethod
+    def toRelativeDayNum(d, timezone=''):
+        return F('toRelativeDayNum', d, timezone)
+
+    @staticmethod
+    def toRelativeHourNum(d, timezone=''):
+        return F('toRelativeHourNum', d, timezone)
+
+    @staticmethod
+    def toRelativeMinuteNum(d, timezone=''):
+        return F('toRelativeMinuteNum', d, timezone)
+
+    @staticmethod
+    def toRelativeSecondNum(d, timezone=''):
+        return F('toRelativeSecondNum', d, timezone)
+
+    @staticmethod
+    def now():
+        return F('now')
+
+    @staticmethod
+    def today():
+        return F('today')
+
+    @staticmethod
+    def yesterday(d):
+        return F('yesterday')
+
+    @staticmethod
+    def timeSlot(d):
+        return F('timeSlot', d)
+
+    @staticmethod
+    def timeSlots(start_time, duration):
+        return F('timeSlots', start_time, duration)
+
+    @staticmethod
+    def formatDateTime(d, format, timezone=''):
+        return F('formatDateTime', d, format, timezone)
+
+
 class Q(object):
 
-    AND_MODE = 'AND'
-    OR_MODE = 'OR'
+    AND_MODE = ' AND '
+    OR_MODE = ' OR '
 
-    def __init__(self, **filter_fields):
-        self._fovs = [self._build_fov(k, v) for k, v in six.iteritems(filter_fields)]
+    def __init__(self, *filter_funcs, **filter_fields):
+        self._conds = list(filter_funcs) + [self._build_cond(k, v) for k, v in six.iteritems(filter_fields)]
         self._l_child = None
         self._r_child = None
         self._negate = False
@@ -191,16 +490,16 @@ class Q(object):
         q._mode = mode # AND/OR
         return q
 
-    def _build_fov(self, key, value):
+    def _build_cond(self, key, value):
         if '__' in key:
             field_name, operator = key.rsplit('__', 1)
         else:
             field_name, operator = key, 'eq'
-        return FOV(field_name, operator, value)
+        return FieldCond(field_name, operator, value)
 
     def to_sql(self, model_cls):
-        if self._fovs:
-            sql = ' {} '.format(self._mode).join(fov.to_sql(model_cls) for fov in self._fovs)
+        if self._conds:
+            sql = self._mode.join(cond.to_sql(model_cls) for cond in self._conds)
         else:
             if self._l_child and self._r_child:
                 sql = '({} {} {})'.format(
@@ -348,10 +647,16 @@ class QuerySet(object):
         Add q object to query if it specified.
         """
         qs = copy(self)
-        if q:
-            qs._q = list(self._q) + list(q)
-        else:
-            qs._q = list(self._q) + [Q(**filter_fields)]
+        qs._q = list(self._q)
+        for arg in q:
+            if isinstance(arg, Q):
+                qs._q.append(arg)
+            elif isinstance(arg, F):
+                qs._q.append(Q(arg))
+            else:
+                raise TypeError('Invalid argument "%r" to queryset filter' % arg)
+        if filter_fields:
+            qs._q += [Q(**filter_fields)]
         return qs
 
     def exclude(self, **filter_fields):
@@ -502,3 +807,5 @@ class AggregateQuerySet(QuerySet):
         sql = u'SELECT count() FROM (%s)' % self.as_sql()
         raw = self._database.raw(sql)
         return int(raw) if raw else 0
+
+

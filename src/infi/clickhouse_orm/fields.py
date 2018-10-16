@@ -8,15 +8,18 @@ from calendar import timegm
 from decimal import Decimal, localcontext
 
 from .utils import escape, parse_array, comma_join
+from .query import F
 
 
 class Field(object):
     '''
     Abstract base class for all field types.
     '''
-    creation_counter = 0
-    class_default = 0
-    db_type = None
+    name             = None # this is set by the parent model
+    parent           = None # this is set by the parent model
+    creation_counter = 0    # used for keeping the model fields ordered
+    class_default    = 0    # should be overridden by concrete subclasses
+    db_type          = None # should be overridden by concrete subclasses
 
     def __init__(self, default=None, alias=None, materialized=None, readonly=None):
         assert (None, None) in {(default, alias), (alias, materialized), (default, materialized)}, \
@@ -95,6 +98,26 @@ class Field(object):
                 return True
             inner_field = getattr(inner_field, 'inner_field', None)
         return False
+
+    # Support comparison operators (for use in querysets)
+
+    def __lt__(self, other):
+        return F.less(self, other)
+
+    def __le__(self, other):
+        return F.lessOrEquals(self, other)
+
+    def __eq__(self, other):
+        return F.equals(self, other)
+
+    def __ne__(self, other):
+        return F.notEquals(self, other)
+
+    def __gt__(self, other):
+        return F.greater(self, other)
+
+    def __ge__(self, other):
+        return F.greaterOrEquals(self, other)
 
 
 class StringField(Field):

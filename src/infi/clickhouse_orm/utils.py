@@ -98,3 +98,14 @@ def comma_join(items):
     Joins an iterable of strings with commas.
     """
     return ', '.join(items)
+
+
+def is_iterable(obj):
+    """
+    Checks if the given object is iterable.
+    """
+    try:
+        iter(obj)
+        return True
+    except TypeError:
+        return False
