@@ -43,7 +43,14 @@ class ModelBase(type):
             _writable_fields=OrderedDict([f for f in fields if not f[1].readonly]),
             _defaults=defaults
         )
-        return super(ModelBase, cls).__new__(cls, str(name), bases, attrs)
+        model = super(ModelBase, cls).__new__(cls, str(name), bases, attrs)
+
+        # Let each field know its parent and its own name
+        for n, f in fields:
+            setattr(f, 'parent', model)
+            setattr(f, 'name', n)
+
+        return model
 
     @classmethod
     def create_ad_hoc_model(cls, fields, model_name='AdHocModel'):

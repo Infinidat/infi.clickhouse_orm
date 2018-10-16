@@ -46,7 +46,7 @@ class Person(Model):
 data = [
     {"first_name": "Abdul", "last_name": "Hester", "birthday": "1970-12-02", "height": "1.63",
      "passport": 35052255},
-    
+
     {"first_name": "Adam", "last_name": "Goodman", "birthday": "1986-01-07", "height": "1.74",
      "passport": 36052255},
 
