@@ -188,7 +188,7 @@ class Q(object):
         q = Q()
         q._l_child = l_child
         q._r_child = r_child
-        q._mode = mode
+        q._mode = mode # AND/OR
         return q
 
     def _build_fov(self, key, value):
@@ -203,7 +203,7 @@ class Q(object):
             sql = ' {} '.format(self._mode).join(fov.to_sql(model_cls) for fov in self._fovs)
         else:
             if self._l_child and self._r_child:
-                sql = '({}) {} ({})'.format(
+                sql = '({} {} {})'.format(
                         self._l_child.to_sql(model_cls), self._mode, self._r_child.to_sql(model_cls))
             else:
                 return '1'
@@ -316,11 +316,12 @@ class QuerySet(object):
         """
         Returns the number of matching model instances.
         """
-        if self._distinct:
+        if self._distinct or self._limits:
             # Use a subquery, since a simple count won't be accurate
             sql = u'SELECT count() FROM (%s)' % self.as_sql()
             raw = self._database.raw(sql)
             return int(raw) if raw else 0
+        # Simple case
         return self._database.count(self._model_cls, self.conditions_as_sql())
 
     def order_by(self, *field_names):

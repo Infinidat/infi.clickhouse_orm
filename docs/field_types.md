@@ -21,6 +21,10 @@ Currently the following field types are supported:
 | UInt64Field        | UInt64     | int/long            | Range 0 to 18446744073709551615
 | Float32Field       | Float32    | float               |
 | Float64Field       | Float64    | float               |
+| DecimalField       | Decimal    | Decimal             | Pythonic values are rounded to fit the scale of the database field
+| Decimal32Field     | Decimal32  | Decimal             | Ditto
+| Decimal64Field     | Decimal64  | Decimal             | Ditto
+| Decimal128Field    | Decimal128 | Decimal             | Ditto
 | Enum8Field         | Enum8      | Enum                | See below
 | Enum16Field        | Enum16     | Enum                | See below
 | ArrayField         | Array      | list                | See below

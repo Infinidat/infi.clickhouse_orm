@@ -90,6 +90,7 @@ class Database(object):
         self.username = username
         self.password = password
         self.readonly = False
+        self.settings = {}
         self.db_exists = False
         self.db_exists = self._is_existing_database()
         if readonly:
@@ -142,6 +143,20 @@ class Database(object):
         sql = "SELECT count() FROM system.tables WHERE database = '%s' AND name = '%s'"
         r = self._send(sql % (self.db_name, model_class.table_name()))
         return r.text.strip() == '1'
+
+    def add_setting(self, name, value):
+        '''
+        Adds a database setting that will be sent with every request.
+        For example, `db.add_setting("max_execution_time", 10)` will
+        limit query execution time to 10 seconds.
+        The name must be string, and the value is converted to string in case
+        it isn't. To remove a setting, pass `None` as the value.
+        '''
+        assert isinstance(name, string_types), 'Setting name must be a string'
+        if value is None:
+            self.settings.pop(name, None)
+        else:
+            self.settings[name] = str(value)
 
     def insert(self, model_instances, batch_size=1000):
         '''
@@ -311,6 +326,7 @@ class Database(object):
 
     def _build_params(self, settings):
         params = dict(settings or {})
+        params.update(self.settings)
         if self.db_exists:
             params['database'] = self.db_name
         if self.username:

@@ -37,7 +37,7 @@ To allow null values in a field, wrap it inside a `NullableField`:
 
         birthday = fields.NullableField(fields.DateField())
 
-In this case, the default value for that fields becomes `null` unless otherwide specified.
+In this case, the default value for that field becomes `null` unless otherwise specified.
 
 ### Materialized fields
 
@@ -51,9 +51,9 @@ It is not possible to specify a default value for a materialized field.
 
 ### Alias fields
 
-An alias field is simply a different way to call another field in the model. For example:
+An alias field is a field whose value is calculated by ClickHouse on the fly, as a function of other fields. It is not physically stored by the database. For example:
 
-        date_born = field.DateField(alias="birthday")
+        weekday_born = field.UInt8Field(alias="toDayOfWeek(birthday)")
 
 Alias fields are read-only, meaning that their values are not sent to the database when inserting records.
 

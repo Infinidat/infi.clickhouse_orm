@@ -5,6 +5,7 @@ import iso8601
 import pytz
 import time
 from calendar import timegm
+from decimal import Decimal, localcontext
 
 from .utils import escape, parse_array, comma_join
 
@@ -291,6 +292,67 @@ class Float32Field(BaseFloatField):
 class Float64Field(BaseFloatField):
 
     db_type = 'Float64'
+
+
+class DecimalField(Field):
+    '''
+    Base class for all decimal fields. Can also be used directly.
+    '''
+
+    def __init__(self, precision, scale, default=None, alias=None, materialized=None, readonly=None):
+        assert 1 <= precision <= 38, 'Precision must be between 1 and 38'
+        assert 0 <= scale <= precision, 'Scale must be between 0 and the given precision'
+        self.precision = precision
+        self.scale = scale
+        self.db_type = 'Decimal(%d,%d)' % (self.precision, self.scale)
+        with localcontext() as ctx:
+            ctx.prec = 38
+            self.exp = Decimal(10) ** -self.scale # for rounding to the required scale
+            self.max_value = Decimal(10 ** (self.precision - self.scale)) - self.exp
+            self.min_value = -self.max_value
+        super(DecimalField, self).__init__(default, alias, materialized, readonly)
+
+    def to_python(self, value, timezone_in_use):
+        if not isinstance(value, Decimal):
+            try:
+                value = Decimal(value)
+            except:
+                raise ValueError('Invalid value for %s - %r' % (self.__class__.__name__, value))
+        if not value.is_finite():
+                raise ValueError('Non-finite value for %s - %r' % (self.__class__.__name__, value))
+        return self._round(value)
+
+    def to_db_string(self, value, quote=True):
+        # There's no need to call escape since numbers do not contain
+        # special characters, and never need quoting
+        return text_type(value)
+
+    def _round(self, value):
+        return value.quantize(self.exp)
+
+    def validate(self, value):
+        self._range_check(value, self.min_value, self.max_value)
+
+
+class Decimal32Field(DecimalField):
+
+    def __init__(self, scale, default=None, alias=None, materialized=None, readonly=None):
+        super(Decimal32Field, self).__init__(9, scale, default, alias, materialized, readonly)
+        self.db_type = 'Decimal32(%d)' % scale
+
+
+class Decimal64Field(DecimalField):
+
+    def __init__(self, scale, default=None, alias=None, materialized=None, readonly=None):
+        super(Decimal64Field, self).__init__(18, scale, default, alias, materialized, readonly)
+        self.db_type = 'Decimal64(%d)' % scale
+
+
+class Decimal128Field(DecimalField):
+
+    def __init__(self, scale, default=None, alias=None, materialized=None, readonly=None):
+        super(Decimal128Field, self).__init__(38, scale, default, alias, materialized, readonly)
+        self.db_type = 'Decimal128(%d)' % scale
 
 
 class BaseEnumField(Field):

@@ -184,3 +184,15 @@ class DatabaseTestCase(TestCaseWithData):
             pass
         self.assertTrue(self.database.does_table_exist(Person))
         self.assertFalse(self.database.does_table_exist(Person2))
+
+    def test_add_setting(self):
+        # Non-string setting name should not be accepted
+        with self.assertRaises(AssertionError):
+            self.database.add_setting(0, 1)
+        # Add a setting and see that it makes the query fail
+        self.database.add_setting('max_columns_to_read', 1)
+        with self.assertRaises(ServerError):
+            list(self.database.select('SELECT * from system.tables'))
+        # Remove the setting and see that now it works
+        self.database.add_setting('max_columns_to_read', None)
+        list(self.database.select('SELECT * from system.tables'))

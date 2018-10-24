@@ -75,6 +75,10 @@ class QuerySetTestCase(TestCaseWithData):
         self._test_qs(qs.filter((Q(first_name__in=['Warren', 'Whilemina', 'Whitney']) & Q(height__gte=1.7) |
                                  (Q(first_name__in=['Victoria', 'Victor', 'Venus']) & Q(height__lt=1.7)))), 4)
         self._test_qs(qs.filter(Q(first_name='Elton') & ~Q(last_name='Smith')), 1)
+        # Check operator precendence
+        self._test_qs(qs.filter(first_name='Cassady').filter(Q(last_name='Knapp') | Q(last_name='Rogers') | Q(last_name='Gregory')), 2)
+        self._test_qs(qs.filter(Q(first_name='Cassady') & Q(last_name='Knapp') | Q(first_name='Beatrice') & Q(last_name='Gregory')), 2)
+        self._test_qs(qs.filter(Q(first_name='Courtney') | Q(first_name='Cassady') & Q(last_name='Knapp')), 3)
 
     def test_filter_unicode_string(self):
         self.database.insert([
@@ -238,6 +242,12 @@ class QuerySetTestCase(TestCaseWithData):
         qs = SampleModel.objects_in(self.database)
         for obj in qs:
             self.assertTrue(obj.num_squared == obj.num ** 2)
+
+    def test_count_of_slice(self):
+        qs = Person.objects_in(self.database)
+        self._test_qs(qs[:70], 70)
+        self._test_qs(qs[70:80], 10)
+        self._test_qs(qs[80:], 20)
 
 
 class AggregateTestCase(TestCaseWithData):

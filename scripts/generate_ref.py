@@ -133,6 +133,6 @@ if __name__ == '__main__':
     print
     module_doc([database.Database, database.DatabaseException])
     module_doc([models.Model, models.BufferModel, models.DistributedModel])
-    module_doc([fields.Field] + all_subclasses(fields.Field), False)
+    module_doc(sorted([fields.Field] + all_subclasses(fields.Field), key=lambda x: x.__name__), False)
     module_doc([engines.Engine] + all_subclasses(engines.Engine), False)
     module_doc([query.QuerySet, query.AggregateQuerySet])

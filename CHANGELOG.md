@@ -1,6 +1,13 @@
 Change Log
 ==========
 
+v1.0.3
+------
+- Bug fix: `QuerySet.count()` ignores slicing
+- Bug fix: wrong parentheses when building queries using Q objects
+- Support Decimal fields
+- Added `Database.add_setting` method
+
 v1.0.2
 ----------
 - Include alias and materialized fields in queryset results
