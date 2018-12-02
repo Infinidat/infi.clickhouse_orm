@@ -3,6 +3,8 @@ import six
 import pytz
 from copy import copy
 from math import ceil
+
+from .engines import CollapsingMergeTree
 from .utils import comma_join
 
 
@@ -243,6 +245,7 @@ class QuerySet(object):
         self._fields = model_cls.fields().keys()
         self._limits = None
         self._distinct = False
+        self._final = False
 
     def __iter__(self):
         """
@@ -290,9 +293,10 @@ class QuerySet(object):
             fields = comma_join('`%s`' % field for field in self._fields)
         ordering = '\nORDER BY ' + self.order_by_as_sql() if self._order_by else ''
         limit = '\nLIMIT %d, %d' % self._limits if self._limits else ''
-        params = (distinct, fields, self._model_cls.table_name(),
+        final = ' FINAL' if self._final else ''
+        params = (distinct, fields, self._model_cls.table_name(), final,
                   self.conditions_as_sql(), ordering, limit)
-        return u'SELECT %s%s\nFROM `%s`\nWHERE %s%s%s' % params
+        return u'SELECT %s%s\nFROM `%s`%s\nWHERE %s%s%s' % params
 
     def order_by_as_sql(self):
         """
@@ -397,6 +401,18 @@ class QuerySet(object):
         """
         qs = copy(self)
         qs._distinct = True
+        return qs
+
+    def final(self):
+        """
+        Adds a FINAL modifier to table, meaning data will be collapsed to final version.
+        Can be used with CollapsingMergeTree engine only
+        """
+        if not issubclass(self._model_cls, CollapsingMergeTree):
+            raise TypeError('final() method can be used only with CollapsingMergeTree engine')
+
+        qs = copy(self)
+        qs._final = True
         return qs
 
     def aggregate(self, *args, **kwargs):

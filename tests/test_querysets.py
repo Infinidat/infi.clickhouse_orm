@@ -141,6 +141,20 @@ class QuerySetTestCase(TestCaseWithData):
             SampleModel(timestamp=now, num=4, color=Color.white),
         ])
 
+    def _insert_sample_collapsing_model(self):
+        self.database.create_table(SampleCollapsingModel)
+        now = datetime.now()
+        self.database.insert([
+            SampleCollapsingModel(timestamp=now, num=1, color=Color.red),
+            SampleCollapsingModel(timestamp=now, num=2, color=Color.red),
+            SampleCollapsingModel(timestamp=now, num=2, color=Color.red, sign=-1),
+            SampleCollapsingModel(timestamp=now, num=2, color=Color.green),
+            SampleCollapsingModel(timestamp=now, num=3, color=Color.white),
+            SampleCollapsingModel(timestamp=now, num=4, color=Color.white, sign=1),
+            SampleCollapsingModel(timestamp=now, num=4, color=Color.white, sign=-1),
+            SampleCollapsingModel(timestamp=now, num=4, color=Color.blue, sign=1),
+        ])
+
     def test_filter_enum_field(self):
         self._insert_sample_model()
         qs = SampleModel.objects_in(self.database)
@@ -248,6 +262,17 @@ class QuerySetTestCase(TestCaseWithData):
         self._test_qs(qs[:70], 70)
         self._test_qs(qs[70:80], 10)
         self._test_qs(qs[80:], 20)
+
+    def test_final(self):
+        # Final can be used with CollapsingMergeTree engine only
+        with self.assertRaises(TypeError):
+            Person.objects_in(self.database).final()
+
+        self._insert_sample_collapsing_model()
+        res = list(SampleCollapsingModel.objects_in(self.database).final().order_by('num'))
+        self.assertEqual(4, len(res))
+        for item, exp_color in zip(res, (Color.red, Color.green, Color.white, Color.blue)):
+            self.assertEqual(exp_color, item.color)
 
 
 class AggregateTestCase(TestCaseWithData):
@@ -390,6 +415,13 @@ class SampleModel(Model):
     num_squared = Int32Field(alias='num*num')
 
     engine = MergeTree('materialized_date', ('materialized_date',))
+
+
+class SampleCollapsingModel(SampleModel):
+
+    sign = UInt8Field(default=1)
+
+    engine = CollapsingMergeTree('materialized_date', ('num',), 'sign')
 
 
 class Numbers(Model):
