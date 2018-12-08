@@ -369,13 +369,13 @@ class AggregateTestCase(TestCaseWithData):
             the__next__number = Int32Field()
             engine = Memory()
         qs = Mdl.objects_in(self.database).filter(the__number=1)
-        self.assertEqual(qs.conditions_as_sql(), 'the__number = 1')
+        self.assertEqual(qs.conditions_as_sql(qs._where_q), 'the__number = 1')
         qs = Mdl.objects_in(self.database).filter(the__number__gt=1)
-        self.assertEqual(qs.conditions_as_sql(), 'the__number > 1')
+        self.assertEqual(qs.conditions_as_sql(qs._where_q), 'the__number > 1')
         qs = Mdl.objects_in(self.database).filter(the__next__number=1)
-        self.assertEqual(qs.conditions_as_sql(), 'the__next__number = 1')
+        self.assertEqual(qs.conditions_as_sql(qs._where_q), 'the__next__number = 1')
         qs = Mdl.objects_in(self.database).filter(the__next__number__gt=1)
-        self.assertEqual(qs.conditions_as_sql(), 'the__next__number > 1')
+        self.assertEqual(qs.conditions_as_sql(qs._where_q), 'the__next__number > 1')
 
 
 Color = Enum('Color', u'red blue green yellow brown white black')
