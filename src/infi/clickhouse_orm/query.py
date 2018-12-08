@@ -183,6 +183,14 @@ class Q(object):
         self._negate = False
         self._mode = self.AND_MODE
 
+    @property
+    def is_empty(self):
+        """
+        Checks if there are any conditions in Q object
+        :return: Boolean
+        """
+        return bool(self._fovs or self._l_child or self._r_child)
+
     @classmethod
     def _construct_from(cls, l_child, r_child, mode):
         q = Q()
@@ -203,7 +211,7 @@ class Q(object):
             sql = ' {} '.format(self._mode).join(fov.to_sql(model_cls) for fov in self._fovs)
         else:
             if self._l_child and self._r_child:
-                sql = '({} {} {})'.format(
+                sql = '({}) {} ({})'.format(
                         self._l_child.to_sql(model_cls), self._mode, self._r_child.to_sql(model_cls))
             else:
                 return '1'
@@ -222,6 +230,9 @@ class Q(object):
         q._negate = True
         return q
 
+    def __bool__(self):
+        return not self.is_empty
+
 
 @six.python_2_unicode_compatible
 class QuerySet(object):
@@ -239,7 +250,8 @@ class QuerySet(object):
         self._model_cls = model_cls
         self._database = database
         self._order_by = []
-        self._q = []
+        self._where_q = Q()
+        self._prewhere_q = Q()
         self._fields = model_cls.fields().keys()
         self._limits = None
         self._distinct = False
@@ -303,14 +315,14 @@ class QuerySet(object):
             for field in self._order_by
         ])
 
-    def conditions_as_sql(self):
+    def conditions_as_sql(self, q_object):
         """
-        Returns the contents of the query's `WHERE` clause as a string.
+        Returns the contents of the query's `WHERE` or `PREWHERE` clause as a string.
         """
-        if self._q:
-            return u' AND '.join([q.to_sql(self._model_cls) for q in self._q])
+        if q_object:
+            return u' AND '.join([q.to_sql(self._model_cls) for q in q_object])
         else:
-            return u'1'
+            return u''
 
     def count(self):
         """
@@ -342,25 +354,40 @@ class QuerySet(object):
         qs._fields = field_names
         return qs
 
-    def filter(self, *q, **filter_fields):
+    def _filter_or_exclude(self, *q, **kwargs):
+        reverse = kwargs.pop('reverse', False)
+        prewhere = kwargs.pop('prewhere', False)
+        condition = copy(self._where_q)
+        qs = copy(self)
+
+        if q:
+            condition &= q
+
+        if kwargs:
+            condition &= Q(**kwargs)
+
+        if reverse:
+            condition = ~condition
+
+        if prewhere:
+            qs._prewhere_q = condition
+        else:
+            qs._where_q = condition
+
+        return qs
+
+    def filter(self, *q, **kwargs):
         """
         Returns a copy of this queryset that includes only rows matching the conditions.
         Add q object to query if it specified.
         """
-        qs = copy(self)
-        if q:
-            qs._q = list(self._q) + list(q)
-        else:
-            qs._q = list(self._q) + [Q(**filter_fields)]
-        return qs
+        return self._filter_or_exclude(*q, **kwargs)
 
-    def exclude(self, **filter_fields):
+    def exclude(self, *q, **kwargs):
         """
         Returns a copy of this queryset that excludes all rows matching the conditions.
         """
-        qs = copy(self)
-        qs._q = list(self._q) + [~Q(**filter_fields)]
-        return qs
+        return self._filter_or_exclude(*q, reverse=True, **kwargs)
 
     def paginate(self, page_num=1, page_size=100):
         """
@@ -476,20 +503,30 @@ class AggregateQuerySet(QuerySet):
         Returns the whole query as a SQL string.
         """
         distinct = 'DISTINCT ' if self._distinct else ''
-        grouping = comma_join('`%s`' % field for field in self._grouping_fields)
         fields = comma_join(list(self._fields) + ['%s AS %s' % (v, k) for k, v in self._calculated_fields.items()])
+
         params = dict(
             distinct=distinct,
-            grouping=grouping or "''",
             fields=fields,
             table=self._model_cls.table_name(),
-            conds=self.conditions_as_sql()
         )
-        sql = u'SELECT %(distinct)s%(fields)s\nFROM `%(table)s`\nWHERE %(conds)s\nGROUP BY %(grouping)s' % params
+        sql = u'SELECT %(distinct)s%(fields)s\nFROM `%(table)s`' % params
+
+        if self._prewhere_q:
+            sql += '\nPREWHERE ' + self.conditions_as_sql(self._prewhere_q)
+
+        if self._where_q:
+            sql += '\nWHERE ' + self.conditions_as_sql(self._where_q)
+
+        if self._grouping_fields:
+            sql += '\nGROUP BY %s' % comma_join('`%s`' % field for field in self._grouping_fields)
+
         if self._order_by:
             sql += '\nORDER BY ' + self.order_by_as_sql()
+
         if self._limits:
             sql += '\nLIMIT %d, %d' % self._limits
+
         return sql
 
     def __iter__(self):
