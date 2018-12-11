@@ -1,7 +1,7 @@
 from __future__ import unicode_literals
 import six
 import pytz
-from copy import copy
+from copy import copy, deepcopy
 from math import ceil
 from .utils import comma_join
 
@@ -170,6 +170,11 @@ class FOV(object):
     def to_sql(self, model_cls):
         return self._operator.to_sql(model_cls, self._field_name, self._value)
 
+    def __deepcopy__(self, memodict={}):
+        res = copy(self)
+        res._value = deepcopy(self._value)
+        return res
+
 
 class Q(object):
 
@@ -178,8 +183,7 @@ class Q(object):
 
     def __init__(self, **filter_fields):
         self._fovs = [self._build_fov(k, v) for k, v in six.iteritems(filter_fields)]
-        self._l_child = None
-        self._r_child = None
+        self._children = []
         self._negate = False
         self._mode = self.AND_MODE
 
@@ -189,14 +193,22 @@ class Q(object):
         Checks if there are any conditions in Q object
         :return: Boolean
         """
-        return not bool(self._fovs or self._l_child or self._r_child)
+        return not bool(self._fovs or self._children)
 
     @classmethod
     def _construct_from(cls, l_child, r_child, mode):
-        q = Q()
-        q._l_child = l_child
-        q._r_child = r_child
-        q._mode = mode  # AND/OR
+        if mode == l_child._mode:
+            q = deepcopy(l_child)
+            q._children.append(deepcopy(r_child))
+        elif mode == r_child._mode:
+            q = deepcopy(r_child)
+            q._children.append(deepcopy(l_child))
+        else:
+            # Different modes
+            q = Q()
+            q._children = [l_child, r_child]
+            q._mode = mode  # AND/OR
+
         return q
 
     def _build_fov(self, key, value):
@@ -207,15 +219,23 @@ class Q(object):
         return FOV(field_name, operator, value)
 
     def to_sql(self, model_cls):
+        condition_sql = []
+
         if self._fovs:
-            sql = ' {} '.format(self._mode).join(fov.to_sql(model_cls) for fov in self._fovs)
-        elif self._l_child and self._r_child:
-            sql = '({}) {} ({})'.format(self._l_child.to_sql(model_cls), self._mode, self._r_child.to_sql(model_cls))
-        elif self._l_child or self._r_child:
-            # Return existing condition
-            sql = (self._l_child or self._r_child).to_sql(model_cls)
-        else:
+            condition_sql.extend([fov.to_sql(model_cls) for fov in self._fovs])
+
+        if self._children:
+            condition_sql.extend([child.to_sql(model_cls) for child in self._children if child])
+
+        if not condition_sql:
+            # Empty Q() object returns everything
             sql = '1'
+        elif len(condition_sql) == 1:
+            # Skip not needed brackets over single condition
+            sql = condition_sql[0]
+        else:
+            # Each condition must be enclosed in brackets, or order of operations may be wrong
+            sql = '(%s)' % ') {} ('.format(self._mode).join(condition_sql)
 
         if self._negate:
             sql = 'NOT (%s)' % sql
@@ -235,6 +255,17 @@ class Q(object):
 
     def __bool__(self):
         return not self.is_empty
+
+    def __deepcopy__(self, memodict={}):
+        q = Q()
+        q._fovs = [deepcopy(fov) for fov in self._fovs]
+        q._negate = self._negate
+        q._mode = self._mode
+
+        if self._children:
+            q._children = [deepcopy(child) for child in self._children]
+
+        return q
 
 
 @six.python_2_unicode_compatible
