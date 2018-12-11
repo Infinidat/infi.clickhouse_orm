@@ -189,14 +189,14 @@ class Q(object):
         Checks if there are any conditions in Q object
         :return: Boolean
         """
-        return bool(self._fovs or self._l_child or self._r_child)
+        return not bool(self._fovs or self._l_child or self._r_child)
 
     @classmethod
     def _construct_from(cls, l_child, r_child, mode):
         q = Q()
         q._l_child = l_child
         q._r_child = r_child
-        q._mode = mode # AND/OR
+        q._mode = mode  # AND/OR
         return q
 
     def _build_fov(self, key, value):
@@ -209,14 +209,17 @@ class Q(object):
     def to_sql(self, model_cls):
         if self._fovs:
             sql = ' {} '.format(self._mode).join(fov.to_sql(model_cls) for fov in self._fovs)
+        elif self._l_child and self._r_child:
+            sql = '({}) {} ({})'.format(self._l_child.to_sql(model_cls), self._mode, self._r_child.to_sql(model_cls))
+        elif self._l_child or self._r_child:
+            # Return existing condition
+            sql = (self._l_child or self._r_child).to_sql(model_cls)
         else:
-            if self._l_child and self._r_child:
-                sql = '({}) {} ({})'.format(
-                        self._l_child.to_sql(model_cls), self._mode, self._r_child.to_sql(model_cls))
-            else:
-                return '1'
+            sql = '1'
+
         if self._negate:
             sql = 'NOT (%s)' % sql
+
         return sql
 
     def __or__(self, other):
@@ -303,7 +306,7 @@ class QuerySet(object):
         distinct = 'DISTINCT ' if self._distinct else ''
 
         params = (distinct, self.select_fields_as_sql(), self._model_cls.table_name())
-        sql = u'SELECT %s%s\nFROM `%s`\n' % params
+        sql = u'SELECT %s%s\nFROM `%s`' % params
 
         if self._prewhere_q:
             sql += '\nPREWHERE ' + self.conditions_as_sql(self._prewhere_q)
@@ -320,7 +323,7 @@ class QuerySet(object):
         if self._limits:
             sql += '\nLIMIT %d, %d' % self._limits
 
-        return
+        return sql
 
     def order_by_as_sql(self):
         """
@@ -335,10 +338,7 @@ class QuerySet(object):
         """
         Returns the contents of the query's `WHERE` or `PREWHERE` clause as a string.
         """
-        if q_object:
-            return u' AND '.join([q.to_sql(self._model_cls) for q in q_object])
-        else:
-            return u''
+        return q_object.to_sql(self._model_cls)
 
     def count(self):
         """
@@ -378,8 +378,8 @@ class QuerySet(object):
         condition = copy(self._where_q)
         qs = copy(self)
 
-        if q:
-            condition &= q
+        for q_obj in q:
+            condition &= q_obj
 
         if kwargs:
             condition &= Q(**kwargs)
@@ -487,7 +487,8 @@ class AggregateQuerySet(QuerySet):
         self._grouping_fields = grouping_fields
         self._calculated_fields = calculated_fields
         self._order_by = list(base_qs._order_by)
-        self._q = list(base_qs._q)
+        self._where_q = base_qs._where_q
+        self._prewhere_q = base_qs._prewhere_q
         self._limits = base_qs._limits
         self._distinct = base_qs._distinct
 

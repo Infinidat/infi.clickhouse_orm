@@ -17,21 +17,29 @@ The `filter` and `exclude` methods are used for filtering the matching instances
 
     >>> qs = Person.objects_in(database)
     >>> qs = qs.filter(first_name__startswith='V').exclude(birthday__lt='2000-01-01')
-    >>> qs.conditions_as_sql()
+    >>> qs.conditions_as_sql(qs._where)
     u"first_name LIKE 'V%' AND NOT (birthday < '2000-01-01')"
 
 It is possible to specify several fields to filter or exclude by:
 
     >>> qs = Person.objects_in(database).filter(last_name='Smith', height__gt=1.75)
-    >>> qs.conditions_as_sql()
+    >>> qs.conditions_as_sql(qs._where)
     u"last_name = 'Smith' AND height > 1.75"
 
 For filters with compound conditions you can use `Q` objects inside `filter` with overloaded operators `&` (AND), `|` (OR) and `~` (NOT):
 
     >>> qs = Person.objects_in(database).filter((Q(first_name='Ciaran', last_name='Carver') | Q(height_lte=1.8)) & ~Q(first_name='David'))
-    >>> qs.conditions_as_sql()
+    >>> qs.conditions_as_sql(qs._where)
     u"((first_name = 'Ciaran' AND last_name = 'Carver') OR height <= 1.8) AND (NOT (first_name = 'David'))"
 
+By default conditions from `filter` and `exclude` methods are add to `WHERE` clause. 
+For better aggregation performance you can add them to `PREWHERE` section using `prewhere=True` parameter
+
+    >>> qs = Person.objects_in(database)
+    >>> qs = qs.filter(first_name__startswith='V', prewhere=True)
+    >>> qs.conditions_as_sql(qs._prewhere)
+    u"first_name LIKE 'V%'"
+    
 There are different operators that can be used, by passing `<fieldname>__<operator>=<value>` (two underscores separate the field name from the operator). In case no operator is given, `eq` is used by default. Below are all the supported operators.
 
 | Operator       | Equivalent SQL                               | Comments                           |
