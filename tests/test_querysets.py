@@ -419,7 +419,7 @@ class SampleModel(Model):
 
 class SampleCollapsingModel(SampleModel):
 
-    sign = UInt8Field(default=1)
+    sign = Int8Field(default=1)
 
     engine = CollapsingMergeTree('materialized_date', ('num',), 'sign')
 

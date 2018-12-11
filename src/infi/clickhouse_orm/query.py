@@ -1,4 +1,5 @@
 from __future__ import unicode_literals
+
 import six
 import pytz
 from copy import copy
@@ -408,7 +409,7 @@ class QuerySet(object):
         Adds a FINAL modifier to table, meaning data will be collapsed to final version.
         Can be used with CollapsingMergeTree engine only
         """
-        if not issubclass(self._model_cls, CollapsingMergeTree):
+        if not isinstance(self._model_cls.engine, CollapsingMergeTree):
             raise TypeError('final() method can be used only with CollapsingMergeTree engine')
 
         qs = copy(self)
