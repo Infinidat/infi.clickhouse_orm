@@ -116,6 +116,7 @@ class Database(object):
         Deletes the database on the ClickHouse server.
         '''
         self._send('DROP DATABASE `%s`' % self.db_name)
+        self.db_exists = False
 
     def create_table(self, model_class):
         '''
