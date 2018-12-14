@@ -151,10 +151,15 @@ class DatabaseTestCase(TestCaseWithData):
         exc = cm.exception
         self.assertEqual(exc.code, 81)
         self.assertEqual(exc.message, "Database db_not_here doesn't exist")
-        # Now create the database - should succeed
-        db.create_database()
-        db.create_table(Person)
-        db.drop_database()
+        # Create and delete the db twice, to ensure db_exists gets updated
+        for i in range(2):
+            # Now create the database - should succeed
+            db.create_database()
+            self.assertTrue(db.db_exists)
+            db.create_table(Person)
+            # Drop the database
+            db.drop_database()
+            self.assertFalse(db.db_exists)
 
     def test_preexisting_db(self):
         db = Database(self.database.db_name, autocreate=False)

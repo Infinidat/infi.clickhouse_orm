@@ -93,7 +93,7 @@ class Database(object):
         self.readonly = False
         self.timeout = timeout
         self.settings = {}
-        self.db_exists = False
+        self.db_exists = False # this is required before running _is_existing_database
         self.db_exists = self._is_existing_database()
         if readonly:
             if not self.db_exists:
