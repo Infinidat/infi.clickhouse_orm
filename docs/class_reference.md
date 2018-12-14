@@ -21,7 +21,7 @@ created on the ClickHouse server if it does not already exist.
 - `username`: optional connection credentials.
 - `password`: optional connection credentials.
 - `readonly`: use a read-only connection.
-- `autocreate`: automatically create the database if does not exist (unless in readonly mode).
+- `autocreate`: automatically create the database if it does not exist (unless in readonly mode).
 - `timeout`: the connection timeout in seconds.
 
 
@@ -866,6 +866,13 @@ Returns a copy of this queryset that includes only rows matching the conditions.
 Add q object to query if it specified.
 
 
+#### final()
+
+
+Adds a FINAL modifier to table, meaning data will be collapsed to final version.
+Can be used with `CollapsingMergeTree` engine only.
+
+
 #### only(*field_names)
 
 
@@ -965,6 +972,13 @@ Returns a copy of this queryset that excludes all rows matching the conditions.
 
 Returns a copy of this queryset that includes only rows matching the conditions.
 Add q object to query if it specified.
+
+
+#### final()
+
+
+Adds a FINAL modifier to table, meaning data will be collapsed to final version.
+Can be used with `CollapsingMergeTree` engine only.
 
 
 #### group_by(*args)

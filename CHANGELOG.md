@@ -4,6 +4,7 @@ Change Log
 Unreleased
 ----------
 - Added `timeout` parameter to database initializer (SUHAR1K)
+- Added `final()` method to querysets (M1hacka)
 
 v1.0.3
 ------
