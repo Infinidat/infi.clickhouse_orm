@@ -148,4 +148,4 @@ data = [
     {"first_name": "Whitney", "last_name": "Scott", "birthday": "1971-07-04", "height": "1.70"},
     {"first_name": "Wynter", "last_name": "Garcia", "birthday": "1975-01-10", "height": "1.69"},
     {"first_name": "Yolanda", "last_name": "Duke", "birthday": "1997-02-25", "height": "1.74"}
-];
+]
