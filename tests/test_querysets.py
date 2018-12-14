@@ -104,6 +104,22 @@ class QuerySetTestCase(TestCaseWithData):
         self._test_qs(qs.filter(birthday=date(1970, 12, 2)), 1)
         self._test_qs(qs.filter(birthday__lte=date(1970, 12, 2)), 3)
 
+    def test_mutiple_filter(self):
+        qs = Person.objects_in(self.database)
+        # Single filter call with multiple conditions is ANDed
+        self._test_qs(qs.filter(first_name='Ciaran', last_name='Carver'), 1)
+        # Separate filter calls are also ANDed
+        self._test_qs(qs.filter(first_name='Ciaran').filter(last_name='Carver'), 1)
+        self._test_qs(qs.filter(birthday='1970-12-02').filter(birthday='1986-01-07'), 0)
+
+    def test_multiple_exclude(self):
+        qs = Person.objects_in(self.database)
+        # Single exclude call with multiple conditions is ANDed
+        self._test_qs(qs.exclude(first_name='Ciaran', last_name='Carver'), 99)
+        # Separate exclude calls are ORed
+        self._test_qs(qs.exclude(first_name='Ciaran').exclude(last_name='Carver'), 98)
+        self._test_qs(qs.exclude(birthday='1970-12-02').exclude(birthday='1986-01-07'), 98)
+
     def test_only(self):
         qs = Person.objects_in(self.database).only('first_name', 'last_name')
         for person in qs:
