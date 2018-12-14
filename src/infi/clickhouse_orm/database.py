@@ -83,8 +83,8 @@ class Database(object):
         - `username`: optional connection credentials.
         - `password`: optional connection credentials.
         - `readonly`: use a read-only connection.
-        - `autocreate`: automatically create the database if does not exist (unless in readonly mode).
-        - `timeout`: the connect timeout.
+        - `autocreate`: automatically create the database if it does not exist (unless in readonly mode).
+        - `timeout`: the connection timeout in seconds.
         '''
         self.db_name = db_name
         self.db_url = db_url
@@ -321,8 +321,7 @@ class Database(object):
         if isinstance(data, string_types):
             data = data.encode('utf-8')
         params = self._build_params(settings)
-        timeout = self.timeout
-        r = requests.post(self.db_url, params=params, data=data, stream=stream, timeout=timeout)
+        r = requests.post(self.db_url, params=params, data=data, stream=stream, timeout=self.timeout)
         if r.status_code != 200:
             raise ServerError(r.text)
         return r

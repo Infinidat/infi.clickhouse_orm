@@ -1,6 +1,10 @@
 Change Log
 ==========
 
+Unreleased
+----------
+- Added `timeout` parameter to database initializer (SUHAR1K)
+
 v1.0.3
 ------
 - Bug fix: `QuerySet.count()` ignores slicing
