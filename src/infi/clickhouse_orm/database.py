@@ -92,6 +92,7 @@ class Database(object):
         self.password = password
         self.readonly = False
         self.timeout = timeout
+        self.request_session = requests.Session()
         self.settings = {}
         self.db_exists = False # this is required before running _is_existing_database
         self.db_exists = self._is_existing_database()
@@ -322,7 +323,7 @@ class Database(object):
         if isinstance(data, string_types):
             data = data.encode('utf-8')
         params = self._build_params(settings)
-        r = requests.post(self.db_url, params=params, data=data, stream=stream, timeout=self.timeout)
+        r = self.request_session.post(self.db_url, params=params, data=data, stream=stream, timeout=self.timeout)
         if r.status_code != 200:
             raise ServerError(r.text)
         return r
