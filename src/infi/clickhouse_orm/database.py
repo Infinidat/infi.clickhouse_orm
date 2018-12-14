@@ -73,7 +73,7 @@ class Database(object):
     '''
 
     def __init__(self, db_name, db_url='http://localhost:8123/',
-                 username=None, password=None, readonly=False, autocreate=True):
+                 username=None, password=None, readonly=False, autocreate=True, timeout=60):
         '''
         Initializes a database instance. Unless it's readonly, the database will be
         created on the ClickHouse server if it does not already exist.
@@ -84,12 +84,14 @@ class Database(object):
         - `password`: optional connection credentials.
         - `readonly`: use a read-only connection.
         - `autocreate`: automatically create the database if does not exist (unless in readonly mode).
+        - `timeout`: the connect timeout.
         '''
         self.db_name = db_name
         self.db_url = db_url
         self.username = username
         self.password = password
         self.readonly = False
+        self.timeout = timeout
         self.settings = {}
         self.db_exists = False
         self.db_exists = self._is_existing_database()
@@ -319,7 +321,8 @@ class Database(object):
         if isinstance(data, string_types):
             data = data.encode('utf-8')
         params = self._build_params(settings)
-        r = requests.post(self.db_url, params=params, data=data, stream=stream)
+        timeout = self.timeout
+        r = requests.post(self.db_url, params=params, data=data, stream=stream, timeout=timeout)
         if r.status_code != 200:
             raise ServerError(r.text)
         return r
