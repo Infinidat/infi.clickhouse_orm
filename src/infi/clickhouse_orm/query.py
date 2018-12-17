@@ -411,9 +411,10 @@ class QuerySet(object):
     def _filter_or_exclude(self, *q, **kwargs):
         reverse = kwargs.pop('reverse', False)
         prewhere = kwargs.pop('prewhere', False)
-        condition = copy(self._where_q)
+
         qs = copy(self)
 
+        condition = Q()
         for q_obj in q:
             condition &= q_obj
 
@@ -423,6 +424,7 @@ class QuerySet(object):
         if reverse:
             condition = ~condition
 
+        condition = copy(self._prewhere_q if prewhere else self._where_q) & condition
         if prewhere:
             qs._prewhere_q = condition
         else:
