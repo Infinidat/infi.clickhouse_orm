@@ -111,6 +111,22 @@ class QuerySetTestCase(TestCaseWithData):
         self._test_qs(qs.filter(birthday=date(1970, 12, 2)), 1)
         self._test_qs(qs.filter(birthday__lte=date(1970, 12, 2)), 3)
 
+    def test_mutiple_filter(self):
+        qs = Person.objects_in(self.database)
+        # Single filter call with multiple conditions is ANDed
+        self._test_qs(qs.filter(first_name='Ciaran', last_name='Carver'), 1)
+        # Separate filter calls are also ANDed
+        self._test_qs(qs.filter(first_name='Ciaran').filter(last_name='Carver'), 1)
+        self._test_qs(qs.filter(birthday='1970-12-02').filter(birthday='1986-01-07'), 0)
+
+    def test_multiple_exclude(self):
+        qs = Person.objects_in(self.database)
+        # Single exclude call with multiple conditions is ANDed
+        self._test_qs(qs.exclude(first_name='Ciaran', last_name='Carver'), 99)
+        # Separate exclude calls are ORed
+        self._test_qs(qs.exclude(first_name='Ciaran').exclude(last_name='Carver'), 98)
+        self._test_qs(qs.exclude(birthday='1970-12-02').exclude(birthday='1986-01-07'), 98)
+
     def test_only(self):
         qs = Person.objects_in(self.database).only('first_name', 'last_name')
         for person in qs:
@@ -146,6 +162,20 @@ class QuerySetTestCase(TestCaseWithData):
             SampleModel(timestamp=now, num=2, color=Color.red),
             SampleModel(timestamp=now, num=3, color=Color.blue),
             SampleModel(timestamp=now, num=4, color=Color.white),
+        ])
+
+    def _insert_sample_collapsing_model(self):
+        self.database.create_table(SampleCollapsingModel)
+        now = datetime.now()
+        self.database.insert([
+            SampleCollapsingModel(timestamp=now, num=1, color=Color.red),
+            SampleCollapsingModel(timestamp=now, num=2, color=Color.red),
+            SampleCollapsingModel(timestamp=now, num=2, color=Color.red, sign=-1),
+            SampleCollapsingModel(timestamp=now, num=2, color=Color.green),
+            SampleCollapsingModel(timestamp=now, num=3, color=Color.white),
+            SampleCollapsingModel(timestamp=now, num=4, color=Color.white, sign=1),
+            SampleCollapsingModel(timestamp=now, num=4, color=Color.white, sign=-1),
+            SampleCollapsingModel(timestamp=now, num=4, color=Color.blue, sign=1),
         ])
 
     def test_filter_enum_field(self):
@@ -255,6 +285,17 @@ class QuerySetTestCase(TestCaseWithData):
         self._test_qs(qs[:70], 70)
         self._test_qs(qs[70:80], 10)
         self._test_qs(qs[80:], 20)
+
+    def test_final(self):
+        # Final can be used with CollapsingMergeTree engine only
+        with self.assertRaises(TypeError):
+            Person.objects_in(self.database).final()
+
+        self._insert_sample_collapsing_model()
+        res = list(SampleCollapsingModel.objects_in(self.database).final().order_by('num'))
+        self.assertEqual(4, len(res))
+        for item, exp_color in zip(res, (Color.red, Color.green, Color.white, Color.blue)):
+            self.assertEqual(exp_color, item.color)
 
 
 class AggregateTestCase(TestCaseWithData):
@@ -408,6 +449,13 @@ class SampleModel(Model):
     num_squared = Int32Field(alias='num*num')
 
     engine = MergeTree('materialized_date', ('materialized_date',))
+
+
+class SampleCollapsingModel(SampleModel):
+
+    sign = Int8Field(default=1)
+
+    engine = CollapsingMergeTree('materialized_date', ('num',), 'sign')
 
 
 class Numbers(Model):

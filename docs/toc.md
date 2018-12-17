@@ -25,6 +25,7 @@
       * [Ordering](querysets.md#ordering)
       * [Omitting Fields](querysets.md#omitting-fields)
       * [Distinct](querysets.md#distinct)
+      * [Final](querysets.md#final)
       * [Slicing](querysets.md#slicing)
       * [Pagination](querysets.md#pagination)
       * [Aggregation](querysets.md#aggregation)
