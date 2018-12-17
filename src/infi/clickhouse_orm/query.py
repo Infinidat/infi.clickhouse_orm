@@ -1,8 +1,11 @@
 from __future__ import unicode_literals
+
 import six
 import pytz
 from copy import copy, deepcopy
 from math import ceil
+
+from .engines import CollapsingMergeTree
 from .utils import comma_join
 
 
@@ -290,6 +293,7 @@ class QuerySet(object):
         self._fields = model_cls.fields().keys()
         self._limits = None
         self._distinct = False
+        self._final = False
 
     def __iter__(self):
         """
@@ -335,9 +339,10 @@ class QuerySet(object):
         Returns the whole query as a SQL string.
         """
         distinct = 'DISTINCT ' if self._distinct else ''
+        final = ' FINAL' if self._final else ''
 
-        params = (distinct, self.select_fields_as_sql(), self._model_cls.table_name())
-        sql = u'SELECT %s%s\nFROM `%s`' % params
+        params = (distinct, self.select_fields_as_sql(), self._model_cls.table_name(), final)
+        sql = u'SELECT %s%s\nFROM `%s`%s' % params
 
         if self._prewhere_q:
             sql += '\nPREWHERE ' + self.conditions_as_sql(self._prewhere_q)
@@ -473,6 +478,18 @@ class QuerySet(object):
         """
         qs = copy(self)
         qs._distinct = True
+        return qs
+
+    def final(self):
+        """
+        Adds a FINAL modifier to table, meaning data will be collapsed to final version.
+        Can be used with `CollapsingMergeTree` engine only.
+        """
+        if not isinstance(self._model_cls.engine, CollapsingMergeTree):
+            raise TypeError('final() method can be used only with CollapsingMergeTree engine')
+
+        qs = copy(self)
+        qs._final = True
         return qs
 
     def aggregate(self, *args, **kwargs):

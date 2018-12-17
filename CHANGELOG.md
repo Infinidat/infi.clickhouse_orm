@@ -1,6 +1,12 @@
 Change Log
 ==========
 
+Unreleased
+----------
+- Added `timeout` parameter to database initializer (SUHAR1K)
+- Added `verify_ssl_cert` parameter to database initializer
+- Added `final()` method to querysets (M1hacka)
+
 v1.0.3
 ------
 - Bug fix: `QuerySet.count()` ignores slicing

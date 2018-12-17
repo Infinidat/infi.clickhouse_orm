@@ -73,7 +73,8 @@ class Database(object):
     '''
 
     def __init__(self, db_name, db_url='http://localhost:8123/',
-                 username=None, password=None, readonly=False, autocreate=True):
+                 username=None, password=None, readonly=False, autocreate=True,
+                 timeout=60, verify_ssl_cert=True):
         '''
         Initializes a database instance. Unless it's readonly, the database will be
         created on the ClickHouse server if it does not already exist.
@@ -83,15 +84,20 @@ class Database(object):
         - `username`: optional connection credentials.
         - `password`: optional connection credentials.
         - `readonly`: use a read-only connection.
-        - `autocreate`: automatically create the database if does not exist (unless in readonly mode).
+        - `autocreate`: automatically create the database if it does not exist (unless in readonly mode).
+        - `timeout`: the connection timeout in seconds.
+        - `verify_ssl_cert`: whether to verify the server's certificate when connecting via HTTPS.
         '''
         self.db_name = db_name
         self.db_url = db_url
         self.username = username
         self.password = password
         self.readonly = False
+        self.timeout = timeout
+        self.request_session = requests.Session()
+        self.request_session.verify = verify_ssl_cert
         self.settings = {}
-        self.db_exists = False
+        self.db_exists = False # this is required before running _is_existing_database
         self.db_exists = self._is_existing_database()
         if readonly:
             if not self.db_exists:
@@ -116,6 +122,7 @@ class Database(object):
         Deletes the database on the ClickHouse server.
         '''
         self._send('DROP DATABASE `%s`' % self.db_name)
+        self.db_exists = False
 
     def create_table(self, model_class):
         '''
@@ -319,7 +326,7 @@ class Database(object):
         if isinstance(data, string_types):
             data = data.encode('utf-8')
         params = self._build_params(settings)
-        r = requests.post(self.db_url, params=params, data=data, stream=stream)
+        r = self.request_session.post(self.db_url, params=params, data=data, stream=stream, timeout=self.timeout)
         if r.status_code != 200:
             raise ServerError(r.text)
         return r

@@ -125,6 +125,17 @@ Adds a DISTINCT clause to the query, meaning that any duplicate rows in the resu
     >>> Person.objects_in(database).only('first_name').distinct().count()
     94
 
+Final
+--------
+
+This method can be used only with CollapsingMergeTree engine.  
+Adds a FINAL modifier to the query, meaning data is selected fully "collapsed" by sign field.
+
+    >>> Person.objects_in(database).count()
+    100
+    >>> Person.objects_in(database).final().count()
+    94
+    
 Slicing
 -------
 
