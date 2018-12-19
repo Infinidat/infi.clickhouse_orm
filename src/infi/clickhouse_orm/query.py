@@ -345,10 +345,10 @@ class QuerySet(object):
         sql = u'SELECT %s%s\nFROM `%s`%s' % params
 
         if self._prewhere_q:
-            sql += '\nPREWHERE ' + self.conditions_as_sql(self._prewhere_q)
+            sql += '\nPREWHERE ' + self.conditions_as_sql(prewhere=True)
 
         if self._where_q:
-            sql += '\nWHERE ' + self.conditions_as_sql(self._where_q)
+            sql += '\nWHERE ' + self.conditions_as_sql(prewhere=False)
 
         if self._grouping_fields:
             sql += '\nGROUP BY %s' % comma_join('`%s`' % field for field in self._grouping_fields)
@@ -370,10 +370,11 @@ class QuerySet(object):
             for field in self._order_by
         ])
 
-    def conditions_as_sql(self, q_object):
+    def conditions_as_sql(self, prewhere=False):
         """
         Returns the contents of the query's `WHERE` or `PREWHERE` clause as a string.
         """
+        q_object = self._prewhere_q if prewhere else self._where_q
         return q_object.to_sql(self._model_cls)
 
     def count(self):
@@ -387,7 +388,7 @@ class QuerySet(object):
             return int(raw) if raw else 0
 
         # Simple case
-        conditions = self.conditions_as_sql(self._where_q & self._prewhere_q)
+        conditions = (self._where_q & self._prewhere_q).to_sql(self._model_cls)
         return self._database.count(self._model_cls, conditions)
 
     def order_by(self, *field_names):
