@@ -25,6 +25,7 @@ Currently the following field types are supported:
 | Decimal32Field     | Decimal32  | Decimal             | Ditto
 | Decimal64Field     | Decimal64  | Decimal             | Ditto
 | Decimal128Field    | Decimal128 | Decimal             | Ditto
+| UUIDField          | UUID       | Decimal             | 
 | Enum8Field         | Enum8      | Enum                | See below
 | Enum16Field        | Enum16     | Enum                | See below
 | ArrayField         | Array      | list                | See below
