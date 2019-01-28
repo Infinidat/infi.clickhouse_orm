@@ -8,10 +8,10 @@ from calendar import timegm
 from decimal import Decimal, localcontext
 
 from .utils import escape, parse_array, comma_join
-from .query import F
+from .funcs import F, FunctionOperatorsMixin
 
 
-class Field(object):
+class Field(FunctionOperatorsMixin):
     '''
     Abstract base class for all field types.
     '''
@@ -98,26 +98,6 @@ class Field(object):
                 return True
             inner_field = getattr(inner_field, 'inner_field', None)
         return False
-
-    # Support comparison operators (for use in querysets)
-
-    def __lt__(self, other):
-        return F.less(self, other)
-
-    def __le__(self, other):
-        return F.lessOrEquals(self, other)
-
-    def __eq__(self, other):
-        return F.equals(self, other)
-
-    def __ne__(self, other):
-        return F.notEquals(self, other)
-
-    def __gt__(self, other):
-        return F.greater(self, other)
-
-    def __ge__(self, other):
-        return F.greaterOrEquals(self, other)
 
 
 class StringField(Field):

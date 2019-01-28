@@ -5,8 +5,8 @@ import pytz
 from copy import copy
 from math import ceil
 from .engines import CollapsingMergeTree
-from datetime import date, datetime
-from .utils import comma_join, is_iterable
+from datetime import date, datetime, tzinfo
+from .utils import comma_join
 
 
 # TODO
@@ -26,6 +26,7 @@ class Operator(object):
         raise NotImplementedError   # pragma: no cover
 
     def _value_to_sql(self, field, value, quote=True):
+        from infi.clickhouse_orm.funcs import F
         if isinstance(value, F):
             return value.to_sql()
         return field.to_db_string(field.to_python(value, pytz.utc), quote)
@@ -185,293 +186,6 @@ class FieldCond(Cond):
         return self._operator.to_sql(model_cls, self._field_name, self._value)
 
 
-class F(Cond):
-    """
-    Represents a database function call and its arguments.
-    It doubles as a query condition when the function returns a boolean result.
-    """
-
-    def __init__(self, name, *args):
-        self.name = name
-        self.args = args
-
-    def to_sql(self, *args):
-        args_sql = comma_join(self.arg_to_sql(arg) for arg in self.args)
-        return self.name + '(' + args_sql + ')'
-
-    def arg_to_sql(self, arg):
-        from .fields import Field, StringField, DateTimeField, DateField
-        if isinstance(arg, F):
-            return arg.to_sql()
-        if isinstance(arg, Field):
-            return "`%s`" % arg.name
-        if isinstance(arg, six.string_types):
-            return StringField().to_db_string(arg)
-        if isinstance(arg, datetime):
-            return DateTimeField().to_db_string(arg)
-        if isinstance(arg, date):
-            return DateField().to_db_string(arg)
-        if isinstance(arg, bool):
-            return six.text_type(int(arg))
-        if arg is None:
-            return 'NULL'
-        if is_iterable(arg):
-            return '[' + comma_join(self.arg_to_sql(x) for x in arg) + ']'
-        return six.text_type(arg)
-
-    # Support comparison operators with F objects
-
-    def __lt__(self, other):
-        return F.less(self, other)
-
-    def __le__(self, other):
-        return F.lessOrEquals(self, other)
-
-    def __eq__(self, other):
-        return F.equals(self, other)
-
-    def __ne__(self, other):
-        return F.notEquals(self, other)
-
-    def __gt__(self, other):
-        return F.greater(self, other)
-
-    def __ge__(self, other):
-        return F.greaterOrEquals(self, other)
-
-    # Support arithmetic operations on F objects
-
-    def __add__(self, other):
-        return F.plus(self, other)
-
-    def __radd__(self, other):
-        return F.plus(other, self)
-
-    def __sub__(self, other):
-        return F.minus(self, other)
-
-    def __rsub__(self, other):
-        return F.minus(other, self)
-
-    def __mul__(self, other):
-        return F.multiply(self, other)
-
-    def __rmul__(self, other):
-        return F.multiply(other, self)
-
-    def __div__(self, other):
-        return F.divide(self, other)
-
-    def __rdiv__(self, other):
-        return F.divide(other, self)
-
-    def __mod__(self, other):
-        return F.modulo(self, other)
-
-    def __rmod__(self, other):
-        return F.modulo(other, self)
-
-    def __neg__(self):
-        return F.negate(self)
-
-    def __pos__(self):
-        return self
-
-    # Arithmetic functions
-
-    @staticmethod
-    def plus(a, b):
-        return F('plus', a, b)
-
-    @staticmethod
-    def minus(a, b):
-        return F('minus', a, b)
-
-    @staticmethod
-    def multiply(a, b):
-        return F('multiply', a, b)
-
-    @staticmethod
-    def divide(a, b):
-        return F('divide', a, b)
-
-    @staticmethod
-    def intDiv(a, b):
-        return F('intDiv', a, b)
-
-    @staticmethod
-    def intDivOrZero(a, b):
-        return F('intDivOrZero', a, b)
-
-    @staticmethod
-    def modulo(a, b):
-        return F('modulo', a, b)
-
-    @staticmethod
-    def negate(a):
-        return F('negate', a)
-
-    @staticmethod
-    def abs(a):
-        return F('abs', a)
-
-    @staticmethod
-    def gcd(a, b):
-        return F('gcd',a, b)
-
-    @staticmethod
-    def lcm(a, b):
-        return F('lcm', a, b)
-
-    # Comparison functions
-
-    @staticmethod
-    def equals(a, b):
-        return F('equals', a, b)
-
-    @staticmethod
-    def notEquals(a, b):
-        return F('notEquals', a, b)
-
-    @staticmethod
-    def less(a, b):
-        return F('less', a, b)
-
-    @staticmethod
-    def greater(a, b):
-        return F('greater', a, b)
-
-    @staticmethod
-    def lessOrEquals(a, b):
-        return F('lessOrEquals', a, b)
-
-    @staticmethod
-    def greaterOrEquals(a, b):
-        return F('greaterOrEquals', a, b)
-
-    # Functions for working with dates and times
-
-    @staticmethod
-    def toYear(d):
-        return F('toYear', d)
-
-    @staticmethod
-    def toMonth(d):
-        return F('toMonth', d)
-
-    @staticmethod
-    def toDayOfMonth(d):
-        return F('toDayOfMonth', d)
-
-    @staticmethod
-    def toDayOfWeek(d):
-        return F('toDayOfWeek', d)
-
-    @staticmethod
-    def toHour(d):
-        return F('toHour', d)
-
-    @staticmethod
-    def toMinute(d):
-        return F('toMinute', d)
-
-    @staticmethod
-    def toSecond(d):
-        return F('toSecond', d)
-
-    @staticmethod
-    def toMonday(d):
-        return F('toMonday', d)
-
-    @staticmethod
-    def toStartOfMonth(d):
-        return F('toStartOfMonth', d)
-
-    @staticmethod
-    def toStartOfQuarter(d):
-        return F('toStartOfQuarter', d)
-
-    @staticmethod
-    def toStartOfYear(d):
-        return F('toStartOfYear', d)
-
-    @staticmethod
-    def toStartOfMinute(d):
-        return F('toStartOfMinute', d)
-
-    @staticmethod
-    def toStartOfFiveMinute(d):
-        return F('toStartOfFiveMinute', d)
-
-    @staticmethod
-    def toStartOfFifteenMinutes(d):
-        return F('toStartOfFifteenMinutes', d)
-
-    @staticmethod
-    def toStartOfHour(d):
-        return F('toStartOfHour', d)
-
-    @staticmethod
-    def toStartOfDay(d):
-        return F('toStartOfDay', d)
-
-    @staticmethod
-    def toTime(d):
-        return F('toTime', d)
-
-    @staticmethod
-    def toRelativeYearNum(d, timezone=''):
-        return F('toRelativeYearNum', d, timezone)
-
-    @staticmethod
-    def toRelativeMonthNum(d, timezone=''):
-        return F('toRelativeMonthNum', d, timezone)
-
-    @staticmethod
-    def toRelativeWeekNum(d, timezone=''):
-        return F('toRelativeWeekNum', d, timezone)
-
-    @staticmethod
-    def toRelativeDayNum(d, timezone=''):
-        return F('toRelativeDayNum', d, timezone)
-
-    @staticmethod
-    def toRelativeHourNum(d, timezone=''):
-        return F('toRelativeHourNum', d, timezone)
-
-    @staticmethod
-    def toRelativeMinuteNum(d, timezone=''):
-        return F('toRelativeMinuteNum', d, timezone)
-
-    @staticmethod
-    def toRelativeSecondNum(d, timezone=''):
-        return F('toRelativeSecondNum', d, timezone)
-
-    @staticmethod
-    def now():
-        return F('now')
-
-    @staticmethod
-    def today():
-        return F('today')
-
-    @staticmethod
-    def yesterday(d):
-        return F('yesterday')
-
-    @staticmethod
-    def timeSlot(d):
-        return F('timeSlot', d)
-
-    @staticmethod
-    def timeSlots(start_time, duration):
-        return F('timeSlots', start_time, duration)
-
-    @staticmethod
-    def formatDateTime(d, format, timezone=''):
-        return F('formatDateTime', d, format, timezone)
-
-
 class Q(object):
 
     AND_MODE = ' AND '
@@ -542,6 +256,7 @@ class QuerySet(object):
         self._order_by = []
         self._q = []
         self._fields = model_cls.fields().keys()
+        self._extra = {}
         self._limits = None
         self._distinct = False
         self._final = False
@@ -590,6 +305,8 @@ class QuerySet(object):
         fields = '*'
         if self._fields:
             fields = comma_join('`%s`' % field for field in self._fields)
+        for name, func in self._extra.items():
+            fields += ', %s AS %s' % (func.to_sql(), name)
         ordering = '\nORDER BY ' + self.order_by_as_sql() if self._order_by else ''
         limit = '\nLIMIT %d, %d' % self._limits if self._limits else ''
         final = ' FINAL' if self._final else ''
@@ -645,11 +362,17 @@ class QuerySet(object):
         qs._fields = field_names
         return qs
 
+    def extra(self, **kwargs):
+        qs = copy(self)
+        qs._extra = kwargs
+        return qs
+
     def filter(self, *q, **filter_fields):
         """
         Returns a copy of this queryset that includes only rows matching the conditions.
         Add q object to query if it specified.
         """
+        from infi.clickhouse_orm.funcs import F
         qs = copy(self)
         qs._q = list(self._q)
         for arg in q:
