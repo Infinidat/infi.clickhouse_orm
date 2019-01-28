@@ -6,6 +6,7 @@ Unreleased
 - Added `timeout` parameter to database initializer (SUHAR1K)
 - Added `verify_ssl_cert` parameter to database initializer
 - Added `final()` method to querysets (M1hacka)
+- Fixed a migrations problem - cannot add a new materialized field after a regular field
 
 v1.0.3
 ------

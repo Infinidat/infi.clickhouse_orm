@@ -75,13 +75,16 @@ class AlterTable(Operation):
         # Identify fields that were added to the model
         prev_name = None
         for name, field in iteritems(self.model_class.fields()):
+            is_regular_field = not (field.materialized or field.alias)
             if name not in table_fields:
                 logger.info('        Add column %s', name)
                 assert prev_name, 'Cannot add a column to the beginning of the table'
-                cmd = 'ADD COLUMN %s %s AFTER %s' % (name, field.get_sql(), prev_name)
+                cmd = 'ADD COLUMN %s %s' % (name, field.get_sql())
+                if is_regular_field:
+                    cmd += ' AFTER %s' % prev_name
                 self._alter_table(database, cmd)
 
-            if not field.materialized and not field.alias:
+            if is_regular_field:
                 # ALIAS and MATERIALIZED fields are not stored in the database, and raise DatabaseError
                 # (no AFTER column). So we will skip them
                 prev_name = name
