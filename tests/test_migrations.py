@@ -93,10 +93,10 @@ class MigrationsTestCase(unittest.TestCase):
         self.database.migrate('tests.sample_migrations', 14)
         self.assertTrue(self.tableExists(MaterializedModel1))
         self.assertEqual(self.getTableFields(MaterializedModel1),
-                          [('date_time', "DateTime"), ('int_field', 'Int8'), ('date', 'Date')])
+                          [('date_time', 'DateTime'), ('int_field', 'Int8'), ('date', 'Date'), ('int_field_plus_one', 'Int8')])
         self.assertTrue(self.tableExists(AliasModel1))
         self.assertEqual(self.getTableFields(AliasModel1),
-                          [('date', 'Date'), ('int_field', 'Int8'), ('date_alias', "Date")])
+                          [('date', 'Date'), ('int_field', 'Int8'), ('date_alias', 'Date'), ('int_field_plus_one', 'Int8')])
 
 
 # Several different models with the same table name, to simulate a table that changes over time
@@ -183,6 +183,7 @@ class MaterializedModel1(Model):
     date_time = DateTimeField()
     date = DateField(materialized='toDate(date_time)')
     int_field = Int8Field()
+    int_field_plus_one = Int8Field(materialized='int_field + 1')
 
     engine = MergeTree('date', ('date',))
 
@@ -206,6 +207,7 @@ class AliasModel1(Model):
     date = DateField()
     date_alias = DateField(alias='date')
     int_field = Int8Field()
+    int_field_plus_one = Int8Field(alias='int_field + 1')
 
     engine = MergeTree('date', ('date',))
 

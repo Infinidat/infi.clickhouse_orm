@@ -161,9 +161,9 @@ class EnginesTestCase(_EnginesHelperTestCase):
 
         self.assertEqual(2, len(parts))
         self.assertEqual('testcollapsemodel', parts[0].table)
-        self.assertEqual('(201701, 13)', parts[0].partition)
+        self.assertEqual('(201701, 13)'.replace(' ', ''), parts[0].partition.replace(' ', ''))
         self.assertEqual('testmodel', parts[1].table)
-        self.assertEqual('(201701, 13)', parts[1].partition)
+        self.assertEqual('(201701, 13)'.replace(' ', ''), parts[1].partition.replace(' ', ''))
 
 
 class SampleModel(Model):

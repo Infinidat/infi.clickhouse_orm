@@ -10,7 +10,7 @@ infi.clickhouse_orm.database
 Database instances connect to a specific ClickHouse database for running queries,
 inserting data and other operations.
 
-#### Database(db_name, db_url="http://localhost:8123/", username=None, password=None, readonly=False, autocreate=True)
+#### Database(db_name, db_url="http://localhost:8123/", username=None, password=None, readonly=False, autocreate=True, timeout=60, verify_ssl_cert=True)
 
 
 Initializes a database instance. Unless it's readonly, the database will be
@@ -21,7 +21,9 @@ created on the ClickHouse server if it does not already exist.
 - `username`: optional connection credentials.
 - `password`: optional connection credentials.
 - `readonly`: use a read-only connection.
-- `autocreate`: automatically create the database if does not exist (unless in readonly mode).
+- `autocreate`: automatically create the database if it does not exist (unless in readonly mode).
+- `timeout`: the connection timeout in seconds.
+- `verify_ssl_cert`: whether to verify the server's certificate when connecting via HTTPS.
 
 
 #### add_setting(name, value)
@@ -865,6 +867,13 @@ Returns a copy of this queryset that includes only rows matching the conditions.
 Add q object to query if it specified.
 
 
+#### final()
+
+
+Adds a FINAL modifier to table, meaning data will be collapsed to final version.
+Can be used with `CollapsingMergeTree` engine only.
+
+
 #### only(*field_names)
 
 
@@ -964,6 +973,13 @@ Returns a copy of this queryset that excludes all rows matching the conditions.
 
 Returns a copy of this queryset that includes only rows matching the conditions.
 Add q object to query if it specified.
+
+
+#### final()
+
+
+Adds a FINAL modifier to table, meaning data will be collapsed to final version.
+Can be used with `CollapsingMergeTree` engine only.
 
 
 #### group_by(*args)
