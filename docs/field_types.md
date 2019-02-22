@@ -9,7 +9,7 @@ Currently the following field types are supported:
 | ------------------ | ---------- | ------------------- | -----------------------------------------------------
 | StringField        | String     | unicode             | Encoded as UTF-8 when written to ClickHouse
 | FixedStringField   | String     | unicode             | Encoded as UTF-8 when written to ClickHouse
-| DateField          | Date       | datetime.date       | Range 1970-01-01 to 2038-01-19
+| DateField          | Date       | datetime.date       | Range 1970-01-01 to 2105-12-31
 | DateTimeField      | DateTime   | datetime.datetime   | Minimal value is 1970-01-01 00:00:00; Always in UTC
 | Int8Field          | Int8       | int                 | Range -128 to 127
 | Int16Field         | Int16      | int                 | Range -32768 to 32767

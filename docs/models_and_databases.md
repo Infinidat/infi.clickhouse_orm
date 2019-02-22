@@ -89,7 +89,7 @@ When values are assigned to model fields, they are immediately converted to thei
     >>> suzy.birthday = 0.5
     ValueError: Invalid value for DateField - 0.5
     >>> suzy.birthday = '1922-05-31'
-    ValueError: DateField out of range - 1922-05-31 is not between 1970-01-01 and 2038-01-19
+    ValueError: DateField out of range - 1922-05-31 is not between 1970-01-01 and 2105-12-31
 
 Inserting to the Database
 -------------------------
