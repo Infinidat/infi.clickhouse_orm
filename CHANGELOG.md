@@ -4,6 +4,7 @@ Change Log
 Unreleased
 ----------
 - Extend date field range (trthhrtz)
+- Fix parsing of server errors in ClickHouse v19.3.3+
 
 v1.0.4
 ------

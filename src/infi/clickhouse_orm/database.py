@@ -40,11 +40,19 @@ class ServerError(DatabaseException):
             self.message = message
             super(ServerError, self).__init__(message)
 
-    ERROR_PATTERN = re.compile(r'''
-        Code:\ (?P<code>\d+),
-        \ e\.displayText\(\)\ =\ (?P<type1>[^ \n]+):\ (?P<msg>.+?),
-        \ e.what\(\)\ =\ (?P<type2>[^ \n]+)
-    ''', re.VERBOSE | re.DOTALL)
+    ERROR_PATTERNS = (
+        # ClickHouse prior to v19.3.3
+        re.compile(r'''
+            Code:\ (?P<code>\d+),
+            \ e\.displayText\(\)\ =\ (?P<type1>[^ \n]+):\ (?P<msg>.+?),
+            \ e.what\(\)\ =\ (?P<type2>[^ \n]+)
+        ''', re.VERBOSE | re.DOTALL),
+        # ClickHouse v19.3.3+
+        re.compile(r'''
+            Code:\ (?P<code>\d+),
+            \ e\.displayText\(\)\ =\ (?P<type1>[^ \n]+):\ (?P<msg>.+)
+        ''', re.VERBOSE | re.DOTALL),
+    )
 
     @classmethod
     def get_error_code_msg(cls, full_error_message):
@@ -54,10 +62,11 @@ class ServerError(DatabaseException):
         See the list of error codes here:
         https://github.com/yandex/ClickHouse/blob/master/dbms/src/Common/ErrorCodes.cpp
         """
-        match = cls.ERROR_PATTERN.match(full_error_message)
-        if match:
-            # assert match.group('type1') == match.group('type2')
-            return int(match.group('code')), match.group('msg')
+        for pattern in cls.ERROR_PATTERNS:
+            match = pattern.match(full_error_message)
+            if match:
+                # assert match.group('type1') == match.group('type2')
+                return int(match.group('code')), match.group('msg').strip()
 
         return 0, full_error_message
 
