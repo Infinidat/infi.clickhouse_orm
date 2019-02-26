@@ -131,7 +131,7 @@ class FixedStringField(StringField):
 class DateField(Field):
 
     min_value = datetime.date(1970, 1, 1)
-    max_value = datetime.date(2038, 1, 19)
+    max_value = datetime.date(2105, 12, 31)
     class_default = min_value
     db_type = 'Date'
 
