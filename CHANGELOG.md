@@ -1,6 +1,10 @@
 Change Log
 ==========
 
+Unreleased
+----------
+- Extend date field range (trthhrtz)
+
 v1.0.4
 ------
 - Added `timeout` parameter to database initializer (SUHAR1K)
