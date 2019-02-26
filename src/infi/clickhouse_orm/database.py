@@ -285,7 +285,7 @@ class Database(object):
         count = self.count(model_class, conditions)
         pages_total = int(ceil(count / float(page_size)))
         if page_num == -1:
-            page_num = pages_total
+            page_num = max(pages_total, 1)
         elif page_num < 1:
             raise ValueError('Invalid page number: %d' % page_num)
         offset = (page_num - 1) * page_size
@@ -296,7 +296,7 @@ class Database(object):
         query += ' LIMIT %d, %d' % (offset, page_size)
         query = self._substitute(query, model_class)
         return Page(
-            objects=list(self.select(query, model_class, settings)),
+            objects=list(self.select(query, model_class, settings)) if count else [],
             number_of_objects=count,
             pages_total=pages_total,
             number=page_num,

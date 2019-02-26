@@ -112,6 +112,14 @@ class DatabaseTestCase(TestCaseWithData):
             self.assertEqual([obj.to_tsv() for obj in page_a.objects],
                               [obj.to_tsv() for obj in page_b.objects])
 
+    def test_pagination_empty_page(self):
+        for page_num in (-1, 1, 2):
+            page = self.database.paginate(Person, 'first_name, last_name', page_num, 10, conditions="first_name = 'Ziggy'")
+            self.assertEqual(page.number_of_objects, 0)
+            self.assertEqual(page.objects, [])
+            self.assertEqual(page.pages_total, 0)
+            self.assertEqual(page.number, max(page_num, 1))
+
     def test_pagination_invalid_page(self):
         self._insert_and_check(self._sample_data(), len(data))
         for page_num in (0, -2, -100):
