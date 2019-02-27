@@ -290,6 +290,7 @@ class QuerySet(object):
         self._where_q = Q()
         self._prewhere_q = Q()
         self._grouping_fields = []
+        self._grouping_with_totals = False
         self._fields = model_cls.fields().keys()
         self._limits = None
         self._distinct = False
@@ -332,6 +333,9 @@ class QuerySet(object):
             return qs
 
     def select_fields_as_sql(self):
+        """
+        Returns the selected fields or expressions as a SQL string.
+        """
         return comma_join('`%s`' % field for field in self._fields) if self._fields else '*'
 
     def as_sql(self):
@@ -352,6 +356,9 @@ class QuerySet(object):
 
         if self._grouping_fields:
             sql += '\nGROUP BY %s' % comma_join('`%s`' % field for field in self._grouping_fields)
+
+            if self._grouping_with_totals:
+                sql += ' WITH TOTALS'
 
         if self._order_by:
             sql += '\nORDER BY ' + self.order_by_as_sql()
@@ -570,6 +577,9 @@ class AggregateQuerySet(QuerySet):
         raise NotImplementedError('Cannot re-aggregate an AggregateQuerySet')
 
     def select_fields_as_sql(self):
+        """
+        Returns the selected fields or expressions as a SQL string.
+        """
         return comma_join(list(self._fields) + ['%s AS %s' % (v, k) for k, v in self._calculated_fields.items()])
 
     def __iter__(self):
@@ -582,3 +592,13 @@ class AggregateQuerySet(QuerySet):
         sql = u'SELECT count() FROM (%s)' % self.as_sql()
         raw = self._database.raw(sql)
         return int(raw) if raw else 0
+
+    def with_totals(self):
+        """
+        Adds WITH TOTALS modifier ot GROUP BY, making query return extra row
+        with aggregate function calculated across all the rows. More information:
+        https://clickhouse.yandex/docs/en/query_language/select/#with-totals-modifier
+        """
+        qs = copy(self)
+        qs._grouping_with_totals = True
+        return qs

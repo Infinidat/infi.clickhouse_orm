@@ -912,6 +912,9 @@ The result is a namedtuple containing `objects` (list), `number_of_objects`,
 #### select_fields_as_sql()
 
 
+Returns the selected fields or expressions as a SQL string.
+
+
 ### AggregateQuerySet
 
 Extends QuerySet
@@ -1028,5 +1031,16 @@ The result is a namedtuple containing `objects` (list), `number_of_objects`,
 
 
 #### select_fields_as_sql()
+
+
+Returns the selected fields or expressions as a SQL string.
+
+
+#### with_totals()
+
+
+Adds WITH TOTALS modifier ot GROUP BY, making query return extra row
+with aggregate function calculated across all the rows. More information:
+https://clickhouse.yandex/docs/en/query_language/select/#with-totals-modifier
 
 

@@ -411,6 +411,17 @@ class AggregateTestCase(TestCaseWithData):
         print(qs.as_sql())
         self.assertEqual(qs.count(), 1)
 
+    def test_aggregate_with_totals(self):
+        qs = Person.objects_in(self.database).aggregate('first_name', count='count()').\
+            with_totals().order_by('-count')[:5]
+        print(qs.as_sql())
+        result = list(qs)
+        self.assertEqual(len(result), 6)
+        for row in result[:-1]:
+            self.assertEqual(2, row.count)
+
+        self.assertEqual(100, result[-1].count)
+
     def test_double_underscore_field(self):
         class Mdl(Model):
             the__number = Int32Field()

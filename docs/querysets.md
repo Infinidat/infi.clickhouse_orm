@@ -32,14 +32,14 @@ For filters with compound conditions you can use `Q` objects inside `filter` wit
     >>> qs.conditions_as_sql()
     u"((first_name = 'Ciaran' AND last_name = 'Carver') OR height <= 1.8) AND (NOT (first_name = 'David'))"
 
-By default conditions from `filter` and `exclude` methods are add to `WHERE` clause. 
+By default conditions from `filter` and `exclude` methods are add to `WHERE` clause.
 For better aggregation performance you can add them to `PREWHERE` section using `prewhere=True` parameter
 
     >>> qs = Person.objects_in(database)
     >>> qs = qs.filter(first_name__startswith='V', prewhere=True)
     >>> qs.conditions_as_sql(prewhere=True)
     u"first_name LIKE 'V%'"
-    
+
 There are different operators that can be used, by passing `<fieldname>__<operator>=<value>` (two underscores separate the field name from the operator). In case no operator is given, `eq` is used by default. Below are all the supported operators.
 
 | Operator       | Equivalent SQL                               | Comments                           |
@@ -128,14 +128,14 @@ Adds a DISTINCT clause to the query, meaning that any duplicate rows in the resu
 Final
 --------
 
-This method can be used only with CollapsingMergeTree engine.  
+This method can be used only with CollapsingMergeTree engine.
 Adds a FINAL modifier to the query, meaning data is selected fully "collapsed" by sign field.
 
     >>> Person.objects_in(database).count()
     100
     >>> Person.objects_in(database).final().count()
     94
-    
+
 Slicing
 -------
 
@@ -209,6 +209,19 @@ This queryset is translated to:
     SELECT toDayOfWeek(birthday) AS weekday, count() AS num FROM person GROUP BY weekday
 
 After calling `aggregate` you can still use most of the regular queryset methods, such as `count`, `order_by` and `paginate`. It is not possible, however, to call `only` or `aggregate`. It is also not possible to filter the queryset on calculated fields, only on fields that exist in the model.
+
+If you limit aggregation results, it might be useful to get total aggregation values for all rows.
+To achieve this, you can use `with_totals` method. It will return extra row (last) with
+values aggregated for all rows suitable for filters.
+
+    qs = Person.objects_in(database).aggregate('first_name', num='count()').with_totals().order_by('-count')[:3]
+    >>> print qs.count()
+    4
+    >>> for row in qs:
+    >>>     print("'{}': {}".format(row.first_name, row.count))
+    'Cassandra': 2
+    'Alexandra': 2
+    '': 100
 
 ---
 
