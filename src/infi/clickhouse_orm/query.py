@@ -576,9 +576,6 @@ class AggregateQuerySet(QuerySet):
     def select_fields_as_sql(self):
         return comma_join(list(self._fields) + ['%s AS %s' % (v, k) for k, v in self._calculated_fields.items()])
 
-    def group_by_as_sql(self):
-        return 'GROUP BY'
-
     def __iter__(self):
         return self._database.select(self.as_sql()) # using an ad-hoc model
 
