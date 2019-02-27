@@ -4,6 +4,7 @@ Change Log
 Unreleased
 ----------
 - Add PREWHERE support to querysets (M1hacka)
+- Add WITH TOTALS support to querysets (M1hacka)
 - Extend date field range (trthhrtz)
 - Fix parsing of server errors in ClickHouse v19.3.3+
 - Fix pagination when asking for the last page on a query that matches no records

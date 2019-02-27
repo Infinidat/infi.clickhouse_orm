@@ -333,6 +333,9 @@ class QuerySet(object):
             return qs
 
     def select_fields_as_sql(self):
+        """
+        Returns the selected fields or expressions as a SQL string.
+        """
         return comma_join('`%s`' % field for field in self._fields) if self._fields else '*'
 
     def as_sql(self):
@@ -574,6 +577,9 @@ class AggregateQuerySet(QuerySet):
         raise NotImplementedError('Cannot re-aggregate an AggregateQuerySet')
 
     def select_fields_as_sql(self):
+        """
+        Returns the selected fields or expressions as a SQL string.
+        """
         return comma_join(list(self._fields) + ['%s AS %s' % (v, k) for k, v in self._calculated_fields.items()])
 
     def __iter__(self):
