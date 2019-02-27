@@ -32,6 +32,14 @@ For filters with compound conditions you can use `Q` objects inside `filter` wit
     >>> qs.conditions_as_sql()
     u"((first_name = 'Ciaran' AND last_name = 'Carver') OR height <= 1.8) AND (NOT (first_name = 'David'))"
 
+By default conditions from `filter` and `exclude` methods are add to `WHERE` clause. 
+For better aggregation performance you can add them to `PREWHERE` section using `prewhere=True` parameter
+
+    >>> qs = Person.objects_in(database)
+    >>> qs = qs.filter(first_name__startswith='V', prewhere=True)
+    >>> qs.conditions_as_sql(prewhere=True)
+    u"first_name LIKE 'V%'"
+    
 There are different operators that can be used, by passing `<fieldname>__<operator>=<value>` (two underscores separate the field name from the operator). In case no operator is given, `eq` is used by default. Below are all the supported operators.
 
 | Operator       | Equivalent SQL                               | Comments                           |

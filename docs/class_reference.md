@@ -835,10 +835,10 @@ is equivalent to:
 Returns the whole query as a SQL string.
 
 
-#### conditions_as_sql()
+#### conditions_as_sql(prewhere=True)
 
 
-Returns the contents of the query's `WHERE` clause as a string.
+Returns the contents of the query's `WHERE` or `PREWHERE` clause as a string.
 
 
 #### count()
@@ -943,10 +943,10 @@ This method is not supported on `AggregateQuerySet`.
 Returns the whole query as a SQL string.
 
 
-#### conditions_as_sql()
+#### conditions_as_sql(prewhere=True)
 
 
-Returns the contents of the query's `WHERE` clause as a string.
+Returns the contents of the query's `WHERE` or `PREWHERE` clause as a string.
 
 
 #### count()
