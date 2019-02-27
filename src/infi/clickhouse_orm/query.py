@@ -344,10 +344,10 @@ class QuerySet(object):
         params = (distinct, self.select_fields_as_sql(), self._model_cls.table_name(), final)
         sql = u'SELECT %s%s\nFROM `%s`%s' % params
 
-        if self._prewhere_q:
+        if self._prewhere_q and not self._prewhere_q.is_empty:
             sql += '\nPREWHERE ' + self.conditions_as_sql(prewhere=True)
 
-        if self._where_q:
+        if self._where_q and not self._where_q.is_empty:
             sql += '\nWHERE ' + self.conditions_as_sql(prewhere=False)
 
         if self._grouping_fields:
@@ -410,7 +410,7 @@ class QuerySet(object):
         return qs
 
     def _filter_or_exclude(self, *q, **kwargs):
-        reverse = kwargs.pop('reverse', False)
+        inverse = kwargs.pop('_inverse', False)
         prewhere = kwargs.pop('prewhere', False)
 
         qs = copy(self)
@@ -422,7 +422,7 @@ class QuerySet(object):
         if kwargs:
             condition &= Q(**kwargs)
 
-        if reverse:
+        if inverse:
             condition = ~condition
 
         condition = copy(self._prewhere_q if prewhere else self._where_q) & condition
@@ -436,15 +436,16 @@ class QuerySet(object):
     def filter(self, *q, **kwargs):
         """
         Returns a copy of this queryset that includes only rows matching the conditions.
-        Add q object to query if it specified.
+        Pass `prewhere=True` to apply the conditions as PREWHERE instead of WHERE.
         """
         return self._filter_or_exclude(*q, **kwargs)
 
     def exclude(self, *q, **kwargs):
         """
         Returns a copy of this queryset that excludes all rows matching the conditions.
+        Pass `prewhere=True` to apply the conditions as PREWHERE instead of WHERE.
         """
-        return self._filter_or_exclude(*q, reverse=True, **kwargs)
+        return self._filter_or_exclude(*q, _inverse=True, **kwargs)
 
     def paginate(self, page_num=1, page_size=100):
         """
