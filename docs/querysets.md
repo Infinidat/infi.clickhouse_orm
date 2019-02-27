@@ -210,6 +210,19 @@ This queryset is translated to:
 
 After calling `aggregate` you can still use most of the regular queryset methods, such as `count`, `order_by` and `paginate`. It is not possible, however, to call `only` or `aggregate`. It is also not possible to filter the queryset on calculated fields, only on fields that exist in the model.
 
+If you limit aggregation results, it might be useful to get total aggregation values for all rows.
+To achieve this, you can use `with_totals` method. It will return extra row (last) with
+values aggregated for all rows suitable for filters.
+
+    qs = Person.objects_in(database).aggregate('first_name' num='count()').with_totals().order_by('-count')[:3]
+    >>> print qs.count()
+    4
+    >>> for row in qs: 
+    >>>     print(row.first_name, row.count)
+    'Cassandra' 2
+    'Alexandra' 2
+    '' 100
+
 ---
 
 [<< Models and Databases](models_and_databases.md) | [Table of Contents](toc.md) | [Field Types >>](field_types.md)
