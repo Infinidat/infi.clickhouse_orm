@@ -147,6 +147,34 @@ to `None`.
 
 NOTE: `ArrayField` of `NullableField` is not supported. Also `EnumField` cannot be nullable.
 
+Compression
+-----------
+You can specify a compression codec to use when writing into the database. Here are the different available :
+
+| Codec                | Argument                                 | Comment
+| -------------------- | ---------------------------------------- | ----------------------------------------------------
+| NONE                 | None                                     | No compression.
+| LZ4                  | None                                     | LZ4 compression.
+| LZ4HC(`level`)       | Possible level range: [3, 12].           | Default value: 9. The higher the better compression.
+| ZSTD(`level`)        | Possible level range: [1, 22].           | Default value: 1. The higher the better compression.
+| Delta(`delta_bytes`) | Possible delta_bytes range: 1, 2, 4 , 8. | Default value for `delta_bytes` is `sizeof(type)` if it is equal to 1, 2,4 or 8 and equals to 1 otherwise.
+
+Syntax example :
+
+```
+CREATE TABLE example
+(
+    dt Date CODEC(ZSTD),  // equivalent to dt Date CODEC(ZSTD(1))
+    ts DateTime CODEC(LZ4HC),  // equivalent to ts DateTime CODEC(LZ4HC(9))
+    path String
+)
+ENGINE = MergeTree()
+PARTITION BY tuple()
+ORDER BY dt
+```
+
+Note that you may need to install some libraries to use compression.
+
 Creating custom field types
 ---------------------------
 Sometimes it is convenient to use data types that are supported in Python, but have no corresponding column type in ClickHouse. In these cases it is possible to define a custom field class that knows how to convert the Pythonic object to a suitable representation in the database, and vice versa.

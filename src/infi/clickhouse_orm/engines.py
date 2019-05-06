@@ -110,6 +110,11 @@ class MergeTree(Engine):
                 params.append(self.sampling_expr)
             params.append('(%s)' % comma_join(self.order_by))
             params.append(str(self.index_granularity))
+        
+        # In ClickHouse 19.1.16 compression codecs were introduced
+        if db.server_version < (19, 1, 16):
+            for param in params:
+                param = param.split(' CODEC(')[0]
 
         return params
 
@@ -125,6 +130,11 @@ class CollapsingMergeTree(MergeTree):
     def _build_sql_params(self, db):
         params = super(CollapsingMergeTree, self)._build_sql_params(db)
         params.append(self.sign_col)
+
+        # In ClickHouse 19.1.16 compression codecs were introduced
+        if db.server_version < (19, 1, 16):
+            for param in params:
+                param = param.split(' CODEC(')[0]
         return params
 
 
@@ -141,6 +151,12 @@ class SummingMergeTree(MergeTree):
         params = super(SummingMergeTree, self)._build_sql_params(db)
         if self.summing_cols:
             params.append('(%s)' % comma_join(self.summing_cols))
+
+        # In ClickHouse 19.1.16 compression codecs were introduced
+        if db.server_version < (19, 1, 16):
+            for param in params:
+                param = param.split(' CODEC(')[0]
+
         return params
 
 
@@ -156,6 +172,12 @@ class ReplacingMergeTree(MergeTree):
         params = super(ReplacingMergeTree, self)._build_sql_params(db)
         if self.ver_col:
             params.append(self.ver_col)
+
+        # In ClickHouse 19.1.16 compression codecs were introduced
+        if db.server_version < (19, 1, 16):
+            for param in params:
+                param = param.split(' CODEC(')[0]
+
         return params
 
 

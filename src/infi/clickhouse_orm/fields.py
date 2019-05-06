@@ -18,7 +18,7 @@ class Field(object):
     class_default = 0
     db_type = None
 
-    def __init__(self, default=None, alias=None, materialized=None, readonly=None):
+    def __init__(self, default=None, alias=None, materialized=None, readonly=None, codec=None):
         assert (None, None) in {(default, alias), (alias, materialized), (default, materialized)}, \
             "Only one of default, alias and materialized parameters can be given"
         assert alias is None or isinstance(alias, string_types) and alias != "",\
@@ -33,6 +33,7 @@ class Field(object):
         self.alias = alias
         self.materialized = materialized
         self.readonly = bool(self.alias or self.materialized or readonly)
+        self.codec = codec
 
     def to_python(self, value, timezone_in_use):
         '''
@@ -68,17 +69,23 @@ class Field(object):
         Returns an SQL expression describing the field (e.g. for CREATE TABLE).
         :param with_default_expression: If True, adds default value to sql.
             It doesn't affect fields with alias and materialized values.
+            Not very useful btw.
         '''
+        sql = '%s' % (self.db_type)
         if with_default_expression:
             if self.alias:
-                return '%s ALIAS %s' % (self.db_type, self.alias)
+                sql += ' ALIAS %s' % (self.alias)
             elif self.materialized:
-                return '%s MATERIALIZED %s' % (self.db_type, self.materialized)
+                sql += ' MATERIALIZED %s' % (self.materialized)
             else:
                 default = self.to_db_string(self.default)
-                return '%s DEFAULT %s' % (self.db_type, default)
-        else:
-            return self.db_type
+                sql += ' DEFAULT %s' % (default)
+
+        # feature appeared in version 19.1.6, 2019-01-24
+        # server_version check is made when _build_sql_params() from engines.py is called.
+        if self.codec is not None:
+            sql += ' CODEC(%s)' % (self.codec)
+        return sql
 
     def isinstance(self, types):
         """
