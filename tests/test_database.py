@@ -150,7 +150,7 @@ class DatabaseTestCase(TestCaseWithData):
 
         exc = cm.exception
         self.assertEqual(exc.code, 193)
-        self.assertEqual(exc.message, 'Wrong password for user default')
+        self.assertTrue(exc.message.startswith('Wrong password for user default'))
 
     def test_nonexisting_db(self):
         db = Database('db_not_here', autocreate=False)
@@ -158,7 +158,7 @@ class DatabaseTestCase(TestCaseWithData):
             db.create_table(Person)
         exc = cm.exception
         self.assertEqual(exc.code, 81)
-        self.assertEqual(exc.message, "Database db_not_here doesn't exist")
+        self.assertTrue(exc.message.startswith("Database db_not_here doesn't exist"))
         # Create and delete the db twice, to ensure db_exists gets updated
         for i in range(2):
             # Now create the database - should succeed
