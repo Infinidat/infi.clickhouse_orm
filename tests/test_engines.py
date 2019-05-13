@@ -209,7 +209,7 @@ class DistributedTestCase(_EnginesHelperTestCase):
 
         exc = cm.exception
         self.assertEqual(exc.code, 170)
-        self.assertEqual(exc.message, "Requested cluster 'cluster_name' not found")
+        self.assertTrue(exc.message.startswith("Requested cluster 'cluster_name' not found"))
 
     def test_verbose_engine_two_superclasses(self):
         class TestModel2(SampleModel):
