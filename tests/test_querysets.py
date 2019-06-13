@@ -11,7 +11,7 @@ from datetime import date, datetime
 try:
     Enum # exists in Python 3.4+
 except NameError:
-    from enum import Enum # use the enum34 library instead
+    from enum import Enum  # use the enum34 library instead
 
 
 class QuerySetTestCase(TestCaseWithData):
@@ -28,6 +28,13 @@ class QuerySetTestCase(TestCaseWithData):
             logging.info('\t[%d]\t%s' % (count, instance.to_dict()))
         self.assertEqual(count, expected_count)
         self.assertEqual(qs.count(), expected_count)
+
+    def test_prewhere(self):
+        # We can't distinguish prewhere and where results, it affects performance only.
+        # So let's control prewhere acts like where does
+        qs = Person.objects_in(self.database)
+        self.assertTrue(qs.filter(first_name='Connor', prewhere=True))
+        self.assertFalse(qs.filter(first_name='Willy', prewhere=True))
 
     def test_no_filtering(self):
         qs = Person.objects_in(self.database)
@@ -403,6 +410,17 @@ class AggregateTestCase(TestCaseWithData):
         qs = Person.objects_in(self.database).aggregate(average_height='avg(height)').distinct()
         print(qs.as_sql())
         self.assertEqual(qs.count(), 1)
+
+    def test_aggregate_with_totals(self):
+        qs = Person.objects_in(self.database).aggregate('first_name', count='count()').\
+            with_totals().order_by('-count')[:5]
+        print(qs.as_sql())
+        result = list(qs)
+        self.assertEqual(len(result), 6)
+        for row in result[:-1]:
+            self.assertEqual(2, row.count)
+
+        self.assertEqual(100, result[-1].count)
 
     def test_double_underscore_field(self):
         class Mdl(Model):

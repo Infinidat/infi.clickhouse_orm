@@ -701,6 +701,13 @@ Extends BaseIntField
 #### UInt8Field(default=None, alias=None, materialized=None, readonly=None)
 
 
+### UUIDField
+
+Extends Field
+
+#### UUIDField(default=None, alias=None, materialized=None, readonly=None)
+
+
 infi.clickhouse_orm.engines
 ---------------------------
 
@@ -835,10 +842,10 @@ is equivalent to:
 Returns the whole query as a SQL string.
 
 
-#### conditions_as_sql()
+#### conditions_as_sql(prewhere=False)
 
 
-Returns the contents of the query's `WHERE` clause as a string.
+Returns the contents of the query's `WHERE` or `PREWHERE` clause as a string.
 
 
 #### count()
@@ -854,17 +861,18 @@ Adds a DISTINCT clause to the query, meaning that any duplicate rows
 in the results will be omitted.
 
 
-#### exclude(**filter_fields)
+#### exclude(*q, **kwargs)
 
 
 Returns a copy of this queryset that excludes all rows matching the conditions.
+Pass `prewhere=True` to apply the conditions as PREWHERE instead of WHERE.
 
 
-#### filter(*q, **filter_fields)
+#### filter(*q, **kwargs)
 
 
 Returns a copy of this queryset that includes only rows matching the conditions.
-Add q object to query if it specified.
+Pass `prewhere=True` to apply the conditions as PREWHERE instead of WHERE.
 
 
 #### final()
@@ -908,6 +916,12 @@ The result is a namedtuple containing `objects` (list), `number_of_objects`,
 `pages_total`, `number` (of the current page), and `page_size`.
 
 
+#### select_fields_as_sql()
+
+
+Returns the selected fields or expressions as a SQL string.
+
+
 ### AggregateQuerySet
 
 Extends QuerySet
@@ -943,10 +957,10 @@ This method is not supported on `AggregateQuerySet`.
 Returns the whole query as a SQL string.
 
 
-#### conditions_as_sql()
+#### conditions_as_sql(prewhere=False)
 
 
-Returns the contents of the query's `WHERE` clause as a string.
+Returns the contents of the query's `WHERE` or `PREWHERE` clause as a string.
 
 
 #### count()
@@ -962,17 +976,18 @@ Adds a DISTINCT clause to the query, meaning that any duplicate rows
 in the results will be omitted.
 
 
-#### exclude(**filter_fields)
+#### exclude(*q, **kwargs)
 
 
 Returns a copy of this queryset that excludes all rows matching the conditions.
+Pass `prewhere=True` to apply the conditions as PREWHERE instead of WHERE.
 
 
-#### filter(*q, **filter_fields)
+#### filter(*q, **kwargs)
 
 
 Returns a copy of this queryset that includes only rows matching the conditions.
-Add q object to query if it specified.
+Pass `prewhere=True` to apply the conditions as PREWHERE instead of WHERE.
 
 
 #### final()
@@ -1020,5 +1035,19 @@ partitioning of records into pages.
 
 The result is a namedtuple containing `objects` (list), `number_of_objects`,
 `pages_total`, `number` (of the current page), and `page_size`.
+
+
+#### select_fields_as_sql()
+
+
+Returns the selected fields or expressions as a SQL string.
+
+
+#### with_totals()
+
+
+Adds WITH TOTALS modifier ot GROUP BY, making query return extra row
+with aggregate function calculated across all the rows. More information:
+https://clickhouse.yandex/docs/en/query_language/select/#with-totals-modifier
 
 

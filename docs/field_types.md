@@ -9,7 +9,7 @@ Currently the following field types are supported:
 | ------------------ | ---------- | ------------------- | -----------------------------------------------------
 | StringField        | String     | unicode             | Encoded as UTF-8 when written to ClickHouse
 | FixedStringField   | String     | unicode             | Encoded as UTF-8 when written to ClickHouse
-| DateField          | Date       | datetime.date       | Range 1970-01-01 to 2038-01-19
+| DateField          | Date       | datetime.date       | Range 1970-01-01 to 2105-12-31
 | DateTimeField      | DateTime   | datetime.datetime   | Minimal value is 1970-01-01 00:00:00; Always in UTC
 | Int8Field          | Int8       | int                 | Range -128 to 127
 | Int16Field         | Int16      | int                 | Range -32768 to 32767
@@ -25,6 +25,7 @@ Currently the following field types are supported:
 | Decimal32Field     | Decimal32  | Decimal             | Ditto
 | Decimal64Field     | Decimal64  | Decimal             | Ditto
 | Decimal128Field    | Decimal128 | Decimal             | Ditto
+| UUIDField          | UUID       | Decimal             | 
 | Enum8Field         | Enum8      | Enum                | See below
 | Enum16Field        | Enum16     | Enum                | See below
 | ArrayField         | Array      | list                | See below
@@ -182,46 +183,6 @@ class BooleanField(Field):
         # The value was already converted by to_python, so it's a bool
         return '1' if value else '0'
 ```
-
-Here's another example - a field for storing UUIDs in the database as 16-byte strings. We'll use Python's built-in `UUID` class to handle the conversion from strings, ints and tuples into UUID instances. So in our Python code we'll have the convenience of working with UUID objects, but they will be stored in the database as efficiently as possible:
-
-```python
-from infi.clickhouse_orm.fields import Field
-from infi.clickhouse_orm.utils import escape
-from uuid import UUID
-import six
-
-class UUIDField(Field):
-
-    # The ClickHouse column type to use
-    db_type = 'FixedString(16)'
-
-    # The default value if empty
-    class_default = UUID(int=0)
-
-    def to_python(self, value, timezone_in_use):
-        # Convert valid values to UUID instance
-        if isinstance(value, UUID):
-            return value
-        elif isinstance(value, six.string_types):
-            return UUID(bytes=value.encode('latin1')) if len(value) == 16 else UUID(value)
-        elif isinstance(value, six.integer_types):
-            return UUID(int=value)
-        elif isinstance(value, tuple):
-            return UUID(fields=value)
-        else:
-            raise ValueError('Invalid value for UUIDField: %r' % value)
-
-    def to_db_string(self, value, quote=True):
-        # The value was already converted by to_python, so it's a UUID instance
-        val = value.bytes
-        if six.PY3:
-            val = str(val, 'latin1')
-        return escape(val, quote)
-
-```
-
-Note that the latin-1 encoding is used as an identity encoding for converting between raw bytes and strings. This is required in Python 3, where `str` and `bytes` are different types.
 
 ---
 

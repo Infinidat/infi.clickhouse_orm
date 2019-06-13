@@ -1,11 +1,12 @@
 from __future__ import unicode_literals
-from six import string_types, text_type, binary_type
+from six import string_types, text_type, binary_type, integer_types
 import datetime
 import iso8601
 import pytz
 import time
 from calendar import timegm
 from decimal import Decimal, localcontext
+from uuid import UUID
 
 from .utils import escape, parse_array, comma_join
 
@@ -131,7 +132,7 @@ class FixedStringField(StringField):
 class DateField(Field):
 
     min_value = datetime.date(1970, 1, 1)
-    max_value = datetime.date(2038, 1, 19)
+    max_value = datetime.date(2105, 12, 31)
     class_default = min_value
     db_type = 'Date'
 
@@ -452,6 +453,29 @@ class ArrayField(Field):
         return 'Array(%s)' % self.inner_field.get_sql(with_default_expression=False)
 
 
+class UUIDField(Field):
+
+    class_default = UUID(int=0)
+    db_type = 'UUID'
+
+    def to_python(self, value, timezone_in_use):
+        if isinstance(value, UUID):
+            return value
+        elif isinstance(value, binary_type):
+            return UUID(bytes=value)
+        elif isinstance(value, string_types):
+            return UUID(value)
+        elif isinstance(value, integer_types):
+            return UUID(int=value)
+        elif isinstance(value, tuple):
+            return UUID(fields=value)
+        else:
+            raise ValueError('Invalid value for UUIDField: %r' % value)
+
+    def to_db_string(self, value, quote=True):
+        return escape(str(value), quote)
+
+
 class NullableField(Field):
 
     class_default = None
@@ -478,4 +502,13 @@ class NullableField(Field):
         return self.inner_field.to_db_string(value, quote=quote)
 
     def get_sql(self, with_default_expression=True):
-        return 'Nullable(%s)' % self.inner_field.get_sql(with_default_expression=False)
+        s = 'Nullable(%s)' % self.inner_field.get_sql(with_default_expression=False)
+        if with_default_expression:
+            if self.alias:
+                s = '%s ALIAS %s' % (s, self.alias)
+            elif self.materialized:
+                s = '%s MATERIALIZED %s' % (s, self.materialized)
+            elif self.default:
+                default = self.to_db_string(self.default)
+                s = '%s DEFAULT %s' % (s, default)
+        return s

@@ -14,7 +14,7 @@ logging.getLogger("requests").setLevel(logging.WARNING)
 class _EnginesHelperTestCase(unittest.TestCase):
 
     def setUp(self):
-        self.database = Database('test-db')
+        self.database = Database('test-db', log_statements=True)
 
     def tearDown(self):
         self.database.drop_database()
@@ -115,8 +115,8 @@ class EnginesTestCase(_EnginesHelperTestCase):
             TestModel2(date='2017-01-02', event_id=2, event_group=2, event_count=2, event_version=2)
         ])
         # event_uversion is materialized field. So * won't select it and it will be zero
-        res = self.database.select('SELECT *, event_uversion FROM $table ORDER BY event_id', model_class=TestMergeModel)
-        res = [row for row in res]
+        res = self.database.select('SELECT *, _table, event_uversion FROM $table ORDER BY event_id', model_class=TestMergeModel)
+        res = list(res)
         self.assertEqual(2, len(res))
         self.assertDictEqual({
             '_table': 'testmodel1',
@@ -209,7 +209,7 @@ class DistributedTestCase(_EnginesHelperTestCase):
 
         exc = cm.exception
         self.assertEqual(exc.code, 170)
-        self.assertEqual(exc.message, "Requested cluster 'cluster_name' not found")
+        self.assertTrue(exc.message.startswith("Requested cluster 'cluster_name' not found"))
 
     def test_verbose_engine_two_superclasses(self):
         class TestModel2(SampleModel):
