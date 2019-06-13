@@ -11,7 +11,7 @@ from infi.clickhouse_orm.engines import *
 class FixedStringFieldsTest(unittest.TestCase):
 
     def setUp(self):
-        self.database = Database('test-db')
+        self.database = Database('test-db', log_statements=True)
         self.database.create_table(FixedStringModel)
 
     def tearDown(self):

@@ -14,7 +14,7 @@ from datetime import date, datetime
 class NullableFieldsTest(unittest.TestCase):
 
     def setUp(self):
-        self.database = Database('test-db')
+        self.database = Database('test-db', log_statements=True)
         self.database.create_table(ModelWithNullable)
 
     def tearDown(self):

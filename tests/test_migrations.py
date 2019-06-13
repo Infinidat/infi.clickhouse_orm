@@ -24,7 +24,7 @@ logging.getLogger("requests").setLevel(logging.WARNING)
 class MigrationsTestCase(unittest.TestCase):
 
     def setUp(self):
-        self.database = Database('test-db')
+        self.database = Database('test-db', log_statements=True)
         self.database.drop_table(MigrationHistory)
 
     def tearDown(self):

@@ -10,7 +10,7 @@ from infi.clickhouse_orm.engines import Memory
 class UUIDFieldsTest(unittest.TestCase):
 
     def setUp(self):
-        self.database = Database('test-db')
+        self.database = Database('test-db', log_statements=True)
 
     def tearDown(self):
         self.database.drop_database()

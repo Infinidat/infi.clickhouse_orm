@@ -11,6 +11,8 @@ Unreleased
 - Use HTTP Basic Authentication instead of passing the credentials in the URL
 - Support default/alias/materialized for nullable fields
 - Add UUIDField (kpotehin)
+- Add `log_statements` parameter to database initializer
+- Fix test_merge which fails on ClickHouse v19.8.3
 
 v1.0.4
 ------

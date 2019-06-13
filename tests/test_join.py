@@ -9,7 +9,7 @@ from infi.clickhouse_orm import database, engines, fields, models
 class JoinTest(unittest.TestCase):
 
     def setUp(self):
-        self.database = database.Database('test-db')
+        self.database = database.Database('test-db', log_statements=True)
         self.database.create_table(Foo)
         self.database.create_table(Bar)
         self.database.insert([Foo(id=i) for i in range(3)])

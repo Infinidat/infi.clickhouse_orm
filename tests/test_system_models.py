@@ -14,7 +14,7 @@ from infi.clickhouse_orm.system_models import SystemPart
 
 class SystemTest(unittest.TestCase):
     def setUp(self):
-        self.database = Database('test-db')
+        self.database = Database('test-db', log_statements=True)
 
     def tearDown(self):
         self.database.drop_database()
@@ -38,7 +38,7 @@ class SystemPartTest(unittest.TestCase):
     BACKUP_DIRS = ['/var/lib/clickhouse/shadow', '/opt/clickhouse/shadow/']
 
     def setUp(self):
-        self.database = Database('test-db')
+        self.database = Database('test-db', log_statements=True)
         self.database.create_table(TestTable)
         self.database.create_table(CustomPartitionedTable)
         self.database.insert([TestTable(date_field=date.today())])

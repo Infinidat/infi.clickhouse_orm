@@ -15,7 +15,7 @@ except NameError:
 class EnumFieldsTest(unittest.TestCase):
 
     def setUp(self):
-        self.database = Database('test-db')
+        self.database = Database('test-db', log_statements=True)
         self.database.create_table(ModelWithEnum)
         self.database.create_table(ModelWithEnumArray)
 
