@@ -92,6 +92,7 @@
          * [UInt32Field](class_reference.md#uint32field)
          * [UInt64Field](class_reference.md#uint64field)
          * [UInt8Field](class_reference.md#uint8field)
+         * [UUIDField](class_reference.md#uuidfield)
       * [infi.clickhouse_orm.engines](class_reference.md#infi.clickhouse_orm.engines)
          * [Engine](class_reference.md#engine)
          * [TinyLog](class_reference.md#tinylog)

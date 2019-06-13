@@ -31,6 +31,7 @@ class UUIDFieldsTest(unittest.TestCase):
             '\x12\x34\x56\x78'*4,
             (0x12345678, 0x1234, 0x5678, 0x12, 0x34, 0x567812345678),
             0x12345678123456781234567812345678,
+            UUID(int=0x12345678123456781234567812345678),
         ]
         for index, value in enumerate(values):
             rec = TestModel(i=index, f=value)

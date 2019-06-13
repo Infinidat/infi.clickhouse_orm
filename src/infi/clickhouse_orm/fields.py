@@ -454,6 +454,7 @@ class ArrayField(Field):
 
 
 class UUIDField(Field):
+
     class_default = UUID(int=0)
     db_type = 'UUID'
 
