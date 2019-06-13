@@ -1,8 +1,8 @@
 Change Log
 ==========
 
-Unreleased
-----------
+v1.1.0
+------
 - Add PREWHERE support to querysets (M1hacka)
 - Add WITH TOTALS support to querysets (M1hacka)
 - Extend date field range (trthhrtz)
