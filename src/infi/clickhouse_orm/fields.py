@@ -478,4 +478,13 @@ class NullableField(Field):
         return self.inner_field.to_db_string(value, quote=quote)
 
     def get_sql(self, with_default_expression=True):
-        return 'Nullable(%s)' % self.inner_field.get_sql(with_default_expression=False)
+        s = 'Nullable(%s)' % self.inner_field.get_sql(with_default_expression=False)
+        if with_default_expression:
+            if self.alias:
+                s = '%s ALIAS %s' % (s, self.alias)
+            elif self.materialized:
+                s = '%s MATERIALIZED %s' % (s, self.materialized)
+            elif self.default:
+                default = self.to_db_string(self.default)
+                s = '%s DEFAULT %s' % (s, default)
+        return s

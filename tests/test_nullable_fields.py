@@ -6,6 +6,7 @@ from infi.clickhouse_orm.database import Database
 from infi.clickhouse_orm.models import Model
 from infi.clickhouse_orm.fields import *
 from infi.clickhouse_orm.engines import *
+from infi.clickhouse_orm.utils import comma_join
 
 from datetime import date, datetime
 
@@ -95,14 +96,19 @@ class NullableFieldsTest(unittest.TestCase):
             ModelWithNullable(date_field='2016-08-30', null_str='', null_int=42, null_date=dt),
             ModelWithNullable(date_field='2016-08-30', null_str='nothing', null_int=None, null_date=None),
             ModelWithNullable(date_field='2016-08-31', null_str=None, null_int=42, null_date=dt),
-            ModelWithNullable(date_field='2016-08-31', null_str=None, null_int=None, null_date=None)
+            ModelWithNullable(date_field='2016-08-31', null_str=None, null_int=None, null_date=None, null_default=None)
         ])
 
     def _assert_sample_data(self, results):
+        for r in results:
+            print(r.to_dict())
         dt = date(1970, 1, 1)
         self.assertEqual(len(results), 4)
         self.assertIsNone(results[0].null_str)
         self.assertEqual(results[0].null_int, 42)
+        self.assertEqual(results[0].null_default, 7)
+        self.assertEqual(results[0].null_alias, 21)
+        self.assertEqual(results[0].null_materialized, 420)
         self.assertEqual(results[0].null_date, dt)
         self.assertIsNone(results[1].null_date)
         self.assertEqual(results[1].null_str, 'nothing')
@@ -110,19 +116,27 @@ class NullableFieldsTest(unittest.TestCase):
         self.assertIsNone(results[2].null_str)
         self.assertEqual(results[2].null_date, dt)
         self.assertEqual(results[2].null_int, 42)
+        self.assertEqual(results[2].null_default, 7)
+        self.assertEqual(results[2].null_alias, 21)
+        self.assertEqual(results[0].null_materialized, 420)
         self.assertIsNone(results[3].null_int)
+        self.assertIsNone(results[3].null_default)
+        self.assertIsNone(results[3].null_alias)
+        self.assertIsNone(results[3].null_materialized)
         self.assertIsNone(results[3].null_str)
         self.assertIsNone(results[3].null_date)
 
     def test_insert_and_select(self):
         self._insert_sample_data()
-        query = 'SELECT * from $table ORDER BY date_field'
+        fields = comma_join(ModelWithNullable.fields().keys())
+        query = 'SELECT %s from $table ORDER BY date_field' % fields
         results = list(self.database.select(query, ModelWithNullable))
         self._assert_sample_data(results)
 
     def test_ad_hoc_model(self):
         self._insert_sample_data()
-        query = 'SELECT * from $db.modelwithnullable ORDER BY date_field'
+        fields = comma_join(ModelWithNullable.fields().keys())
+        query = 'SELECT %s from $db.modelwithnullable ORDER BY date_field' % fields
         results = list(self.database.select(query))
         self._assert_sample_data(results)
 
@@ -133,5 +147,8 @@ class ModelWithNullable(Model):
     null_str = NullableField(StringField(), extra_null_values={''})
     null_int = NullableField(Int32Field())
     null_date = NullableField(DateField())
+    null_default = NullableField(Int32Field(), default=7)
+    null_alias = NullableField(Int32Field(), alias='null_int/2')
+    null_materialized = NullableField(Int32Field(), alias='null_int*10')
 
     engine = MergeTree('date_field', ('date_field',))
