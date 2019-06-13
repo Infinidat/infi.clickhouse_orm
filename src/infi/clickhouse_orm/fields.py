@@ -461,8 +461,10 @@ class UUIDField(Field):
     def to_python(self, value, timezone_in_use):
         if isinstance(value, UUID):
             return value
+        elif isinstance(value, binary_type):
+            return UUID(bytes=value)
         elif isinstance(value, string_types):
-            return UUID(bytes=value) if len(value) == 16 else UUID(value)
+            return UUID(value)
         elif isinstance(value, integer_types):
             return UUID(int=value)
         elif isinstance(value, tuple):
