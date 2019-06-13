@@ -344,9 +344,12 @@ class QuerySet(object):
         """
         distinct = 'DISTINCT ' if self._distinct else ''
         final = ' FINAL' if self._final else ''
+        table_name = self._model_cls.table_name()
+        if not self._model_cls.is_system_model():
+            table_name = '`%s`' % table_name
 
-        params = (distinct, self.select_fields_as_sql(), self._model_cls.table_name(), final)
-        sql = u'SELECT %s%s\nFROM `%s`%s' % params
+        params = (distinct, self.select_fields_as_sql(), table_name, final)
+        sql = u'SELECT %s%s\nFROM %s%s' % params
 
         if self._prewhere_q and not self._prewhere_q.is_empty:
             sql += '\nPREWHERE ' + self.conditions_as_sql(prewhere=True)

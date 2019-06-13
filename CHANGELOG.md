@@ -13,6 +13,7 @@ Unreleased
 - Add UUIDField (kpotehin)
 - Add `log_statements` parameter to database initializer
 - Fix test_merge which fails on ClickHouse v19.8.3
+- Fix querysets using the SystemPart model
 
 v1.0.4
 ------

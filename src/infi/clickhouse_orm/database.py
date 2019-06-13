@@ -361,7 +361,10 @@ class Database(object):
         if '$' in query:
             mapping = dict(db="`%s`" % self.db_name)
             if model_class:
-                mapping['table'] = "`%s`.`%s`" % (self.db_name, model_class.table_name())
+                if model_class.is_system_model():
+                    mapping['table'] = model_class.table_name()
+                else:
+                    mapping['table'] = "`%s`.`%s`" % (self.db_name, model_class.table_name())
             query = Template(query).safe_substitute(mapping)
         return query
 

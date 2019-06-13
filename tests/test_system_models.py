@@ -13,6 +13,7 @@ from infi.clickhouse_orm.system_models import SystemPart
 
 
 class SystemTest(unittest.TestCase):
+
     def setUp(self):
         self.database = Database('test-db', log_statements=True)
 
@@ -54,6 +55,12 @@ class SystemPartTest(unittest.TestCase):
                 return dirnames
         raise unittest.SkipTest('Cannot find backups dir')
 
+    def test_is_read_only(self):
+        self.assertTrue(SystemPart.is_read_only())
+
+    def test_is_system_model(self):
+        self.assertTrue(SystemPart.is_system_model())
+
     def test_get_all(self):
         parts = SystemPart.get(self.database)
         self.assertEqual(len(list(parts)), 2)
@@ -62,7 +69,8 @@ class SystemPartTest(unittest.TestCase):
         parts = list(SystemPart.get_active(self.database))
         self.assertEqual(len(parts), 2)
         parts[0].detach()
-        self.assertEqual(len(list(SystemPart.get_active(self.database))), 1)
+        parts = list(SystemPart.get_active(self.database))
+        self.assertEqual(len(parts), 1)
 
     def test_get_conditions(self):
         parts = list(SystemPart.get(self.database, conditions="table='testtable'"))
@@ -100,6 +108,10 @@ class SystemPartTest(unittest.TestCase):
     def test_fetch(self):
         # TODO Not tested, as I have no replication set
         pass
+
+    def test_query(self):
+        SystemPart.objects_in(self.database).count()
+        list(SystemPart.objects_in(self.database).filter(table='testtable'))
 
 
 class TestTable(Model):
