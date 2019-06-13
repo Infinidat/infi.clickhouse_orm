@@ -701,6 +701,13 @@ Extends BaseIntField
 #### UInt8Field(default=None, alias=None, materialized=None, readonly=None)
 
 
+### UUIDField
+
+Extends Field
+
+#### UUIDField(default=None, alias=None, materialized=None, readonly=None)
+
+
 infi.clickhouse_orm.engines
 ---------------------------
 

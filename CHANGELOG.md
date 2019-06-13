@@ -10,6 +10,7 @@ Unreleased
 - Fix pagination when asking for the last page on a query that matches no records
 - Use HTTP Basic Authentication instead of passing the credentials in the URL
 - Support default/alias/materialized for nullable fields
+- Add UUIDField (kpotehin)
 
 v1.0.4
 ------

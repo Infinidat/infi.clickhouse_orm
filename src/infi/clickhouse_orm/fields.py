@@ -1,11 +1,12 @@
 from __future__ import unicode_literals
-from six import string_types, text_type, binary_type
+from six import string_types, text_type, binary_type, integer_types
 import datetime
 import iso8601
 import pytz
 import time
 from calendar import timegm
 from decimal import Decimal, localcontext
+from uuid import UUID
 
 from .utils import escape, parse_array, comma_join
 
@@ -450,6 +451,27 @@ class ArrayField(Field):
     def get_sql(self, with_default_expression=True):
         from .utils import escape
         return 'Array(%s)' % self.inner_field.get_sql(with_default_expression=False)
+
+
+class UUIDField(Field):
+
+    class_default = UUID(int=0)
+    db_type = 'UUID'
+
+    def to_python(self, value, timezone_in_use):
+        if isinstance(value, UUID):
+            return value
+        elif isinstance(value, string_types):
+            return UUID(bytes=value) if len(value) == 16 else UUID(value)
+        elif isinstance(value, integer_types):
+            return UUID(int=value)
+        elif isinstance(value, tuple):
+            return UUID(fields=value)
+        else:
+            raise ValueError('Invalid value for UUIDField: %r' % value)
+
+    def to_db_string(self, value, quote=True):
+        return escape(str(value), quote)
 
 
 class NullableField(Field):
