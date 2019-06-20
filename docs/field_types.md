@@ -148,6 +148,45 @@ to `None`.
 
 NOTE: `ArrayField` of `NullableField` is not supported. Also `EnumField` cannot be nullable.
 
+Working with field compression codecs
+-------------------------------------
+Besides default data compression, defined in server settings, per-field specification is also available.
+
+Supported compression algorithms:
+
+| Codec                | Argument                                   | Comment
+| -------------------- | -------------------------------------------| ----------------------------------------------------
+| NONE                 | None                                       | No compression.
+| LZ4                  | None                                       | LZ4 compression.
+| LZ4HC(`level`)       | Possible `level` range: [3, 12].           | Default value: 9. Greater values stands for better compression and higher CPU usage. Recommended value range: [4,9].
+| ZSTD(`level`)        | Possible `level`range: [1, 22].            | Default value: 1. Greater values stands for better compression and higher CPU usage. Levels >= 20, should be used with caution, as they require more memory. 
+| Delta(`delta_bytes`) | Possible `delta_bytes` range: 1, 2, 4 , 8. | Default value for `delta_bytes` is `sizeof(type)` if it is equal to 1, 2,4 or 8 and equals to 1 otherwise.
+
+Codecs can be combined in a pipeline. Default table codec is not included into pipeline (if it should be applied to a field, you have to specify it explicitly in pipeline).
+
+Recommended usage for codecs:
+- Usually, values for particular metric, stored in path does not differ significantly from point to point. Using delta-encoding allows to reduce disk space usage significantly.
+- DateTime works great with pipeline of Delta, ZSTD and the column size can be compressed to 2-3% of its original size (given a smooth datetime data)
+- Numeric types usually enjoy best compression rates with ZSTD
+- String types enjoy good compression rates with LZ4HC
+
+Usage:
+```python
+class Stats(models.Model):
+
+    id                  = fields.UInt64Field(codec='ZSTD(10)')
+    timestamp           = fields.DateTimeField(codec='Delta,ZSTD')
+    timestamp_date      = fields.DateField(codec='Delta(4),ZSTD(22)')
+    metadata_id         = fields.Int64Field(codec='LZ4')
+    status              = fields.StringField(codec='LZ4HC(10)')
+    calculation         = fields.NullableField(fields.Float32Field(), codec='ZSTD')
+    alerts              = fields.ArrayField(fields.FixedStringField(length=15), codec='Delta(2),LZ4HC')
+
+    engine = MergeTree('timestamp_date', ('id', 'timestamp'))
+
+```
+:exclamation:**_This feature is supported on clickhouse version 19.1.16 and above, codec arguments will be ignored by the ORM for clickhouse versions lower than 19.1.16_**
+
 Creating custom field types
 ---------------------------
 Sometimes it is convenient to use data types that are supported in Python, but have no corresponding column type in ClickHouse. In these cases it is possible to define a custom field class that knows how to convert the Pythonic object to a suitable representation in the database, and vice versa.

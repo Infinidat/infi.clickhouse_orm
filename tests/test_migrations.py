@@ -258,3 +258,16 @@ class Model4Buffer_changed(BufferModel, Model4_changed):
     @classmethod
     def table_name(cls):
         return 'model4buffer'
+
+
+class Model4_compressed(Model):
+
+    date = DateField(codec='Delta(4),ZSTD')
+    f3 = DateTimeField(codec='Delta,ZSTD(10)')
+    f2 = StringField(codec='LZ4HC')
+
+    engine = MergeTree('date', ('date',))
+
+    @classmethod
+    def table_name(cls):
+        return 'model4'
