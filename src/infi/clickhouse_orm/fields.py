@@ -3,7 +3,6 @@ from six import string_types, text_type, binary_type, integer_types
 import datetime
 import iso8601
 import pytz
-import time
 from calendar import timegm
 from decimal import Decimal, localcontext
 from uuid import UUID
@@ -23,8 +22,8 @@ class Field(object):
         assert (None, None) in {(default, alias), (alias, materialized), (default, materialized)}, \
             "Only one of default, alias and materialized parameters can be given"
         assert alias is None or isinstance(alias, string_types) and alias != "",\
-            "Alias field must be string field name, if given"
-        assert materialized is None or isinstance(materialized, string_types) and alias != "",\
+            "Alias field must be a string, if given"
+        assert materialized is None or isinstance(materialized, string_types) and materialized != "",\
             "Materialized field must be string, if given"
         assert readonly is None or type(readonly) is bool, "readonly parameter must be bool if given"
         assert codec is None or isinstance(codec, string_types) and codec != "", \
@@ -407,10 +406,7 @@ class BaseEnumField(Field):
         this method returns a matching enum field.
         '''
         import re
-        try:
-            Enum # exists in Python 3.4+
-        except NameError:
-            from enum import Enum # use the enum34 library instead
+        from enum import Enum
         members = {}
         for match in re.finditer("'(\w+)' = (\d+)", db_type):
             members[match.group(1)] = int(match.group(2))

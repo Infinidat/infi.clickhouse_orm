@@ -7,14 +7,11 @@ from infi.clickhouse_orm.fields import *
 from infi.clickhouse_orm.engines import *
 from infi.clickhouse_orm.migrations import MigrationHistory
 
+from enum import Enum
 # Add tests to path so that migrations will be importable
 import sys, os
 sys.path.append(os.path.dirname(__file__))
 
-try:
-    Enum # exists in Python 3.4+
-except NameError:
-    from enum import Enum # use the enum34 library instead
 
 import logging
 logging.basicConfig(level=logging.DEBUG, format='%(message)s')
