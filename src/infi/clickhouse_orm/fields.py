@@ -82,8 +82,8 @@ class Field(object):
             else:
                 default = self.to_db_string(self.default)
                 sql += ' DEFAULT %s' % default
-        if self.codec and db and db.has_codec_support:
-            sql+= ' CODEC(%s)' % self.codec
+            if self.codec and db and db.has_codec_support:
+                sql+= ' CODEC(%s)' % self.codec
         return sql
 
     def isinstance(self, types):
@@ -395,8 +395,8 @@ class BaseEnumField(Field):
         if with_default_expression:
             default = self.to_db_string(self.default)
             sql = '%s DEFAULT %s' % (sql, default)
-        if self.codec and db and db.has_codec_support:
-            sql+= ' CODEC(%s)' % self.codec
+            if self.codec and db and db.has_codec_support:
+                sql+= ' CODEC(%s)' % self.codec
         return sql
 
     @classmethod
@@ -453,8 +453,8 @@ class ArrayField(Field):
         return '[' + comma_join(array) + ']'
 
     def get_sql(self, with_default_expression=True, db=None):
-        sql = 'Array(%s)' % self.inner_field.get_sql(with_default_expression=False)
-        if self.codec and db and db.has_codec_support:
+        sql = 'Array(%s)' % self.inner_field.get_sql(with_default_expression=False, db=db)
+        if with_default_expression and self.codec and db and db.has_codec_support:
             sql+= ' CODEC(%s)' % self.codec
         return sql
 
@@ -508,7 +508,7 @@ class NullableField(Field):
         return self.inner_field.to_db_string(value, quote=quote)
 
     def get_sql(self, with_default_expression=True, db=None):
-        sql = 'Nullable(%s)' % self.inner_field.get_sql(with_default_expression=False)
+        sql = 'Nullable(%s)' % self.inner_field.get_sql(with_default_expression=False, db=db)
         if with_default_expression:
             if self.alias:
                 sql += ' ALIAS %s' % self.alias
@@ -517,6 +517,6 @@ class NullableField(Field):
             elif self.default:
                 default = self.to_db_string(self.default)
                 sql += ' DEFAULT %s' % default
-        if self.codec and db and db.has_codec_support:
-            sql+= ' CODEC(%s)' % self.codec
+            if self.codec and db and db.has_codec_support:
+                sql+= ' CODEC(%s)' % self.codec
         return sql

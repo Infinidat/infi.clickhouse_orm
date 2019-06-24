@@ -2,5 +2,5 @@ from infi.clickhouse_orm import migrations
 from ..test_migrations import *
 
 operations = [
-    migrations.AlterTableWithBuffer(Model4_compressed)
+    migrations.AlterTable(Model4_compressed),
 ]

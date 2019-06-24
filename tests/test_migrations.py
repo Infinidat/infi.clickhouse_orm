@@ -94,6 +94,8 @@ class MigrationsTestCase(unittest.TestCase):
         self.assertTrue(self.tableExists(AliasModel1))
         self.assertEqual(self.getTableFields(AliasModel1),
                           [('date', 'Date'), ('int_field', 'Int8'), ('date_alias', 'Date'), ('int_field_plus_one', 'Int8')])
+        self.database.migrate('tests.sample_migrations', 15)
+        self.assertTrue(self.tableExists(Model4_compressed))
 
 
 # Several different models with the same table name, to simulate a table that changes over time
@@ -259,7 +261,7 @@ class Model4Buffer_changed(BufferModel, Model4_changed):
 
 class Model4_compressed(Model):
 
-    date = DateField(codec='Delta(4),ZSTD')
+    date = DateField()
     f3 = DateTimeField(codec='Delta,ZSTD(10)')
     f2 = StringField(codec='LZ4HC')
 
