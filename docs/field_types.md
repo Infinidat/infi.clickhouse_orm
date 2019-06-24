@@ -121,8 +121,7 @@ db.select('SELECT * FROM $db.event', model_class=Event)
 
 Working with nullable fields
 ----------------------------
-From [some time](https://github.com/yandex/ClickHouse/pull/70) ClickHouse provides a NULL value support.
-Also see some information [here](https://github.com/yandex/ClickHouse/blob/master/dbms/tests/queries/0_stateless/00395_nullable.sql).
+[ClickHouse provides a NULL value support](https://clickhouse.yandex/docs/en/data_types/nullable).
 
 Wrapping another field in a `NullableField` makes it possible to assign `None` to that field. For example:
 
@@ -147,6 +146,8 @@ The `extra_null_values` parameter is an iterable of additional values that shoul
 to `None`.
 
 NOTE: `ArrayField` of `NullableField` is not supported. Also `EnumField` cannot be nullable.
+
+NOTE: Using `Nullable` almost always negatively affects performance, keep this in mind when designing your databases.
 
 Working with field compression codecs
 -------------------------------------

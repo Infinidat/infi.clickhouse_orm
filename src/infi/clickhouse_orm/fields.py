@@ -76,15 +76,20 @@ class Field(object):
         '''
         sql = self.db_type
         if with_default_expression:
-            if self.alias:
-                sql += ' ALIAS %s' % self.alias
-            elif self.materialized:
-                sql += ' MATERIALIZED %s' % self.materialized
-            else:
-                default = self.to_db_string(self.default)
-                sql += ' DEFAULT %s' % default
-            if self.codec and db and db.has_codec_support:
-                sql+= ' CODEC(%s)' % self.codec
+            sql += self._extra_params(db)
+        return sql
+
+    def _extra_params(self, db):
+        sql = ''
+        if self.alias:
+            sql += ' ALIAS %s' % self.alias
+        elif self.materialized:
+            sql += ' MATERIALIZED %s' % self.materialized
+        elif self.default:
+            default = self.to_db_string(self.default)
+            sql += ' DEFAULT %s' % default
+        if self.codec and db and db.has_codec_support:
+            sql += ' CODEC(%s)' % self.codec
         return sql
 
     def isinstance(self, types):
@@ -511,15 +516,7 @@ class NullableField(Field):
     def get_sql(self, with_default_expression=True, db=None):
         sql = 'Nullable(%s)' % self.inner_field.get_sql(with_default_expression=False, db=db)
         if with_default_expression:
-            if self.alias:
-                sql += ' ALIAS %s' % self.alias
-            elif self.materialized:
-                sql += ' MATERIALIZED %s' % self.materialized
-            elif self.default:
-                default = self.to_db_string(self.default)
-                sql += ' DEFAULT %s' % default
-            if self.codec and db and db.has_codec_support:
-                sql+= ' CODEC(%s)' % self.codec
+            sql += self._extra_params(db)
         return sql
 
 
@@ -549,13 +546,5 @@ class LowCardinalityField(Field):
             sql = self.inner_field.get_sql(with_default_expression=False)
             logger.warning('LowCardinalityField not supported on clickhouse-server version < 19.0 using {} as fallback'.format(self.inner_field.__class__.__name__))
         if with_default_expression:
-            if self.alias:
-                sql += ' ALIAS %s' % self.alias
-            elif self.materialized:
-                sql += ' MATERIALIZED %s' % self.materialized
-            elif self.default:
-                default = self.to_db_string(self.default)
-                sql += ' DEFAULT %s' % default
-            if self.codec and db and db.has_codec_support:
-                sql+= ' CODEC(%s)' % self.codec
+            sql += self._extra_params(db)
         return sql
