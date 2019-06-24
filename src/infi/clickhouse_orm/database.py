@@ -122,6 +122,8 @@ class Database(object):
         self.server_timezone = self._get_server_timezone() if self.server_version > (1, 1, 53981) else pytz.utc
         # Versions 19.1.16 and above support codec compression
         self.has_codec_support = self.server_version >= (19, 1, 16)
+        # Version 19.0 and above support LowCardinality
+        self.has_low_cardinality_support = self.server_version >= (19, 0)
 
     def create_database(self):
         '''

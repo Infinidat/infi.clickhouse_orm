@@ -6,9 +6,10 @@ import pytz
 from calendar import timegm
 from decimal import Decimal, localcontext
 from uuid import UUID
-
+from logging import getLogger
 from .utils import escape, parse_array, comma_join
 
+logger = getLogger('clickhouse_orm')
 
 class Field(object):
     '''
@@ -509,6 +510,44 @@ class NullableField(Field):
 
     def get_sql(self, with_default_expression=True, db=None):
         sql = 'Nullable(%s)' % self.inner_field.get_sql(with_default_expression=False, db=db)
+        if with_default_expression:
+            if self.alias:
+                sql += ' ALIAS %s' % self.alias
+            elif self.materialized:
+                sql += ' MATERIALIZED %s' % self.materialized
+            elif self.default:
+                default = self.to_db_string(self.default)
+                sql += ' DEFAULT %s' % default
+            if self.codec and db and db.has_codec_support:
+                sql+= ' CODEC(%s)' % self.codec
+        return sql
+
+
+class LowCardinalityField(Field):
+
+    def __init__(self, inner_field, default=None, alias=None, materialized=None, readonly=None, codec=None):
+        assert isinstance(inner_field, Field), "The first argument of LowCardinalityField must be a Field instance. Not: {}".format(inner_field)
+        assert not isinstance(inner_field, LowCardinalityField), "LowCardinality inner fields are not supported by the ORM"
+        assert not isinstance(inner_field, ArrayField), "Array field inside LowCardinality are not supported by the ORM. Use Array(LowCardinality) instead"
+        self.inner_field = inner_field
+        self.class_default = self.inner_field.class_default
+        super(LowCardinalityField, self).__init__(default, alias, materialized, readonly, codec)
+
+    def to_python(self, value, timezone_in_use):
+        return self.inner_field.to_python(value, timezone_in_use)
+
+    def validate(self, value):
+        self.inner_field.validate(value)
+
+    def to_db_string(self, value, quote=True):
+        return self.inner_field.to_db_string(value, quote=quote)
+
+    def get_sql(self, with_default_expression=True, db=None):
+        if db and db.has_low_cardinality_support:
+            sql = 'LowCardinality(%s)' % self.inner_field.get_sql(with_default_expression=False)
+        else:
+            sql = self.inner_field.get_sql(with_default_expression=False)
+            logger.warning('LowCardinalityField not supported on clickhouse-server version < 19.0 using {} as fallback'.format(self.inner_field.__class__.__name__))
         if with_default_expression:
             if self.alias:
                 sql += ' ALIAS %s' % self.alias
