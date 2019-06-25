@@ -188,6 +188,37 @@ class Stats(models.Model):
 ```
 :exclamation:**_This feature is supported on ClickHouse version 19.1.16 and above, codec arguments will be ignored by the ORM for ClickHouse versions lower than 19.1.16_**
 
+Working with LowCardinality fields
+----------------------------------
+Starting with version 19.0 ClickHouse offers a new type of field to improve the performance of queries
+and compaction of columns for low entropy data.  
+
+[More specifically](https://github.com/yandex/ClickHouse/issues/4074) LowCardinality data type builds dictionaries automatically. It can use multiple different dictionaries if necessarily.
+If the number of distinct values is pretty large, the dictionaries become local, several different dictionaries will be used for different ranges of data. For example, if you have too many distinct values in total, but only less than about a million values each day - then the queries by day will be processed efficiently, and queries for larger ranges will be processed rather efficiently.
+
+LowCardinality works independently of (generic) fields compression.
+LowCardinality fields are subsequently compressed as usual.
+The compression ratios of LowCardinality fields for text data may be significantly better than without LowCardinality.
+
+LowCardinality will give performance boost, in the form of processing speed, if the number of distinct values is less than a few millions. This is because data is processed in dictionary encoded form.
+
+You can find further information about LowCardinality in [this presentation](https://github.com/yandex/clickhouse-presentations/blob/master/meetup19/string_optimization.pdf).
+
+Usage example:
+```python
+class LowCardinalityModel(models.Model):
+    date       = fields.DateField()
+    int32      = fields.LowCardinalityField(fields.Int32Field())
+    float32    = fields.LowCardinalityField(fields.Float32Field())
+    string     = fields.LowCardinalityField(fields.StringField())
+    nullable   = fields.LowCardinalityField(fields.NullableField(fields.StringField()))
+    array      = fields.ArrayField(fields.LowCardinalityField(fields.UInt64Field()))
+
+    engine = MergeTree('date', ('date',))
+```
+
+:exclamation:**_LowCardinality field with inner array field is not supported. Use Array field with LowCardinality inner field as seen in the example._**
+
 Creating custom field types
 ---------------------------
 Sometimes it is convenient to use data types that are supported in Python, but have no corresponding column type in ClickHouse. In these cases it is possible to define a custom field class that knows how to convert the Pythonic object to a suitable representation in the database, and vice versa.
