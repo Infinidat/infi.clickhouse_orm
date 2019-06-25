@@ -186,7 +186,7 @@ class Stats(models.Model):
     engine = MergeTree('timestamp_date', ('id', 'timestamp'))
 
 ```
-:exclamation:**_This feature is supported on clickhouse version 19.1.16 and above, codec arguments will be ignored by the ORM for clickhouse versions lower than 19.1.16_**
+:exclamation:**_This feature is supported on ClickHouse version 19.1.16 and above, codec arguments will be ignored by the ORM for ClickHouse versions lower than 19.1.16_**
 
 Creating custom field types
 ---------------------------
