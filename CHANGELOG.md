@@ -1,6 +1,11 @@
 Change Log
 ==========
 
+Unreleased
+----------
+- Add support for per-field compression codecs (rbelio, Chocorean)
+- Add support for low cardinality fields (rbelio)
+
 v1.1.0
 ------
 - Add PREWHERE support to querysets (M1hacka)

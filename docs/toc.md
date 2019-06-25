@@ -36,7 +36,7 @@
       * [Working with array fields](field_types.md#working-with-array-fields)
       * [Working with materialized and alias fields](field_types.md#working-with-materialized-and-alias-fields)
       * [Working with nullable fields](field_types.md#working-with-nullable-fields)
-      * [Creating custom field types](field_types.md#creating-custom-field-types)
+      * [Working with field compression codecs](field_types.md#working-with-field-compression-codecs)
 
    * [Table Engines](table_engines.md#table-engines)
       * [Simple Engines](table_engines.md#simple-engines)
@@ -86,6 +86,7 @@
          * [Int32Field](class_reference.md#int32field)
          * [Int64Field](class_reference.md#int64field)
          * [Int8Field](class_reference.md#int8field)
+         * [LowCardinalityField](class_reference.md#lowcardinalityfield)
          * [NullableField](class_reference.md#nullablefield)
          * [StringField](class_reference.md#stringfield)
          * [UInt16Field](class_reference.md#uint16field)
