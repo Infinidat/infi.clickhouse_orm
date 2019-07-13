@@ -5,7 +5,7 @@ import pytz
 from copy import copy
 from math import ceil
 from .engines import CollapsingMergeTree
-from datetime import date, datetime, tzinfo
+from datetime import date, datetime
 from .utils import comma_join
 
 
