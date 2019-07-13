@@ -25,7 +25,7 @@ Currently the following field types are supported:
 | Decimal32Field     | Decimal32  | Decimal             | Ditto
 | Decimal64Field     | Decimal64  | Decimal             | Ditto
 | Decimal128Field    | Decimal128 | Decimal             | Ditto
-| UUIDField          | UUID       | Decimal             | 
+| UUIDField          | UUID       | Decimal             |
 | Enum8Field         | Enum8      | Enum                | See below
 | Enum16Field        | Enum16     | Enum                | See below
 | ArrayField         | Array      | list                | See below
@@ -160,7 +160,7 @@ Supported compression algorithms:
 | NONE                 | None                                       | No compression.
 | LZ4                  | None                                       | LZ4 compression.
 | LZ4HC(`level`)       | Possible `level` range: [3, 12].           | Default value: 9. Greater values stands for better compression and higher CPU usage. Recommended value range: [4,9].
-| ZSTD(`level`)        | Possible `level`range: [1, 22].            | Default value: 1. Greater values stands for better compression and higher CPU usage. Levels >= 20, should be used with caution, as they require more memory. 
+| ZSTD(`level`)        | Possible `level`range: [1, 22].            | Default value: 1. Greater values stands for better compression and higher CPU usage. Levels >= 20, should be used with caution, as they require more memory.
 | Delta(`delta_bytes`) | Possible `delta_bytes` range: 1, 2, 4 , 8. | Default value for `delta_bytes` is `sizeof(type)` if it is equal to 1, 2,4 or 8 and equals to 1 otherwise.
 
 Codecs can be combined in a pipeline. Default table codec is not included into pipeline (if it should be applied to a field, you have to specify it explicitly in pipeline).
@@ -186,12 +186,13 @@ class Stats(models.Model):
     engine = MergeTree('timestamp_date', ('id', 'timestamp'))
 
 ```
-:exclamation:**_This feature is supported on ClickHouse version 19.1.16 and above, codec arguments will be ignored by the ORM for ClickHouse versions lower than 19.1.16_**
+
+Note: This feature is supported on ClickHouse version 19.1.16 and above. Codec arguments will be ignored by the ORM for older versions of ClickHouse.
 
 Working with LowCardinality fields
 ----------------------------------
 Starting with version 19.0 ClickHouse offers a new type of field to improve the performance of queries
-and compaction of columns for low entropy data.  
+and compaction of columns for low entropy data.
 
 [More specifically](https://github.com/yandex/ClickHouse/issues/4074) LowCardinality data type builds dictionaries automatically. It can use multiple different dictionaries if necessarily.
 If the number of distinct values is pretty large, the dictionaries become local, several different dictionaries will be used for different ranges of data. For example, if you have too many distinct values in total, but only less than about a million values each day - then the queries by day will be processed efficiently, and queries for larger ranges will be processed rather efficiently.
@@ -217,7 +218,7 @@ class LowCardinalityModel(models.Model):
     engine = MergeTree('date', ('date',))
 ```
 
-:exclamation:**_LowCardinality field with inner array field is not supported. Use Array field with LowCardinality inner field as seen in the example._**
+Note: `LowCardinality` field with an inner array field is not supported. Use an `ArrayField` with a `LowCardinality` inner field as seen in the example.
 
 Creating custom field types
 ---------------------------

@@ -1,8 +1,8 @@
 Change Log
 ==========
 
-Unreleased
-----------
+v1.2.0
+------
 - Add support for per-field compression codecs (rbelio, Chocorean)
 - Add support for low cardinality fields (rbelio)
 
