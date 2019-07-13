@@ -440,9 +440,14 @@ class FuncsTestCase(TestCaseWithData):
         self._test_func(F.randConstant(17))
 
     def test_encoding_functions(self):
-        uuid = '123e4567-e89b-12d3-a456-426655440000'
         self._test_func(F.hex(F.unhex('0FA1')), '0FA1')
-        self._test_func(F.UUIDNumToString(F.UUIDStringToNum(uuid)), uuid)
         self._test_func(F.bitmaskToArray(17))
         self._test_func(F.bitmaskToList(18))
 
+    def test_uuid_functions(self):
+        from uuid import UUID
+        uuid = self._test_func(F.generateUUIDv4())
+        self.assertEqual(type(uuid), UUID)
+        s = str(uuid)
+        self._test_func(F.toUUID(s), uuid)
+        self._test_func(F.UUIDNumToString(F.UUIDStringToNum(s)), s)

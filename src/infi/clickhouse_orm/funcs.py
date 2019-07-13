@@ -1137,14 +1137,6 @@ class F(Cond, FunctionOperatorsMixin):
         return F('unhex', x)
 
     @staticmethod
-    def UUIDNumToString(s):
-        return F('UUIDNumToString', s)
-
-    @staticmethod
-    def UUIDStringToNum(s):
-        return F('UUIDStringToNum', s)
-
-    @staticmethod
     def bitmaskToArray(x):
         return F('bitmaskToArray', x)
 
@@ -1152,7 +1144,23 @@ class F(Cond, FunctionOperatorsMixin):
     def bitmaskToList(x):
         return F('bitmaskToList', x)
 
+    # Functions for working with UUID
 
+    @staticmethod
+    def generateUUIDv4():
+        return F('generateUUIDv4')
+
+    @staticmethod
+    def toUUID(s):
+        return F('toUUID', s)
+
+    @staticmethod
+    def UUIDNumToString(s):
+        return F('UUIDNumToString', s)
+
+    @staticmethod
+    def UUIDStringToNum(s):
+        return F('UUIDStringToNum', s)
 
 
 
