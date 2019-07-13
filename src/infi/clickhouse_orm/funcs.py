@@ -576,3 +576,626 @@ class F(Cond, FunctionOperatorsMixin):
     def tryBase64Decode(s):
         return F('tryBase64Decode', s)
 
+    # Functions for searching and replacing in strings
+
+    @staticmethod
+    def replace(haystack, pattern, replacement):
+        return F('replace', haystack, pattern, replacement)
+    replaceAll = replace
+
+    @staticmethod
+    def replaceAll(haystack, pattern, replacement):
+        return F('replaceAll', haystack, pattern, replacement)
+
+    @staticmethod
+    def replaceOne(haystack, pattern, replacement):
+        return F('replaceOne', haystack, pattern, replacement)
+
+    @staticmethod
+    def replaceRegexpAll(haystack, pattern, replacement):
+        return F('replaceRegexpAll', haystack, pattern, replacement)
+
+    @staticmethod
+    def replaceRegexpOne(haystack, pattern, replacement):
+        return F('replaceRegexpOne', haystack, pattern, replacement)
+
+    @staticmethod
+    def regexpQuoteMeta(x):
+        return F('regexpQuoteMeta', x)
+
+    # Mathematical functions
+
+    @staticmethod
+    def e():
+        return F('e')
+
+    @staticmethod
+    def pi():
+        return F('pi')
+
+    @staticmethod
+    def exp(x):
+        return F('exp', x)
+
+    @staticmethod
+    def log(x):
+        return F('log', x)
+    ln = log
+
+    @staticmethod
+    def exp2(x):
+        return F('exp2', x)
+
+    @staticmethod
+    def log2(x):
+        return F('log2', x)
+
+    @staticmethod
+    def exp10(x):
+        return F('exp10', x)
+
+    @staticmethod
+    def log10(x):
+        return F('log10', x)
+
+    @staticmethod
+    def sqrt(x):
+        return F('sqrt', x)
+
+    @staticmethod
+    def cbrt(x):
+        return F('cbrt', x)
+
+    @staticmethod
+    def erf(x):
+        return F('erf', x)
+
+    @staticmethod
+    def erfc(x):
+        return F('erfc', x)
+
+    @staticmethod
+    def lgamma(x):
+        return F('lgamma', x)
+
+    @staticmethod
+    def tgamma(x):
+        return F('tgamma', x)
+
+    @staticmethod
+    def sin(x):
+        return F('sin', x)
+
+    @staticmethod
+    def cos(x):
+        return F('cos', x)
+
+    @staticmethod
+    def tan(x):
+        return F('tan', x)
+
+    @staticmethod
+    def asin(x):
+        return F('asin', x)
+
+    @staticmethod
+    def acos(x):
+        return F('acos', x)
+
+    @staticmethod
+    def atan(x):
+        return F('atan', x)
+
+    @staticmethod
+    def power(x, y):
+        return F('power', x, y)
+    pow = power
+
+    @staticmethod
+    def intExp10(x):
+        return F('intExp10', x)
+
+    @staticmethod
+    def intExp2(x):
+        return F('intExp2', x)
+
+    # Rounding functions
+
+    @staticmethod
+    def floor(x, n=None):
+        return F('floor', x, n) if n else F('floor', x)
+
+    @staticmethod
+    def ceiling(x, n=None):
+        return F('ceiling', x, n) if n else F('ceiling', x)
+    ceil = ceiling
+
+    @staticmethod
+    def round(x, n=None):
+        return F('round', x, n) if n else F('round', x)
+
+    @staticmethod
+    def roundAge(x):
+        return F('roundAge', x)
+
+    @staticmethod
+    def roundDown(x, y):
+        return F('roundDown', x, y)
+
+    @staticmethod
+    def roundDuration(x):
+        return F('roundDuration', x)
+
+    @staticmethod
+    def roundToExp2(x):
+        return F('roundToExp2', x)
+
+    # Functions for working with arrays
+
+    @staticmethod
+    def emptyArrayDate():
+        return F('emptyArrayDate')
+
+    @staticmethod
+    def emptyArrayDateTime():
+        return F('emptyArrayDateTime')
+
+    @staticmethod
+    def emptyArrayFloat32():
+        return F('emptyArrayFloat32')
+
+    @staticmethod
+    def emptyArrayFloat64():
+        return F('emptyArrayFloat64')
+
+    @staticmethod
+    def emptyArrayInt16():
+        return F('emptyArrayInt16')
+
+    @staticmethod
+    def emptyArrayInt32():
+        return F('emptyArrayInt32')
+
+    @staticmethod
+    def emptyArrayInt64():
+        return F('emptyArrayInt64')
+
+    @staticmethod
+    def emptyArrayInt8():
+        return F('emptyArrayInt8')
+
+    @staticmethod
+    def emptyArrayString():
+        return F('emptyArrayString')
+
+    @staticmethod
+    def emptyArrayUInt16():
+        return F('emptyArrayUInt16')
+
+    @staticmethod
+    def emptyArrayUInt32():
+        return F('emptyArrayUInt32')
+
+    @staticmethod
+    def emptyArrayUInt64():
+        return F('emptyArrayUInt64')
+
+    @staticmethod
+    def emptyArrayUInt8():
+        return F('emptyArrayUInt8')
+
+    @staticmethod
+    def emptyArrayToSingle(x):
+        return F('emptyArrayToSingle', x)
+
+    @staticmethod
+    def range(n):
+        return F('range', n)
+
+    @staticmethod
+    def array(*args):
+        return F('array', *args)
+
+    @staticmethod
+    def arrayConcat(*args):
+        return F('arrayConcat', *args)
+
+    @staticmethod
+    def arrayElement(arr, n):
+        return F('arrayElement', arr, n)
+
+    @staticmethod
+    def has(arr, x):
+        return F('has', arr, x)
+
+    @staticmethod
+    def hasAll(arr, x):
+        return F('hasAll', arr, x)
+
+    @staticmethod
+    def hasAny(arr, x):
+        return F('hasAny', arr, x)
+
+    @staticmethod
+    def indexOf(arr, x):
+        return F('indexOf', arr, x)
+
+    @staticmethod
+    def countEqual(arr, x):
+        return F('countEqual', arr, x)
+
+    @staticmethod
+    def arrayEnumerate(arr):
+        return F('arrayEnumerate', arr)
+
+    @staticmethod
+    def arrayEnumerateDense(*args):
+        return F('arrayEnumerateDense', *args)
+
+    @staticmethod
+    def arrayEnumerateDenseRanked(*args):
+        return F('arrayEnumerateDenseRanked', *args)
+
+    @staticmethod
+    def arrayEnumerateUniq(*args):
+        return F('arrayEnumerateUniq', *args)
+
+    @staticmethod
+    def arrayEnumerateUniqRanked(*args):
+        return F('arrayEnumerateUniqRanked', *args)
+
+    @staticmethod
+    def arrayPopBack(arr):
+        return F('arrayPopBack', arr)
+
+    @staticmethod
+    def arrayPopFront(arr):
+        return F('arrayPopFront', arr)
+
+    @staticmethod
+    def arrayPushBack(arr, x):
+        return F('arrayPushBack', arr, x)
+
+    @staticmethod
+    def arrayPushFront(arr, x):
+        return F('arrayPushFront', arr, x)
+
+    @staticmethod
+    def arrayResize(array, size, extender=None):
+        return F('arrayResize',array, size, extender) if extender is not None else F('arrayResize', array, size)
+
+    @staticmethod
+    def arraySlice(array, offset, length=None):
+        return F('arraySlice',array, offset, length) if length is not None else F('arraySlice', array, offset)
+
+    @staticmethod
+    def arrayUniq(*args):
+        return F('arrayUniq', *args)
+
+    @staticmethod
+    def arrayJoin(arr):
+        return F('arrayJoin', arr)
+
+    @staticmethod
+    def arrayDifference(arr):
+        return F('arrayDifference', arr)
+
+    @staticmethod
+    def arrayDistinct(x):
+        return F('arrayDistinct', x)
+
+    @staticmethod
+    def arrayIntersect(*args):
+        return F('arrayIntersect', *args)
+
+    @staticmethod
+    def arrayReduce(agg_func_name, *args):
+        return F('arrayReduce', agg_func_name, *args)
+
+    @staticmethod
+    def arrayReverse(arr):
+        return F('arrayReverse', arr)
+
+    # Functions for splitting and merging strings and arrays
+
+    @staticmethod
+    def splitByChar(sep, s):
+        return F('splitByChar', sep, s)
+
+    @staticmethod
+    def splitByString(sep, s):
+        return F('splitByString', sep, s)
+
+    @staticmethod
+    def arrayStringConcat(arr, sep=None):
+        return F('arrayStringConcat', arr, sep) if sep else F('arrayStringConcat', arr)
+
+    @staticmethod
+    def alphaTokens(s):
+        return F('alphaTokens', s)
+
+    # Bit functions
+
+    @staticmethod
+    def bitAnd(x, y):
+        return F('bitAnd', x, y)
+
+    @staticmethod
+    def bitNot(x):
+        return F('bitNot', x)
+
+    @staticmethod
+    def bitOr(x, y):
+        return F('bitOr', x, y)
+
+    @staticmethod
+    def bitRotateLeft(x, y):
+        return F('bitRotateLeft', x, y)
+
+    @staticmethod
+    def bitRotateRight(x, y):
+        return F('bitRotateRight', x, y)
+
+    @staticmethod
+    def bitShiftLeft(x, y):
+        return F('bitShiftLeft', x, y)
+
+    @staticmethod
+    def bitShiftRight(x, y):
+        return F('bitShiftRight', x, y)
+
+    @staticmethod
+    def bitTest(x, y):
+        return F('bitTest', x, y)
+
+    @staticmethod
+    def bitTestAll(x, *args):
+        return F('bitTestAll', x, *args)
+
+    @staticmethod
+    def bitTestAny(x, *args):
+        return F('bitTestAny', x, *args)
+
+    @staticmethod
+    def bitXor(x, y):
+        return F('bitXor', x, y)
+
+    # Bitmap functions
+
+    @staticmethod
+    def bitmapAnd(x, y):
+        return F('bitmapAnd', x, y)
+
+    @staticmethod
+    def bitmapAndCardinality(x, y):
+        return F('bitmapAndCardinality', x, y)
+
+    @staticmethod
+    def bitmapAndnot(x, y):
+        return F('bitmapAndnot', x, y)
+
+    @staticmethod
+    def bitmapAndnotCardinality(x, y):
+        return F('bitmapAndnotCardinality', x, y)
+
+    @staticmethod
+    def bitmapBuild(x):
+        return F('bitmapBuild', x)
+
+    @staticmethod
+    def bitmapCardinality(x):
+        return F('bitmapCardinality', x)
+
+    @staticmethod
+    def bitmapContains(haystack, needle):
+        return F('bitmapContains', haystack, needle)
+
+    @staticmethod
+    def bitmapHasAll(x, y):
+        return F('bitmapHasAll', x, y)
+
+    @staticmethod
+    def bitmapHasAny(x, y):
+        return F('bitmapHasAny', x, y)
+
+    @staticmethod
+    def bitmapOr(x, y):
+        return F('bitmapOr', x, y)
+
+    @staticmethod
+    def bitmapOrCardinality(x, y):
+        return F('bitmapOrCardinality', x, y)
+
+    @staticmethod
+    def bitmapToArray(x):
+        return F('bitmapToArray', x)
+
+    @staticmethod
+    def bitmapXor(x, y):
+        return F('bitmapXor', x, y)
+
+    @staticmethod
+    def bitmapXorCardinality(x, y):
+        return F('bitmapXorCardinality', x, y)
+
+    # Hash functions
+
+    @staticmethod
+    def halfMD5(*args):
+        return F('halfMD5', *args)
+
+    @staticmethod
+    def MD5(s):
+        return F('MD5', s)
+
+    @staticmethod
+    def sipHash128(*args):
+        return F('sipHash128', *args)
+
+    @staticmethod
+    def sipHash64(*args):
+        return F('sipHash64', *args)
+
+    @staticmethod
+    def cityHash64(*args):
+        return F('cityHash64', *args)
+
+    @staticmethod
+    def intHash32(x):
+        return F('intHash32', x)
+
+    @staticmethod
+    def intHash64(x):
+        return F('intHash64', x)
+
+    @staticmethod
+    def SHA1(s):
+        return F('SHA1', s)
+
+    @staticmethod
+    def SHA224(s):
+        return F('SHA224', s)
+
+    @staticmethod
+    def SHA256(s):
+        return F('SHA256', s)
+
+    @staticmethod
+    def URLHash(url, n=None):
+        return F('URLHash', url, n) if n is not None else F('URLHash', url)
+
+    @staticmethod
+    def farmHash64(*args):
+        return F('farmHash64',*args)
+
+    @staticmethod
+    def javaHash(s):
+        return F('javaHash', s)
+
+    @staticmethod
+    def hiveHash(s):
+        return F('hiveHash', s)
+
+    @staticmethod
+    def metroHash64(*args):
+        return F('metroHash64', *args)
+
+    @staticmethod
+    def jumpConsistentHash(x, buckets):
+        return F('jumpConsistentHash', x, buckets)
+
+    @staticmethod
+    def murmurHash2_32(*args):
+        return F('murmurHash2_32', *args)
+
+    @staticmethod
+    def murmurHash2_64(*args):
+        return F('murmurHash2_64', *args)
+
+    @staticmethod
+    def murmurHash3_32(*args):
+        return F('murmurHash3_32', *args)
+
+    @staticmethod
+    def murmurHash3_64(*args):
+        return F('murmurHash3_64', *args)
+
+    @staticmethod
+    def murmurHash3_128(s):
+        return F('murmurHash3_128', s)
+
+    @staticmethod
+    def xxHash32(*args):
+        return F('xxHash32', *args)
+
+    @staticmethod
+    def xxHash64(*args):
+        return F('xxHash64', *args)
+
+    # Functions for generating pseudo-random numbers
+
+    @staticmethod
+    def rand(dummy=None):
+        return F('rand') if dummy is None else F('rand', dummy)
+
+    @staticmethod
+    def rand64(dummy=None):
+        return F('rand64') if dummy is None else F('rand64', dummy)
+
+    @staticmethod
+    def randConstant(dummy=None):
+        return F('randConstant') if dummy is None else F('randConstant', dummy)
+
+    # Encoding functions
+
+    @staticmethod
+    def hex(x):
+        return F('hex', x)
+
+    @staticmethod
+    def unhex(x):
+        return F('unhex', x)
+
+    @staticmethod
+    def UUIDNumToString(s):
+        return F('UUIDNumToString', s)
+
+    @staticmethod
+    def UUIDStringToNum(s):
+        return F('UUIDStringToNum', s)
+
+    @staticmethod
+    def bitmaskToArray(x):
+        return F('bitmaskToArray', x)
+
+    @staticmethod
+    def bitmaskToList(x):
+        return F('bitmaskToList', x)
+
+
+
+
+
+
+
+    # Higher-order functions
+
+    # arrayMap: Function arrayMap needs at least 2 argument; passed 0. (version 19.8.3.8 (official build)) (42)
+
+    @staticmethod
+    def arrayCount(*args):
+        return F('arrayCount', *args)
+
+    @staticmethod
+    def arraySum(*args):
+        return F('arraySum', *args)
+
+    @staticmethod
+    def arrayExists(*args):
+        return F('arrayExists', *args)
+
+    @staticmethod
+    def arrayAll(*args):
+        return F('arrayAll', *args)
+
+    # arrayFilter: Function arrayFilter needs at least 2 argument; passed 0. (version 19.8.3.8 (official build)) (42)
+
+    # arrayFirst: Function arrayFirst needs at least 2 argument; passed 0. (version 19.8.3.8 (official build)) (42)
+
+    # arrayFirstIndex: Function arrayFirstIndex needs at least 2 argument; passed 0. (version 19.8.3.8 (official build)) (42)
+
+    @staticmethod
+    def arrayCumSum(*args):
+        return F('arrayCumSum', *args)
+
+    @staticmethod
+    def arrayCumSumNonNegative(*args):
+        return F('arrayCumSumNonNegative', *args)
+
+    @staticmethod
+    def arraySort(*args):
+        return F('arraySort', *args)
+
+    @staticmethod
+    def arrayReverseSort(*args):
+        return F('arrayReverseSort', *args)

@@ -27,6 +27,7 @@ class FuncsTestCase(TestCaseWithData):
         logger.info('\t==> %s', result[0].value if result else '<empty>')
         if expected_value is not None:
             self.assertEqual(result[0].value, expected_value)
+        return result[0].value if result else None
 
     def test_func_to_sql(self):
         # No args
@@ -259,3 +260,189 @@ class FuncsTestCase(TestCaseWithData):
         except ServerError as e:
             # ClickHouse version that doesn't support these functions
             raise unittest.SkipTest(e.message)
+
+    def test_replace_functions(self):
+        haystack = 'hello'
+        self._test_func(F.replace(haystack, 'l', 'L'), 'heLLo')
+        self._test_func(F.replaceAll(haystack, 'l', 'L'), 'heLLo')
+        self._test_func(F.replaceOne(haystack, 'l', 'L'), 'heLlo')
+        self._test_func(F.replaceRegexpAll(haystack, '[eo]', 'X'), 'hXllX')
+        self._test_func(F.replaceRegexpOne(haystack, '[eo]', 'X'), 'hXllo')
+        self._test_func(F.regexpQuoteMeta('[eo]'), '\\[eo\\]')
+
+    def test_math_functions(self):
+        x = 17
+        y = 3
+        self._test_func(F.e())
+        self._test_func(F.pi())
+        self._test_func(F.exp(x))
+        self._test_func(F.exp10(x))
+        self._test_func(F.exp2(x))
+        self._test_func(F.log(x))
+        self._test_func(F.log10(x))
+        self._test_func(F.log2(x))
+        self._test_func(F.ln(x))
+        self._test_func(F.sqrt(x))
+        self._test_func(F.cbrt(x))
+        self._test_func(F.erf(x))
+        self._test_func(F.erfc(x))
+        self._test_func(F.lgamma(x))
+        self._test_func(F.tgamma(x))
+        self._test_func(F.sin(x))
+        self._test_func(F.cos(x))
+        self._test_func(F.tan(x))
+        self._test_func(F.asin(x))
+        self._test_func(F.acos(x))
+        self._test_func(F.atan(x))
+        self._test_func(F.pow(x, y))
+        self._test_func(F.power(x, y))
+        self._test_func(F.intExp10(x))
+        self._test_func(F.intExp2(x))
+
+    def test_rounding_functions(self):
+        x = 22.22222
+        n = 3
+        self._test_func(F.floor(x), 22)
+        self._test_func(F.floor(x, n), 22.222)
+        self._test_func(F.ceil(x), 23)
+        self._test_func(F.ceil(x, n), 22.223)
+        self._test_func(F.ceiling(x), 23)
+        self._test_func(F.ceiling(x, n), 22.223)
+        self._test_func(F.round(x), 22)
+        self._test_func(F.round(x, n), 22.222)
+        self._test_func(F.roundAge(x), 18)
+        self._test_func(F.roundDown(x, [10, 20, 30]), 20)
+        self._test_func(F.roundDuration(x), 10)
+        self._test_func(F.roundToExp2(x), 16)
+
+    def test_array_functions(self):
+        arr = [1, 2, 3]
+        self._test_func(F.emptyArrayDate())
+        self._test_func(F.emptyArrayDateTime())
+        self._test_func(F.emptyArrayFloat32())
+        self._test_func(F.emptyArrayFloat64())
+        self._test_func(F.emptyArrayInt16())
+        self._test_func(F.emptyArrayInt32())
+        self._test_func(F.emptyArrayInt64())
+        self._test_func(F.emptyArrayInt8())
+        self._test_func(F.emptyArrayString())
+        self._test_func(F.emptyArrayToSingle(F.emptyArrayInt16()), [0])
+        self._test_func(F.emptyArrayUInt16())
+        self._test_func(F.emptyArrayUInt32())
+        self._test_func(F.emptyArrayUInt64())
+        self._test_func(F.emptyArrayUInt8())
+        self._test_func(F.range(7), list(range(7)))
+        self._test_func(F.array(*arr), arr)
+        self._test_func(F.arrayConcat([1, 2], [3]), arr)
+        self._test_func(F.arrayElement([10, 20, 30], 2), 20)
+        self._test_func(F.has(arr, 2), 1)
+        self._test_func(F.hasAll(arr, [1, 7]), 0)
+        self._test_func(F.hasAny(arr, [1, 7]), 1)
+        self._test_func(F.indexOf(arr, 3), 3)
+        self._test_func(F.countEqual(arr, 2), 1)
+        self._test_func(F.arrayEnumerate(arr))
+        self._test_func(F.arrayEnumerateDense(arr))
+        self._test_func(F.arrayEnumerateDenseRanked(arr))
+        self._test_func(F.arrayEnumerateUniq(arr))
+        self._test_func(F.arrayEnumerateUniqRanked(arr))
+        self._test_func(F.arrayPopBack(arr), [1, 2])
+        self._test_func(F.arrayPopFront(arr), [2, 3])
+        self._test_func(F.arrayPushBack(arr, 7), arr + [7])
+        self._test_func(F.arrayPushFront(arr, 7), [7] + arr)
+        self._test_func(F.arrayResize(arr, 5), [1, 2, 3, 0, 0])
+        self._test_func(F.arrayResize(arr, 5, 9), [1, 2, 3, 9, 9])
+        self._test_func(F.arraySlice(arr, 2), [2, 3])
+        self._test_func(F.arraySlice(arr, 2, 1), [2])
+        self._test_func(F.arrayUniq(arr + arr), 3)
+        self._test_func(F.arrayJoin(arr))
+        self._test_func(F.arrayDifference(arr), [0, 1, 1])
+        self._test_func(F.arrayDistinct(arr + arr), arr)
+        self._test_func(F.arrayIntersect(arr, [3, 4]), [3])
+        self._test_func(F.arrayReduce('min', arr), 1)
+        self._test_func(F.arrayReverse(arr), [3, 2, 1])
+
+    def test_split_and_merge_functions(self):
+        self._test_func(F.splitByChar('_', 'a_b_c'), ['a', 'b', 'c'])
+        self._test_func(F.splitByString('__', 'a__b__c'), ['a', 'b', 'c'])
+        self._test_func(F.arrayStringConcat(['a', 'b', 'c']), 'abc')
+        self._test_func(F.arrayStringConcat(['a', 'b', 'c'], '_'), 'a_b_c')
+        self._test_func(F.alphaTokens('aaa.bbb.111'), ['aaa', 'bbb'])
+
+    def test_bit_functions(self):
+        x = 17
+        y = 4
+        z = 5
+        self._test_func(F.bitAnd(x, y))
+        self._test_func(F.bitNot(x))
+        self._test_func(F.bitOr(x, y))
+        self._test_func(F.bitRotateLeft(x, y))
+        self._test_func(F.bitRotateRight(x, y))
+        self._test_func(F.bitShiftLeft(x, y))
+        self._test_func(F.bitShiftRight(x, y))
+        self._test_func(F.bitTest(x, y))
+        self._test_func(F.bitTestAll(x, y))
+        self._test_func(F.bitTestAll(x, y, z))
+        self._test_func(F.bitTestAny(x, y))
+        self._test_func(F.bitTestAny(x, y, z))
+        self._test_func(F.bitXor(x, y))
+
+    def test_bitmap_functions(self):
+        self._test_func(F.bitmapToArray(F.bitmapBuild([1, 2, 3])), [1, 2, 3])
+        self._test_func(F.bitmapContains(F.bitmapBuild([1, 5, 7, 9]), F.toUInt32(9)), 1)
+        self._test_func(F.bitmapHasAny(F.bitmapBuild([1,2,3]), F.bitmapBuild([3,4,5])), 1)
+        self._test_func(F.bitmapHasAll(F.bitmapBuild([1,2,3]), F.bitmapBuild([3,4,5])), 0)
+        self._test_func(F.bitmapToArray(F.bitmapAnd(F.bitmapBuild([1, 2, 3]), F.bitmapBuild([3, 4, 5]))), [3])
+        self._test_func(F.bitmapToArray(F.bitmapOr(F.bitmapBuild([1, 2, 3]), F.bitmapBuild([3, 4, 5]))), [1, 2, 3, 4, 5])
+        self._test_func(F.bitmapToArray(F.bitmapXor(F.bitmapBuild([1, 2, 3]), F.bitmapBuild([3, 4, 5]))), [1, 2, 4, 5])
+        self._test_func(F.bitmapToArray(F.bitmapAndnot(F.bitmapBuild([1, 2, 3]), F.bitmapBuild([3, 4, 5]))), [1, 2])
+        self._test_func(F.bitmapCardinality(F.bitmapBuild([1, 2, 3, 4, 5])), 5)
+        self._test_func(F.bitmapAndCardinality(F.bitmapBuild([1, 2, 3]), F.bitmapBuild([3, 4, 5])), 1)
+        self._test_func(F.bitmapOrCardinality(F.bitmapBuild([1, 2, 3]), F.bitmapBuild([3, 4, 5])), 5)
+        self._test_func(F.bitmapXorCardinality(F.bitmapBuild([1, 2, 3]), F.bitmapBuild([3, 4, 5])), 4)
+        self._test_func(F.bitmapAndnotCardinality(F.bitmapBuild([1, 2, 3]), F.bitmapBuild([3, 4, 5])), 2)
+
+    def test_hash_functions(self):
+        args = ['x', 'y', 'z']
+        x = 17
+        s = 'hello'
+        url = 'http://example.com/a/b/c/d'
+        self._test_func(F.hex(F.halfMD5(*args)))
+        self._test_func(F.hex(F.MD5(s)))
+        self._test_func(F.hex(F.sipHash64(*args)))
+        self._test_func(F.hex(F.sipHash128(s)))
+        self._test_func(F.hex(F.cityHash64(*args)))
+        self._test_func(F.hex(F.intHash32(x)))
+        self._test_func(F.hex(F.intHash64(x)))
+        self._test_func(F.hex(F.SHA1(s)))
+        self._test_func(F.hex(F.SHA224(s)))
+        self._test_func(F.hex(F.SHA256(s)))
+        self._test_func(F.hex(F.URLHash(url)))
+        self._test_func(F.hex(F.URLHash(url, 3)))
+        self._test_func(F.hex(F.farmHash64(*args)))
+        self._test_func(F.javaHash(s))
+        self._test_func(F.hiveHash(s))
+        self._test_func(F.hex(F.metroHash64(*args)))
+        self._test_func(F.jumpConsistentHash(x, 3))
+        self._test_func(F.hex(F.murmurHash2_32(*args)))
+        self._test_func(F.hex(F.murmurHash2_64(*args)))
+        self._test_func(F.hex(F.murmurHash3_32(*args)))
+        self._test_func(F.hex(F.murmurHash3_64(*args)))
+        self._test_func(F.hex(F.murmurHash3_128(s)))
+        self._test_func(F.hex(F.xxHash32(*args)))
+        self._test_func(F.hex(F.xxHash64(*args)))
+
+    def test_rand_functions(self):
+        self._test_func(F.rand())
+        self._test_func(F.rand(17))
+        self._test_func(F.rand64())
+        self._test_func(F.rand64(17))
+        self._test_func(F.randConstant())
+        self._test_func(F.randConstant(17))
+
+    def test_encoding_functions(self):
+        uuid = '123e4567-e89b-12d3-a456-426655440000'
+        self._test_func(F.hex(F.unhex('0FA1')), '0FA1')
+        self._test_func(F.UUIDNumToString(F.UUIDStringToNum(uuid)), uuid)
+        self._test_func(F.bitmaskToArray(17))
+        self._test_func(F.bitmaskToList(18))
+
