@@ -24,7 +24,7 @@ class FuncsTestCase(TestCaseWithData):
         sql = 'SELECT %s AS value' % func.to_sql()
         logger.info(sql)
         result = list(self.database.select(sql))
-        logger.info('\t==> %s', result[0].value)
+        logger.info('\t==> %s', result[0].value if result else '<empty>')
         if expected_value is not None:
             self.assertEqual(result[0].value, expected_value)
 
@@ -255,7 +255,7 @@ class FuncsTestCase(TestCaseWithData):
         try:
             self._test_func(F.base64Decode(F.base64Encode('Hello')), 'Hello')
             self._test_func(F.tryBase64Decode(F.base64Encode('Hello')), 'Hello')
-            self._test_func(F.tryBase64Decode('zzz'), '')
+            self._test_func(F.tryBase64Decode('zzz'), None)
         except ServerError as e:
             # ClickHouse version that doesn't support these functions
             raise unittest.SkipTest(e.message)

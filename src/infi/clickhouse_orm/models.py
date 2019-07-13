@@ -197,7 +197,7 @@ class Model(with_metaclass(ModelBase)):
         parts = ['CREATE TABLE IF NOT EXISTS `%s`.`%s` (' % (db.db_name, cls.table_name())]
         cols = []
         for name, field in iteritems(cls.fields()):
-            cols.append('    %s %s' % (name, field.get_sql()))
+            cols.append('    %s %s' % (name, field.get_sql(db=db)))
         parts.append(',\n'.join(cols))
         parts.append(')')
         parts.append('ENGINE = ' + cls.engine.create_table_sql(db))
@@ -318,9 +318,16 @@ class MergeModel(Model):
 
     @classmethod
     def create_table_sql(cls, db):
-        assert isinstance(cls.engine, Merge), "engine must be engines.Merge instance"
-        return super(MergeModel, cls).create_table_sql(db)
-
+        assert isinstance(cls.engine, Merge), "engine must be an instance of engines.Merge"
+        parts = ['CREATE TABLE IF NOT EXISTS `%s`.`%s` (' % (db.db_name, cls.table_name())]
+        cols = []
+        for name, field in iteritems(cls.fields()):
+            if name != '_table':
+                cols.append('    %s %s' % (name, field.get_sql(db=db)))
+        parts.append(',\n'.join(cols))
+        parts.append(')')
+        parts.append('ENGINE = ' + cls.engine.create_table_sql(db))
+        return '\n'.join(parts)
 
 # TODO: base class for models that require specific engine
 
@@ -331,7 +338,7 @@ class DistributedModel(Model):
     """
 
     def set_database(self, db):
-        assert isinstance(self.engine, Distributed), "engine must be engines.Distributed instance"
+        assert isinstance(self.engine, Distributed), "engine must be an instance of engines.Distributed"
         res = super(DistributedModel, self).set_database(db)
         return res
 

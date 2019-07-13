@@ -40,7 +40,7 @@ class MergeTree(Engine):
         assert date_col is None or isinstance(date_col, six.string_types), 'date_col must be string if present'
         assert partition_key is None or type(partition_key) in (list, tuple),\
             'partition_key must be tuple or list if present'
-        assert (replica_table_path is None) == (replica_name == None), \
+        assert (replica_table_path is None) == (replica_name is None), \
             'both replica_table_path and replica_name must be specified'
 
         # These values conflict with each other (old and new syntax of table engines.

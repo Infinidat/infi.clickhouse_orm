@@ -112,6 +112,14 @@ class DatabaseTestCase(TestCaseWithData):
             self.assertEqual([obj.to_tsv() for obj in page_a.objects],
                               [obj.to_tsv() for obj in page_b.objects])
 
+    def test_pagination_empty_page(self):
+        for page_num in (-1, 1, 2):
+            page = self.database.paginate(Person, 'first_name, last_name', page_num, 10, conditions="first_name = 'Ziggy'")
+            self.assertEqual(page.number_of_objects, 0)
+            self.assertEqual(page.objects, [])
+            self.assertEqual(page.pages_total, 0)
+            self.assertEqual(page.number, max(page_num, 1))
+
     def test_pagination_invalid_page(self):
         self._insert_and_check(self._sample_data(), len(data))
         for page_num in (0, -2, -100):
@@ -142,7 +150,7 @@ class DatabaseTestCase(TestCaseWithData):
 
         exc = cm.exception
         self.assertEqual(exc.code, 193)
-        self.assertEqual(exc.message, 'Wrong password for user default')
+        self.assertTrue(exc.message.startswith('Wrong password for user default'))
 
     def test_nonexisting_db(self):
         db = Database('db_not_here', autocreate=False)
@@ -150,7 +158,7 @@ class DatabaseTestCase(TestCaseWithData):
             db.create_table(Person)
         exc = cm.exception
         self.assertEqual(exc.code, 81)
-        self.assertEqual(exc.message, "Database db_not_here doesn't exist")
+        self.assertTrue(exc.message.startswith("Database db_not_here doesn't exist"))
         # Create and delete the db twice, to ensure db_exists gets updated
         for i in range(2):
             # Now create the database - should succeed

@@ -1,11 +1,31 @@
 Change Log
 ==========
 
-Unreleased
-----------
+v1.2.0
+------
+- Add support for per-field compression codecs (rbelio, Chocorean)
+- Add support for low cardinality fields (rbelio)
+
+v1.1.0
+------
+- Add PREWHERE support to querysets (M1hacka)
+- Add WITH TOTALS support to querysets (M1hacka)
+- Extend date field range (trthhrtz)
+- Fix parsing of server errors in ClickHouse v19.3.3+
+- Fix pagination when asking for the last page on a query that matches no records
+- Use HTTP Basic Authentication instead of passing the credentials in the URL
+- Support default/alias/materialized for nullable fields
+- Add UUIDField (kpotehin)
+- Add `log_statements` parameter to database initializer
+- Fix test_merge which fails on ClickHouse v19.8.3
+- Fix querysets using the SystemPart model
+
+v1.0.4
+------
 - Added `timeout` parameter to database initializer (SUHAR1K)
 - Added `verify_ssl_cert` parameter to database initializer
 - Added `final()` method to querysets (M1hacka)
+- Fixed a migrations problem - cannot add a new materialized field after a regular field
 
 v1.0.3
 ------

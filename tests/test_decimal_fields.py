@@ -12,7 +12,7 @@ from infi.clickhouse_orm.engines import *
 class DecimalFieldsTest(unittest.TestCase):
 
     def setUp(self):
-        self.database = Database('test-db')
+        self.database = Database('test-db', log_statements=True)
         try:
             self.database.create_table(DecimalModel)
         except ServerError as e:

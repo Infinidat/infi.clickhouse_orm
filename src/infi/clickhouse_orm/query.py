@@ -2,7 +2,7 @@ from __future__ import unicode_literals
 
 import six
 import pytz
-from copy import copy
+from copy import copy, deepcopy
 from math import ceil
 from .engines import CollapsingMergeTree
 from datetime import date, datetime
@@ -185,25 +185,45 @@ class FieldCond(Cond):
     def to_sql(self, model_cls):
         return self._operator.to_sql(model_cls, self._field_name, self._value)
 
+    def __deepcopy__(self, memodict={}):
+        res = copy(self)
+        res._value = deepcopy(self._value)
+        return res
+
 
 class Q(object):
 
-    AND_MODE = ' AND '
-    OR_MODE = ' OR '
+    AND_MODE = 'AND'
+    OR_MODE = 'OR'
 
     def __init__(self, *filter_funcs, **filter_fields):
         self._conds = list(filter_funcs) + [self._build_cond(k, v) for k, v in six.iteritems(filter_fields)]
-        self._l_child = None
-        self._r_child = None
+        self._children = []
         self._negate = False
         self._mode = self.AND_MODE
 
+    @property
+    def is_empty(self):
+        """
+        Checks if there are any conditions in Q object
+        :return: Boolean
+        """
+        return not bool(self._conds or self._children)
+
     @classmethod
     def _construct_from(cls, l_child, r_child, mode):
-        q = Q()
-        q._l_child = l_child
-        q._r_child = r_child
-        q._mode = mode # AND/OR
+        if mode == l_child._mode:
+            q = deepcopy(l_child)
+            q._children.append(deepcopy(r_child))
+        elif mode == r_child._mode:
+            q = deepcopy(r_child)
+            q._children.append(deepcopy(l_child))
+        else:
+            # Different modes
+            q = Q()
+            q._children = [l_child, r_child]
+            q._mode = mode  # AND/OR
+
         return q
 
     def _build_cond(self, key, value):
@@ -214,16 +234,27 @@ class Q(object):
         return FieldCond(field_name, operator, value)
 
     def to_sql(self, model_cls):
+        condition_sql = []
+
         if self._conds:
-            sql = self._mode.join(cond.to_sql(model_cls) for cond in self._conds)
+            condition_sql.extend([cond.to_sql(model_cls) for cond in self._conds])
+
+        if self._children:
+            condition_sql.extend([child.to_sql(model_cls) for child in self._children if child])
+
+        if not condition_sql:
+            # Empty Q() object returns everything
+            sql = '1'
+        elif len(condition_sql) == 1:
+            # Skip not needed brackets over single condition
+            sql = condition_sql[0]
         else:
-            if self._l_child and self._r_child:
-                sql = '({} {} {})'.format(
-                        self._l_child.to_sql(model_cls), self._mode, self._r_child.to_sql(model_cls))
-            else:
-                return '1'
+            # Each condition must be enclosed in brackets, or order of operations may be wrong
+            sql = '(%s)' % ') {} ('.format(self._mode).join(condition_sql)
+
         if self._negate:
             sql = 'NOT (%s)' % sql
+
         return sql
 
     def __or__(self, other):
@@ -235,6 +266,20 @@ class Q(object):
     def __invert__(self):
         q = copy(self)
         q._negate = True
+        return q
+
+    def __bool__(self):
+        return not self.is_empty
+
+    def __deepcopy__(self, memodict={}):
+        q = Q()
+        q._conds = [deepcopy(cond) for cond in self._conds]
+        q._negate = self._negate
+        q._mode = self._mode
+
+        if self._children:
+            q._children = [deepcopy(child) for child in self._children]
+
         return q
 
 
@@ -254,7 +299,10 @@ class QuerySet(object):
         self._model_cls = model_cls
         self._database = database
         self._order_by = []
-        self._q = []
+        self._where_q = Q()
+        self._prewhere_q = Q()
+        self._grouping_fields = []
+        self._grouping_with_totals = False
         self._fields = model_cls.fields().keys()
         self._extra = {}
         self._limits = None
@@ -297,22 +345,49 @@ class QuerySet(object):
             qs._limits = (start, stop - start)
             return qs
 
-    def as_sql(self):
+    def select_fields_as_sql(self):
         """
-        Returns the whole query as a SQL string.
+        Returns the selected fields or expressions as a SQL string.
         """
-        distinct = 'DISTINCT ' if self._distinct else ''
         fields = '*'
         if self._fields:
             fields = comma_join('`%s`' % field for field in self._fields)
         for name, func in self._extra.items():
             fields += ', %s AS %s' % (func.to_sql(), name)
-        ordering = '\nORDER BY ' + self.order_by_as_sql() if self._order_by else ''
-        limit = '\nLIMIT %d, %d' % self._limits if self._limits else ''
+        return fields
+
+    def as_sql(self):
+        """
+        Returns the whole query as a SQL string.
+        """
+        distinct = 'DISTINCT ' if self._distinct else ''
         final = ' FINAL' if self._final else ''
-        params = (distinct, fields, self._model_cls.table_name(), final,
-                  self.conditions_as_sql(), ordering, limit)
-        return u'SELECT %s%s\nFROM `%s`%s\nWHERE %s%s%s' % params
+        table_name = self._model_cls.table_name()
+        if not self._model_cls.is_system_model():
+            table_name = '`%s`' % table_name
+
+        params = (distinct, self.select_fields_as_sql(), table_name, final)
+        sql = u'SELECT %s%s\nFROM %s%s' % params
+
+        if self._prewhere_q and not self._prewhere_q.is_empty:
+            sql += '\nPREWHERE ' + self.conditions_as_sql(prewhere=True)
+
+        if self._where_q and not self._where_q.is_empty:
+            sql += '\nWHERE ' + self.conditions_as_sql(prewhere=False)
+
+        if self._grouping_fields:
+            sql += '\nGROUP BY %s' % comma_join('`%s`' % field for field in self._grouping_fields)
+
+            if self._grouping_with_totals:
+                sql += ' WITH TOTALS'
+
+        if self._order_by:
+            sql += '\nORDER BY ' + self.order_by_as_sql()
+
+        if self._limits:
+            sql += '\nLIMIT %d, %d' % self._limits
+
+        return sql
 
     def order_by_as_sql(self):
         """
@@ -323,14 +398,12 @@ class QuerySet(object):
             for field in self._order_by
         ])
 
-    def conditions_as_sql(self):
+    def conditions_as_sql(self, prewhere=False):
         """
-        Returns the contents of the query's `WHERE` clause as a string.
+        Returns the contents of the query's `WHERE` or `PREWHERE` clause as a string.
         """
-        if self._q:
-            return u' AND '.join([q.to_sql(self._model_cls) for q in self._q])
-        else:
-            return u'1'
+        q_object = self._prewhere_q if prewhere else self._where_q
+        return q_object.to_sql(self._model_cls)
 
     def count(self):
         """
@@ -341,8 +414,10 @@ class QuerySet(object):
             sql = u'SELECT count() FROM (%s)' % self.as_sql()
             raw = self._database.raw(sql)
             return int(raw) if raw else 0
+
         # Simple case
-        return self._database.count(self._model_cls, self.conditions_as_sql())
+        conditions = (self._where_q & self._prewhere_q).to_sql(self._model_cls)
+        return self._database.count(self._model_cls, conditions)
 
     def order_by(self, *field_names):
         """
@@ -367,32 +442,50 @@ class QuerySet(object):
         qs._extra = kwargs
         return qs
 
-    def filter(self, *q, **filter_fields):
-        """
-        Returns a copy of this queryset that includes only rows matching the conditions.
-        Add q object to query if it specified.
-        """
-        from infi.clickhouse_orm.funcs import F
+    def _filter_or_exclude(self, *q, **kwargs):
+        from .funcs import F
+
+        inverse = kwargs.pop('_inverse', False)
+        prewhere = kwargs.pop('prewhere', False)
+
         qs = copy(self)
-        qs._q = list(self._q)
+
+        condition = Q()
         for arg in q:
             if isinstance(arg, Q):
-                qs._q.append(arg)
+                condition &= arg
             elif isinstance(arg, F):
-                qs._q.append(Q(arg))
+                condition &= Q(arg)
             else:
                 raise TypeError('Invalid argument "%r" to queryset filter' % arg)
-        if filter_fields:
-            qs._q += [Q(**filter_fields)]
+
+        if kwargs:
+            condition &= Q(**kwargs)
+
+        if inverse:
+            condition = ~condition
+
+        condition = copy(self._prewhere_q if prewhere else self._where_q) & condition
+        if prewhere:
+            qs._prewhere_q = condition
+        else:
+            qs._where_q = condition
+
         return qs
 
-    def exclude(self, **filter_fields):
+    def filter(self, *q, **kwargs):
+        """
+        Returns a copy of this queryset that includes only rows matching the conditions.
+        Pass `prewhere=True` to apply the conditions as PREWHERE instead of WHERE.
+        """
+        return self._filter_or_exclude(*q, **kwargs)
+
+    def exclude(self, *q, **kwargs):
         """
         Returns a copy of this queryset that excludes all rows matching the conditions.
+        Pass `prewhere=True` to apply the conditions as PREWHERE instead of WHERE.
         """
-        qs = copy(self)
-        qs._q = list(self._q) + [~Q(**filter_fields)]
-        return qs
+        return self._filter_or_exclude(*q, _inverse=True, **kwargs)
 
     def paginate(self, page_num=1, page_size=100):
         """
@@ -486,7 +579,8 @@ class AggregateQuerySet(QuerySet):
         self._grouping_fields = grouping_fields
         self._calculated_fields = calculated_fields
         self._order_by = list(base_qs._order_by)
-        self._q = list(base_qs._q)
+        self._where_q = base_qs._where_q
+        self._prewhere_q = base_qs._prewhere_q
         self._limits = base_qs._limits
         self._distinct = base_qs._distinct
 
@@ -515,26 +609,11 @@ class AggregateQuerySet(QuerySet):
         """
         raise NotImplementedError('Cannot re-aggregate an AggregateQuerySet')
 
-    def as_sql(self):
+    def select_fields_as_sql(self):
         """
-        Returns the whole query as a SQL string.
+        Returns the selected fields or expressions as a SQL string.
         """
-        distinct = 'DISTINCT ' if self._distinct else ''
-        grouping = comma_join('`%s`' % field for field in self._grouping_fields)
-        fields = comma_join(list(self._fields) + ['%s AS %s' % (v, k) for k, v in self._calculated_fields.items()])
-        params = dict(
-            distinct=distinct,
-            grouping=grouping or "''",
-            fields=fields,
-            table=self._model_cls.table_name(),
-            conds=self.conditions_as_sql()
-        )
-        sql = u'SELECT %(distinct)s%(fields)s\nFROM `%(table)s`\nWHERE %(conds)s\nGROUP BY %(grouping)s' % params
-        if self._order_by:
-            sql += '\nORDER BY ' + self.order_by_as_sql()
-        if self._limits:
-            sql += '\nLIMIT %d, %d' % self._limits
-        return sql
+        return comma_join(list(self._fields) + ['%s AS %s' % (v, k) for k, v in self._calculated_fields.items()])
 
     def __iter__(self):
         return self._database.select(self.as_sql()) # using an ad-hoc model
@@ -547,4 +626,12 @@ class AggregateQuerySet(QuerySet):
         raw = self._database.raw(sql)
         return int(raw) if raw else 0
 
-
+    def with_totals(self):
+        """
+        Adds WITH TOTALS modifier ot GROUP BY, making query return extra row
+        with aggregate function calculated across all the rows. More information:
+        https://clickhouse.yandex/docs/en/query_language/select/#with-totals-modifier
+        """
+        qs = copy(self)
+        qs._grouping_with_totals = True
+        return qs

@@ -3,17 +3,15 @@ from __future__ import unicode_literals, print_function
 import unittest
 
 from infi.clickhouse_orm.database import Database
-from infi.clickhouse_orm.query import Q, F
+from infi.clickhouse_orm.query import Q
+from infi.clickhouse_orm.funcs import F
 from .base_test_with_data import *
 from datetime import date, datetime
+from enum import Enum
 
 from logging import getLogger
 logger = getLogger('tests')
 
-try:
-    Enum # exists in Python 3.4+
-except NameError:
-    from enum import Enum # use the enum34 library instead
 
 
 class QuerySetTestCase(TestCaseWithData):
@@ -30,6 +28,13 @@ class QuerySetTestCase(TestCaseWithData):
             logger.info('\t[%d]\t%s' % (count, instance.to_dict()))
         self.assertEqual(count, expected_count)
         self.assertEqual(qs.count(), expected_count)
+
+    def test_prewhere(self):
+        # We can't distinguish prewhere and where results, it affects performance only.
+        # So let's control prewhere acts like where does
+        qs = Person.objects_in(self.database)
+        self.assertTrue(qs.filter(first_name='Connor', prewhere=True))
+        self.assertFalse(qs.filter(first_name='Willy', prewhere=True))
 
     def test_no_filtering(self):
         qs = Person.objects_in(self.database)
@@ -222,7 +227,7 @@ class QuerySetTestCase(TestCaseWithData):
         qs = Person.objects_in(self.database).order_by('first_name', 'last_name')
         # Try different page sizes
         for page_size in (1, 2, 7, 10, 30, 100, 150):
-            # Iterate over pages and collect all intances
+            # Iterate over pages and collect all instances
             page_num = 1
             instances = set()
             while True:
@@ -296,7 +301,7 @@ class QuerySetTestCase(TestCaseWithData):
         qs = Person.objects_in(self.database)
         qs = qs.filter(Q(first_name='a'), F('greater', Person.height, 1.7), last_name='b')
         self.assertEqual(qs.conditions_as_sql(),
-                         "first_name = 'a' AND greater(`height`, 1.7) AND last_name = 'b'")
+                         "(first_name = 'a') AND (greater(`height`, 1.7)) AND (last_name = 'b')")
 
     def test_invalid_filter(self):
         qs = Person.objects_in(self.database)
@@ -417,6 +422,17 @@ class AggregateTestCase(TestCaseWithData):
         print(qs.as_sql())
         self.assertEqual(qs.count(), 1)
 
+    def test_aggregate_with_totals(self):
+        qs = Person.objects_in(self.database).aggregate('first_name', count='count()').\
+            with_totals().order_by('-count')[:5]
+        print(qs.as_sql())
+        result = list(qs)
+        self.assertEqual(len(result), 6)
+        for row in result[:-1]:
+            self.assertEqual(2, row.count)
+
+        self.assertEqual(100, result[-1].count)
+
     def test_double_underscore_field(self):
         class Mdl(Model):
             the__number = Int32Field()
@@ -463,9 +479,9 @@ class FuncsTestCase(TestCaseWithData):
         # Numeric args
         self.assertEqual(F('func', 1, 1.1, Decimal('3.3')).to_sql(), "func(1, 1.1, 3.3)")
         # Date args
-        self.assertEqual(F('func', date(2018, 12, 31)).to_sql(), "func('2018-12-31')")
+        self.assertEqual(F('func', date(2018, 12, 31)).to_sql(), "func(toDate('2018-12-31'))")
         # Datetime args
-        self.assertEqual(F('func', datetime(2018, 12, 31)).to_sql(), "func('1546214400')")
+        self.assertEqual(F('func', datetime(2018, 12, 31)).to_sql(), "func(toDateTime('1546214400'))")
         # Boolean args
         self.assertEqual(F('func', True, False).to_sql(), "func(1, 0)")
         # Null args

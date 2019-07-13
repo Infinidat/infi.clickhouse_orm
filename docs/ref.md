@@ -482,9 +482,9 @@ infi.clickhouse_orm.query
 #### QuerySet(model_cls, database)
 
 
-#### conditions_as_sql()
+#### conditions_as_sql(prewhere=True)
 
-Return the contents of the queryset's WHERE clause.
+Return the contents of the queryset's WHERE or `PREWHERE` clause.
 
 
 #### count()

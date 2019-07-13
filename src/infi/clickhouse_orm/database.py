@@ -40,11 +40,19 @@ class ServerError(DatabaseException):
             self.message = message
             super(ServerError, self).__init__(message)
 
-    ERROR_PATTERN = re.compile(r'''
-        Code:\ (?P<code>\d+),
-        \ e\.displayText\(\)\ =\ (?P<type1>[^ \n]+):\ (?P<msg>.+?),
-        \ e.what\(\)\ =\ (?P<type2>[^ \n]+)
-    ''', re.VERBOSE | re.DOTALL)
+    ERROR_PATTERNS = (
+        # ClickHouse prior to v19.3.3
+        re.compile(r'''
+            Code:\ (?P<code>\d+),
+            \ e\.displayText\(\)\ =\ (?P<type1>[^ \n]+):\ (?P<msg>.+?),
+            \ e.what\(\)\ =\ (?P<type2>[^ \n]+)
+        ''', re.VERBOSE | re.DOTALL),
+        # ClickHouse v19.3.3+
+        re.compile(r'''
+            Code:\ (?P<code>\d+),
+            \ e\.displayText\(\)\ =\ (?P<type1>[^ \n]+):\ (?P<msg>.+)
+        ''', re.VERBOSE | re.DOTALL),
+    )
 
     @classmethod
     def get_error_code_msg(cls, full_error_message):
@@ -54,10 +62,11 @@ class ServerError(DatabaseException):
         See the list of error codes here:
         https://github.com/yandex/ClickHouse/blob/master/dbms/src/Common/ErrorCodes.cpp
         """
-        match = cls.ERROR_PATTERN.match(full_error_message)
-        if match:
-            # assert match.group('type1') == match.group('type2')
-            return int(match.group('code')), match.group('msg')
+        for pattern in cls.ERROR_PATTERNS:
+            match = pattern.match(full_error_message)
+            if match:
+                # assert match.group('type1') == match.group('type2')
+                return int(match.group('code')), match.group('msg').strip()
 
         return 0, full_error_message
 
@@ -74,7 +83,7 @@ class Database(object):
 
     def __init__(self, db_name, db_url='http://localhost:8123/',
                  username=None, password=None, readonly=False, autocreate=True,
-                 timeout=60, verify_ssl_cert=True):
+                 timeout=60, verify_ssl_cert=True, log_statements=False):
         '''
         Initializes a database instance. Unless it's readonly, the database will be
         created on the ClickHouse server if it does not already exist.
@@ -87,15 +96,17 @@ class Database(object):
         - `autocreate`: automatically create the database if it does not exist (unless in readonly mode).
         - `timeout`: the connection timeout in seconds.
         - `verify_ssl_cert`: whether to verify the server's certificate when connecting via HTTPS.
+        - `log_statements`: when True, all database statements are logged.
         '''
         self.db_name = db_name
         self.db_url = db_url
-        self.username = username
-        self.password = password
         self.readonly = False
         self.timeout = timeout
         self.request_session = requests.Session()
         self.request_session.verify = verify_ssl_cert
+        if username:
+            self.request_session.auth = (username, password or '')
+        self.log_statements = log_statements
         self.settings = {}
         self.db_exists = False # this is required before running _is_existing_database
         self.db_exists = self._is_existing_database()
@@ -109,6 +120,10 @@ class Database(object):
         self.server_version = self._get_server_version()
         # Versions 1.1.53981 and below don't have timezone function
         self.server_timezone = self._get_server_timezone() if self.server_version > (1, 1, 53981) else pytz.utc
+        # Versions 19.1.16 and above support codec compression
+        self.has_codec_support = self.server_version >= (19, 1, 16)
+        # Version 19.0 and above support LowCardinality
+        self.has_low_cardinality_support = self.server_version >= (19, 0)
 
     def create_database(self):
         '''
@@ -276,7 +291,7 @@ class Database(object):
         count = self.count(model_class, conditions)
         pages_total = int(ceil(count / float(page_size)))
         if page_num == -1:
-            page_num = pages_total
+            page_num = max(pages_total, 1)
         elif page_num < 1:
             raise ValueError('Invalid page number: %d' % page_num)
         offset = (page_num - 1) * page_size
@@ -287,7 +302,7 @@ class Database(object):
         query += ' LIMIT %d, %d' % (offset, page_size)
         query = self._substitute(query, model_class)
         return Page(
-            objects=list(self.select(query, model_class, settings)),
+            objects=list(self.select(query, model_class, settings)) if count else [],
             number_of_objects=count,
             pages_total=pages_total,
             number=page_num,
@@ -325,6 +340,8 @@ class Database(object):
     def _send(self, data, settings=None, stream=False):
         if isinstance(data, string_types):
             data = data.encode('utf-8')
+            if self.log_statements:
+                logger.info(data)
         params = self._build_params(settings)
         r = self.request_session.post(self.db_url, params=params, data=data, stream=stream, timeout=self.timeout)
         if r.status_code != 200:
@@ -336,10 +353,6 @@ class Database(object):
         params.update(self.settings)
         if self.db_exists:
             params['database'] = self.db_name
-        if self.username:
-            params['user'] = self.username
-        if self.password:
-            params['password'] = self.password
         # Send the readonly flag, unless the connection is already readonly (to prevent db error)
         if self.readonly and not self.connection_readonly:
             params['readonly'] = '1'
@@ -352,7 +365,10 @@ class Database(object):
         if '$' in query:
             mapping = dict(db="`%s`" % self.db_name)
             if model_class:
-                mapping['table'] = "`%s`.`%s`" % (self.db_name, model_class.table_name())
+                if model_class.is_system_model():
+                    mapping['table'] = model_class.table_name()
+                else:
+                    mapping['table'] = "`%s`.`%s`" % (self.db_name, model_class.table_name())
             query = Template(query).safe_substitute(mapping)
         return query
 

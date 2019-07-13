@@ -10,7 +10,7 @@ from infi.clickhouse_orm.engines import *
 class DateFieldsTest(unittest.TestCase):
 
     def setUp(self):
-        self.database = Database('test-db')
+        self.database = Database('test-db', log_statements=True)
         self.database.create_table(ModelWithDate)
 
     def tearDown(self):

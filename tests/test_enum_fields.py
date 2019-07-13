@@ -6,16 +6,13 @@ from infi.clickhouse_orm.models import Model
 from infi.clickhouse_orm.fields import *
 from infi.clickhouse_orm.engines import *
 
-try:
-    Enum # exists in Python 3.4+
-except NameError:
-    from enum import Enum # use the enum34 library instead
+from enum import Enum
 
 
 class EnumFieldsTest(unittest.TestCase):
 
     def setUp(self):
-        self.database = Database('test-db')
+        self.database = Database('test-db', log_statements=True)
         self.database.create_table(ModelWithEnum)
         self.database.create_table(ModelWithEnumArray)
 

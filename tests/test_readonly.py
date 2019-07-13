@@ -36,9 +36,9 @@ class ReadonlyTestCase(TestCaseWithData):
     def _check_db_readonly_err(self, exc, drop_table=None):
         self.assertEqual(exc.code, 164)
         if drop_table:
-            self.assertEqual(exc.message, 'Cannot drop table in readonly mode')
+            self.assertTrue(exc.message.startswith('Cannot drop table in readonly mode'))
         else:
-            self.assertEqual(exc.message, 'Cannot insert into table in readonly mode')
+            self.assertTrue(exc.message.startswith('Cannot insert into table in readonly mode'))
 
     def test_readonly_db_with_default_user(self):
         self._test_readonly_db('default')

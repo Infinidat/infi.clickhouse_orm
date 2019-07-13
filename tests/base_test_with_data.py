@@ -14,7 +14,7 @@ logging.getLogger("requests").setLevel(logging.WARNING)
 class TestCaseWithData(unittest.TestCase):
 
     def setUp(self):
-        self.database = Database('test-db')
+        self.database = Database('test-db', log_statements=True)
         self.database.create_table(Person)
 
     def tearDown(self):

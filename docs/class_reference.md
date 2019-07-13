@@ -10,7 +10,7 @@ infi.clickhouse_orm.database
 Database instances connect to a specific ClickHouse database for running queries,
 inserting data and other operations.
 
-#### Database(db_name, db_url="http://localhost:8123/", username=None, password=None, readonly=False, autocreate=True, timeout=60, verify_ssl_cert=True)
+#### Database(db_name, db_url="http://localhost:8123/", username=None, password=None, readonly=False, autocreate=True, timeout=60, verify_ssl_cert=True, log_statements=False)
 
 
 Initializes a database instance. Unless it's readonly, the database will be
@@ -24,6 +24,7 @@ created on the ClickHouse server if it does not already exist.
 - `autocreate`: automatically create the database if it does not exist (unless in readonly mode).
 - `timeout`: the connection timeout in seconds.
 - `verify_ssl_cert`: whether to verify the server's certificate when connecting via HTTPS.
+- `log_statements`: when True, all database statements are logged.
 
 
 #### add_setting(name, value)
@@ -510,7 +511,7 @@ infi.clickhouse_orm.fields
 
 Extends Field
 
-#### ArrayField(inner_field, default=None, alias=None, materialized=None, readonly=None)
+#### ArrayField(inner_field, default=None, alias=None, materialized=None, readonly=None, codec=None)
 
 
 ### BaseEnumField
@@ -520,7 +521,7 @@ Extends Field
 
 Abstract base class for all enum-type fields.
 
-#### BaseEnumField(enum_cls, default=None, alias=None, materialized=None, readonly=None)
+#### BaseEnumField(enum_cls, default=None, alias=None, materialized=None, readonly=None, codec=None)
 
 
 ### BaseFloatField
@@ -530,7 +531,7 @@ Extends Field
 
 Abstract base class for all float-type fields.
 
-#### BaseFloatField(default=None, alias=None, materialized=None, readonly=None)
+#### BaseFloatField(default=None, alias=None, materialized=None, readonly=None, codec=None)
 
 
 ### BaseIntField
@@ -540,21 +541,21 @@ Extends Field
 
 Abstract base class for all integer-type fields.
 
-#### BaseIntField(default=None, alias=None, materialized=None, readonly=None)
+#### BaseIntField(default=None, alias=None, materialized=None, readonly=None, codec=None)
 
 
 ### DateField
 
 Extends Field
 
-#### DateField(default=None, alias=None, materialized=None, readonly=None)
+#### DateField(default=None, alias=None, materialized=None, readonly=None, codec=None)
 
 
 ### DateTimeField
 
 Extends Field
 
-#### DateTimeField(default=None, alias=None, materialized=None, readonly=None)
+#### DateTimeField(default=None, alias=None, materialized=None, readonly=None, codec=None)
 
 
 ### Decimal128Field
@@ -592,14 +593,14 @@ Base class for all decimal fields. Can also be used directly.
 
 Extends BaseEnumField
 
-#### Enum16Field(enum_cls, default=None, alias=None, materialized=None, readonly=None)
+#### Enum16Field(enum_cls, default=None, alias=None, materialized=None, readonly=None, codec=None)
 
 
 ### Enum8Field
 
 Extends BaseEnumField
 
-#### Enum8Field(enum_cls, default=None, alias=None, materialized=None, readonly=None)
+#### Enum8Field(enum_cls, default=None, alias=None, materialized=None, readonly=None, codec=None)
 
 
 ### Field
@@ -607,7 +608,7 @@ Extends BaseEnumField
 
 Abstract base class for all field types.
 
-#### Field(default=None, alias=None, materialized=None, readonly=None)
+#### Field(default=None, alias=None, materialized=None, readonly=None, codec=None)
 
 
 ### FixedStringField
@@ -621,84 +622,98 @@ Extends StringField
 
 Extends BaseFloatField
 
-#### Float32Field(default=None, alias=None, materialized=None, readonly=None)
+#### Float32Field(default=None, alias=None, materialized=None, readonly=None, codec=None)
 
 
 ### Float64Field
 
 Extends BaseFloatField
 
-#### Float64Field(default=None, alias=None, materialized=None, readonly=None)
+#### Float64Field(default=None, alias=None, materialized=None, readonly=None, codec=None)
 
 
 ### Int16Field
 
 Extends BaseIntField
 
-#### Int16Field(default=None, alias=None, materialized=None, readonly=None)
+#### Int16Field(default=None, alias=None, materialized=None, readonly=None, codec=None)
 
 
 ### Int32Field
 
 Extends BaseIntField
 
-#### Int32Field(default=None, alias=None, materialized=None, readonly=None)
+#### Int32Field(default=None, alias=None, materialized=None, readonly=None, codec=None)
 
 
 ### Int64Field
 
 Extends BaseIntField
 
-#### Int64Field(default=None, alias=None, materialized=None, readonly=None)
+#### Int64Field(default=None, alias=None, materialized=None, readonly=None, codec=None)
 
 
 ### Int8Field
 
 Extends BaseIntField
 
-#### Int8Field(default=None, alias=None, materialized=None, readonly=None)
+#### Int8Field(default=None, alias=None, materialized=None, readonly=None, codec=None)
+
+
+### LowCardinalityField
+
+Extends Field
+
+#### LowCardinalityField(inner_field, default=None, alias=None, materialized=None, readonly=None, codec=None)
 
 
 ### NullableField
 
 Extends Field
 
-#### NullableField(inner_field, default=None, alias=None, materialized=None, extra_null_values=None)
+#### NullableField(inner_field, default=None, alias=None, materialized=None, extra_null_values=None, codec=None)
 
 
 ### StringField
 
 Extends Field
 
-#### StringField(default=None, alias=None, materialized=None, readonly=None)
+#### StringField(default=None, alias=None, materialized=None, readonly=None, codec=None)
 
 
 ### UInt16Field
 
 Extends BaseIntField
 
-#### UInt16Field(default=None, alias=None, materialized=None, readonly=None)
+#### UInt16Field(default=None, alias=None, materialized=None, readonly=None, codec=None)
 
 
 ### UInt32Field
 
 Extends BaseIntField
 
-#### UInt32Field(default=None, alias=None, materialized=None, readonly=None)
+#### UInt32Field(default=None, alias=None, materialized=None, readonly=None, codec=None)
 
 
 ### UInt64Field
 
 Extends BaseIntField
 
-#### UInt64Field(default=None, alias=None, materialized=None, readonly=None)
+#### UInt64Field(default=None, alias=None, materialized=None, readonly=None, codec=None)
 
 
 ### UInt8Field
 
 Extends BaseIntField
 
-#### UInt8Field(default=None, alias=None, materialized=None, readonly=None)
+#### UInt8Field(default=None, alias=None, materialized=None, readonly=None, codec=None)
+
+
+### UUIDField
+
+Extends Field
+
+#### UUIDField(default=None, alias=None, materialized=None, readonly=None, codec=None)
 
 
 infi.clickhouse_orm.engines
@@ -835,10 +850,10 @@ is equivalent to:
 Returns the whole query as a SQL string.
 
 
-#### conditions_as_sql()
+#### conditions_as_sql(prewhere=False)
 
 
-Returns the contents of the query's `WHERE` clause as a string.
+Returns the contents of the query's `WHERE` or `PREWHERE` clause as a string.
 
 
 #### count()
@@ -854,17 +869,18 @@ Adds a DISTINCT clause to the query, meaning that any duplicate rows
 in the results will be omitted.
 
 
-#### exclude(**filter_fields)
+#### exclude(*q, **kwargs)
 
 
 Returns a copy of this queryset that excludes all rows matching the conditions.
+Pass `prewhere=True` to apply the conditions as PREWHERE instead of WHERE.
 
 
-#### filter(*q, **filter_fields)
+#### filter(*q, **kwargs)
 
 
 Returns a copy of this queryset that includes only rows matching the conditions.
-Add q object to query if it specified.
+Pass `prewhere=True` to apply the conditions as PREWHERE instead of WHERE.
 
 
 #### final()
@@ -908,6 +924,12 @@ The result is a namedtuple containing `objects` (list), `number_of_objects`,
 `pages_total`, `number` (of the current page), and `page_size`.
 
 
+#### select_fields_as_sql()
+
+
+Returns the selected fields or expressions as a SQL string.
+
+
 ### AggregateQuerySet
 
 Extends QuerySet
@@ -943,10 +965,10 @@ This method is not supported on `AggregateQuerySet`.
 Returns the whole query as a SQL string.
 
 
-#### conditions_as_sql()
+#### conditions_as_sql(prewhere=False)
 
 
-Returns the contents of the query's `WHERE` clause as a string.
+Returns the contents of the query's `WHERE` or `PREWHERE` clause as a string.
 
 
 #### count()
@@ -962,17 +984,18 @@ Adds a DISTINCT clause to the query, meaning that any duplicate rows
 in the results will be omitted.
 
 
-#### exclude(**filter_fields)
+#### exclude(*q, **kwargs)
 
 
 Returns a copy of this queryset that excludes all rows matching the conditions.
+Pass `prewhere=True` to apply the conditions as PREWHERE instead of WHERE.
 
 
-#### filter(*q, **filter_fields)
+#### filter(*q, **kwargs)
 
 
 Returns a copy of this queryset that includes only rows matching the conditions.
-Add q object to query if it specified.
+Pass `prewhere=True` to apply the conditions as PREWHERE instead of WHERE.
 
 
 #### final()
@@ -1020,5 +1043,19 @@ partitioning of records into pages.
 
 The result is a namedtuple containing `objects` (list), `number_of_objects`,
 `pages_total`, `number` (of the current page), and `page_size`.
+
+
+#### select_fields_as_sql()
+
+
+Returns the selected fields or expressions as a SQL string.
+
+
+#### with_totals()
+
+
+Adds WITH TOTALS modifier ot GROUP BY, making query return extra row
+with aggregate function calculated across all the rows. More information:
+https://clickhouse.yandex/docs/en/query_language/select/#with-totals-modifier
 
 
