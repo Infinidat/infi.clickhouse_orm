@@ -7,11 +7,7 @@ from infi.clickhouse_orm.query import Q
 from .base_test_with_data import *
 import logging
 from datetime import date, datetime
-
-try:
-    Enum # exists in Python 3.4+
-except NameError:
-    from enum import Enum  # use the enum34 library instead
+from enum import Enum
 
 
 class QuerySetTestCase(TestCaseWithData):
@@ -227,7 +223,7 @@ class QuerySetTestCase(TestCaseWithData):
         qs = Person.objects_in(self.database).order_by('first_name', 'last_name')
         # Try different page sizes
         for page_size in (1, 2, 7, 10, 30, 100, 150):
-            # Iterate over pages and collect all intances
+            # Iterate over pages and collect all instances
             page_num = 1
             instances = set()
             while True:

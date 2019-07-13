@@ -79,7 +79,7 @@ class AlterTable(Operation):
             if name not in table_fields:
                 logger.info('        Add column %s', name)
                 assert prev_name, 'Cannot add a column to the beginning of the table'
-                cmd = 'ADD COLUMN %s %s' % (name, field.get_sql())
+                cmd = 'ADD COLUMN %s %s' % (name, field.get_sql(db=database))
                 if is_regular_field:
                     cmd += ' AFTER %s' % prev_name
                 self._alter_table(database, cmd)
@@ -93,7 +93,7 @@ class AlterTable(Operation):
         # The order of class attributes can be changed any time, so we can't count on it
         # Secondly, MATERIALIZED and ALIAS fields are always at the end of the DESC, so we can't expect them to save
         # attribute position. Watch https://github.com/Infinidat/infi.clickhouse_orm/issues/47
-        model_fields = {name: field.get_sql(with_default_expression=False)
+        model_fields = {name: field.get_sql(with_default_expression=False, db=database)
                         for name, field in iteritems(self.model_class.fields())}
         for field_name, field_sql in self._get_table_fields(database):
             # All fields must have been created and dropped by this moment

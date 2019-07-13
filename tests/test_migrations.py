@@ -7,14 +7,11 @@ from infi.clickhouse_orm.fields import *
 from infi.clickhouse_orm.engines import *
 from infi.clickhouse_orm.migrations import MigrationHistory
 
+from enum import Enum
 # Add tests to path so that migrations will be importable
 import sys, os
 sys.path.append(os.path.dirname(__file__))
 
-try:
-    Enum # exists in Python 3.4+
-except NameError:
-    from enum import Enum # use the enum34 library instead
 
 import logging
 logging.basicConfig(level=logging.DEBUG, format='%(message)s')
@@ -97,6 +94,17 @@ class MigrationsTestCase(unittest.TestCase):
         self.assertTrue(self.tableExists(AliasModel1))
         self.assertEqual(self.getTableFields(AliasModel1),
                           [('date', 'Date'), ('int_field', 'Int8'), ('date_alias', 'Date'), ('int_field_plus_one', 'Int8')])
+        self.database.migrate('tests.sample_migrations', 15)
+        self.assertTrue(self.tableExists(Model4_compressed))
+        if self.database.has_low_cardinality_support:
+            self.assertEqual(self.getTableFields(Model2LowCardinality),
+                             [('date', 'Date'), ('f1', 'LowCardinality(Int32)'), ('f3', 'LowCardinality(Float32)'),
+                              ('f2', 'LowCardinality(String)'), ('f4', 'LowCardinality(Nullable(String))'), ('f5', 'Array(LowCardinality(UInt64))')])
+        else:
+            logging.warning('No support for low cardinality')
+            self.assertEqual(self.getTableFields(Model2),
+                             [('date', 'Date'), ('f1', 'Int32'), ('f3', 'Float32'), ('f2', 'String'), ('f4', 'Nullable(String)'),
+                              ('f5', 'Array(UInt64)')])
 
 
 # Several different models with the same table name, to simulate a table that changes over time
@@ -258,3 +266,31 @@ class Model4Buffer_changed(BufferModel, Model4_changed):
     @classmethod
     def table_name(cls):
         return 'model4buffer'
+
+
+class Model4_compressed(Model):
+
+    date = DateField()
+    f3 = DateTimeField(codec='Delta,ZSTD(10)')
+    f2 = StringField(codec='LZ4HC')
+
+    engine = MergeTree('date', ('date',))
+
+    @classmethod
+    def table_name(cls):
+        return 'model4'
+
+
+class Model2LowCardinality(Model):
+    date = DateField()
+    f1 = LowCardinalityField(Int32Field())
+    f3 = LowCardinalityField(Float32Field())
+    f2 = LowCardinalityField(StringField())
+    f4 = LowCardinalityField(NullableField(StringField()))
+    f5 = ArrayField(LowCardinalityField(UInt64Field()))
+
+    engine = MergeTree('date', ('date',))
+
+    @classmethod
+    def table_name(cls):
+        return 'mig'

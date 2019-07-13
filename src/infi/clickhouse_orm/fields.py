@@ -3,13 +3,13 @@ from six import string_types, text_type, binary_type, integer_types
 import datetime
 import iso8601
 import pytz
-import time
 from calendar import timegm
 from decimal import Decimal, localcontext
 from uuid import UUID
-
+from logging import getLogger
 from .utils import escape, parse_array, comma_join
 
+logger = getLogger('clickhouse_orm')
 
 class Field(object):
     '''
@@ -19,14 +19,16 @@ class Field(object):
     class_default = 0
     db_type = None
 
-    def __init__(self, default=None, alias=None, materialized=None, readonly=None):
+    def __init__(self, default=None, alias=None, materialized=None, readonly=None, codec=None):
         assert (None, None) in {(default, alias), (alias, materialized), (default, materialized)}, \
             "Only one of default, alias and materialized parameters can be given"
         assert alias is None or isinstance(alias, string_types) and alias != "",\
-            "Alias field must be string field name, if given"
-        assert materialized is None or isinstance(materialized, string_types) and alias != "",\
+            "Alias field must be a string, if given"
+        assert materialized is None or isinstance(materialized, string_types) and materialized != "",\
             "Materialized field must be string, if given"
         assert readonly is None or type(readonly) is bool, "readonly parameter must be bool if given"
+        assert codec is None or isinstance(codec, string_types) and codec != "", \
+            "Codec field must be string, if given"
 
         self.creation_counter = Field.creation_counter
         Field.creation_counter += 1
@@ -34,6 +36,7 @@ class Field(object):
         self.alias = alias
         self.materialized = materialized
         self.readonly = bool(self.alias or self.materialized or readonly)
+        self.codec = codec
 
     def to_python(self, value, timezone_in_use):
         '''
@@ -64,22 +67,30 @@ class Field(object):
         '''
         return escape(value, quote)
 
-    def get_sql(self, with_default_expression=True):
+    def get_sql(self, with_default_expression=True, db=None):
         '''
         Returns an SQL expression describing the field (e.g. for CREATE TABLE).
         :param with_default_expression: If True, adds default value to sql.
             It doesn't affect fields with alias and materialized values.
+        :param db: Database, used for checking supported features.
         '''
+        sql = self.db_type
         if with_default_expression:
-            if self.alias:
-                return '%s ALIAS %s' % (self.db_type, self.alias)
-            elif self.materialized:
-                return '%s MATERIALIZED %s' % (self.db_type, self.materialized)
-            else:
-                default = self.to_db_string(self.default)
-                return '%s DEFAULT %s' % (self.db_type, default)
-        else:
-            return self.db_type
+            sql += self._extra_params(db)
+        return sql
+
+    def _extra_params(self, db):
+        sql = ''
+        if self.alias:
+            sql += ' ALIAS %s' % self.alias
+        elif self.materialized:
+            sql += ' MATERIALIZED %s' % self.materialized
+        elif self.default:
+            default = self.to_db_string(self.default)
+            sql += ' DEFAULT %s' % default
+        if self.codec and db and db.has_codec_support:
+            sql += ' CODEC(%s)' % self.codec
+        return sql
 
     def isinstance(self, types):
         """
@@ -361,11 +372,11 @@ class BaseEnumField(Field):
     Abstract base class for all enum-type fields.
     '''
 
-    def __init__(self, enum_cls, default=None, alias=None, materialized=None, readonly=None):
+    def __init__(self, enum_cls, default=None, alias=None, materialized=None, readonly=None, codec=None):
         self.enum_cls = enum_cls
         if default is None:
             default = list(enum_cls)[0]
-        super(BaseEnumField, self).__init__(default, alias, materialized, readonly)
+        super(BaseEnumField, self).__init__(default, alias, materialized, readonly, codec)
 
     def to_python(self, value, timezone_in_use):
         if isinstance(value, self.enum_cls):
@@ -384,12 +395,14 @@ class BaseEnumField(Field):
     def to_db_string(self, value, quote=True):
         return escape(value.name, quote)
 
-    def get_sql(self, with_default_expression=True):
+    def get_sql(self, with_default_expression=True, db=None):
         values = ['%s = %d' % (escape(item.name), item.value) for item in self.enum_cls]
         sql = '%s(%s)' % (self.db_type, ' ,'.join(values))
         if with_default_expression:
             default = self.to_db_string(self.default)
             sql = '%s DEFAULT %s' % (sql, default)
+            if self.codec and db and db.has_codec_support:
+                sql+= ' CODEC(%s)' % self.codec
         return sql
 
     @classmethod
@@ -399,10 +412,7 @@ class BaseEnumField(Field):
         this method returns a matching enum field.
         '''
         import re
-        try:
-            Enum # exists in Python 3.4+
-        except NameError:
-            from enum import Enum # use the enum34 library instead
+        from enum import Enum
         members = {}
         for match in re.finditer("'(\w+)' = (\d+)", db_type):
             members[match.group(1)] = int(match.group(2))
@@ -425,11 +435,11 @@ class ArrayField(Field):
 
     class_default = []
 
-    def __init__(self, inner_field, default=None, alias=None, materialized=None, readonly=None):
+    def __init__(self, inner_field, default=None, alias=None, materialized=None, readonly=None, codec=None):
         assert isinstance(inner_field, Field), "The first argument of ArrayField must be a Field instance"
         assert not isinstance(inner_field, ArrayField), "Multidimensional array fields are not supported by the ORM"
         self.inner_field = inner_field
-        super(ArrayField, self).__init__(default, alias, materialized, readonly)
+        super(ArrayField, self).__init__(default, alias, materialized, readonly, codec)
 
     def to_python(self, value, timezone_in_use):
         if isinstance(value, text_type):
@@ -448,9 +458,11 @@ class ArrayField(Field):
         array = [self.inner_field.to_db_string(v, quote=True) for v in value]
         return '[' + comma_join(array) + ']'
 
-    def get_sql(self, with_default_expression=True):
-        from .utils import escape
-        return 'Array(%s)' % self.inner_field.get_sql(with_default_expression=False)
+    def get_sql(self, with_default_expression=True, db=None):
+        sql = 'Array(%s)' % self.inner_field.get_sql(with_default_expression=False, db=db)
+        if with_default_expression and self.codec and db and db.has_codec_support:
+            sql+= ' CODEC(%s)' % self.codec
+        return sql
 
 
 class UUIDField(Field):
@@ -481,12 +493,12 @@ class NullableField(Field):
     class_default = None
 
     def __init__(self, inner_field, default=None, alias=None, materialized=None,
-                 extra_null_values=None):
+                 extra_null_values=None, codec=None):
         self.inner_field = inner_field
         self._null_values = [None]
         if extra_null_values:
             self._null_values.extend(extra_null_values)
-        super(NullableField, self).__init__(default, alias, materialized, readonly=None)
+        super(NullableField, self).__init__(default, alias, materialized, readonly=None, codec=codec)
 
     def to_python(self, value, timezone_in_use):
         if value == '\\N' or value in self._null_values:
@@ -501,14 +513,38 @@ class NullableField(Field):
             return '\\N'
         return self.inner_field.to_db_string(value, quote=quote)
 
-    def get_sql(self, with_default_expression=True):
-        s = 'Nullable(%s)' % self.inner_field.get_sql(with_default_expression=False)
+    def get_sql(self, with_default_expression=True, db=None):
+        sql = 'Nullable(%s)' % self.inner_field.get_sql(with_default_expression=False, db=db)
         if with_default_expression:
-            if self.alias:
-                s = '%s ALIAS %s' % (s, self.alias)
-            elif self.materialized:
-                s = '%s MATERIALIZED %s' % (s, self.materialized)
-            elif self.default:
-                default = self.to_db_string(self.default)
-                s = '%s DEFAULT %s' % (s, default)
-        return s
+            sql += self._extra_params(db)
+        return sql
+
+
+class LowCardinalityField(Field):
+
+    def __init__(self, inner_field, default=None, alias=None, materialized=None, readonly=None, codec=None):
+        assert isinstance(inner_field, Field), "The first argument of LowCardinalityField must be a Field instance. Not: {}".format(inner_field)
+        assert not isinstance(inner_field, LowCardinalityField), "LowCardinality inner fields are not supported by the ORM"
+        assert not isinstance(inner_field, ArrayField), "Array field inside LowCardinality are not supported by the ORM. Use Array(LowCardinality) instead"
+        self.inner_field = inner_field
+        self.class_default = self.inner_field.class_default
+        super(LowCardinalityField, self).__init__(default, alias, materialized, readonly, codec)
+
+    def to_python(self, value, timezone_in_use):
+        return self.inner_field.to_python(value, timezone_in_use)
+
+    def validate(self, value):
+        self.inner_field.validate(value)
+
+    def to_db_string(self, value, quote=True):
+        return self.inner_field.to_db_string(value, quote=quote)
+
+    def get_sql(self, with_default_expression=True, db=None):
+        if db and db.has_low_cardinality_support:
+            sql = 'LowCardinality(%s)' % self.inner_field.get_sql(with_default_expression=False)
+        else:
+            sql = self.inner_field.get_sql(with_default_expression=False)
+            logger.warning('LowCardinalityField not supported on clickhouse-server version < 19.0 using {} as fallback'.format(self.inner_field.__class__.__name__))
+        if with_default_expression:
+            sql += self._extra_params(db)
+        return sql
