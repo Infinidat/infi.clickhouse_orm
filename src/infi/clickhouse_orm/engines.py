@@ -35,8 +35,10 @@ class Memory(Engine):
 class MergeTree(Engine):
 
     def __init__(self, date_col=None, order_by=(), sampling_expr=None,
-                 index_granularity=8192, replica_table_path=None, replica_name=None, partition_key=None):
+                 index_granularity=8192, replica_table_path=None, replica_name=None, partition_key=None,
+                 primary_key=None):
         assert type(order_by) in (list, tuple), 'order_by must be a list or tuple'
+        assert primary_key is None or type(primary_key) in (list, tuple), 'primary_key must be a list or tuple'
         assert date_col is None or isinstance(date_col, six.string_types), 'date_col must be string if present'
         assert partition_key is None or type(partition_key) in (list, tuple),\
             'partition_key must be tuple or list if present'
@@ -48,6 +50,7 @@ class MergeTree(Engine):
         assert date_col or partition_key, "You must set either date_col or partition_key"
         self.date_col = date_col
         self.partition_key = partition_key if partition_key else ('toYYYYMM(`%s`)' % date_col,)
+        self.primary_key = primary_key
 
         self.order_by = order_by
         self.sampling_expr = sampling_expr
@@ -77,6 +80,9 @@ class MergeTree(Engine):
         if db.server_version >= (1, 1, 54310):
             partition_sql = "PARTITION BY %s ORDER BY %s" \
                             % ('(%s)' % comma_join(self.partition_key), '(%s)' % comma_join(self.order_by))
+
+            if self.primary_key:
+                partition_sql += " PRIMARY KEY (%s)" % comma_join(self.primary_key)
 
             if self.sampling_expr:
                 partition_sql += " SAMPLE BY %s" % self.sampling_expr
@@ -117,9 +123,10 @@ class MergeTree(Engine):
 class CollapsingMergeTree(MergeTree):
 
     def __init__(self, date_col=None, order_by=(), sign_col='sign', sampling_expr=None,
-                 index_granularity=8192, replica_table_path=None, replica_name=None, partition_key=None):
+                 index_granularity=8192, replica_table_path=None, replica_name=None, partition_key=None,
+                 primary_key=None):
         super(CollapsingMergeTree, self).__init__(date_col, order_by, sampling_expr, index_granularity,
-                                                  replica_table_path, replica_name, partition_key)
+                                                  replica_table_path, replica_name, partition_key, primary_key)
         self.sign_col = sign_col
 
     def _build_sql_params(self, db):
@@ -131,9 +138,10 @@ class CollapsingMergeTree(MergeTree):
 class SummingMergeTree(MergeTree):
 
     def __init__(self, date_col=None, order_by=(), summing_cols=None, sampling_expr=None,
-                 index_granularity=8192, replica_table_path=None, replica_name=None, partition_key=None):
+                 index_granularity=8192, replica_table_path=None, replica_name=None, partition_key=None,
+                 primary_key=None):
         super(SummingMergeTree, self).__init__(date_col, order_by, sampling_expr, index_granularity, replica_table_path,
-                                               replica_name, partition_key)
+                                               replica_name, partition_key, primary_key)
         assert type is None or type(summing_cols) in (list, tuple), 'summing_cols must be a list or tuple'
         self.summing_cols = summing_cols
 
@@ -147,9 +155,10 @@ class SummingMergeTree(MergeTree):
 class ReplacingMergeTree(MergeTree):
 
     def __init__(self, date_col=None, order_by=(), ver_col=None, sampling_expr=None,
-                 index_granularity=8192, replica_table_path=None, replica_name=None, partition_key=None):
+                 index_granularity=8192, replica_table_path=None, replica_name=None, partition_key=None,
+                 primary_key=None):
         super(ReplacingMergeTree, self).__init__(date_col, order_by, sampling_expr, index_granularity,
-                                                 replica_table_path, replica_name, partition_key)
+                                                 replica_table_path, replica_name, partition_key, primary_key)
         self.ver_col = ver_col
 
     def _build_sql_params(self, db):
