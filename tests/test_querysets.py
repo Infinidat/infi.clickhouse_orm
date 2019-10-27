@@ -520,8 +520,8 @@ class FuncsTestCase(TestCaseWithData):
         self._test_qs(qs.filter(F.toDayOfWeek(Person.birthday) == 7), 18)
         # People born on 1976-10-01
         self._test_qs(qs.filter(F('equals', Person.birthday, '1976-10-01')), 1)
-        self._test_qs(qs.filter(F('equals', Person.birthday, date(1976, 10, 01))), 1)
-        self._test_qs(qs.filter(Person.birthday == date(1976, 10, 01)), 1)
+        self._test_qs(qs.filter(F('equals', Person.birthday, date(1976, 10, 1))), 1)
+        self._test_qs(qs.filter(Person.birthday == date(1976, 10, 1)), 1)
 
     def test_func_as_field_value(self):
         qs = Person.objects_in(self.database)

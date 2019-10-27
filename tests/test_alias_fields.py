@@ -8,7 +8,7 @@ from infi.clickhouse_orm.fields import *
 from infi.clickhouse_orm.engines import *
 
 
-class MaterializedFieldsTest(unittest.TestCase):
+class AliasFieldsTest(unittest.TestCase):
 
     def setUp(self):
         self.database = Database('test-db', log_statements=True)
@@ -25,7 +25,7 @@ class MaterializedFieldsTest(unittest.TestCase):
         )
         self.database.insert([instance])
         # We can't select * from table, as it doesn't select materialized and alias fields
-        query = 'SELECT date_field, int_field, str_field, alias_int, alias_date, alias_str' \
+        query = 'SELECT date_field, int_field, str_field, alias_int, alias_date, alias_str, alias_func' \
                 ' FROM $db.%s ORDER BY alias_date' % ModelWithAliasFields.table_name()
         for model_cls in (ModelWithAliasFields, None):
             results = list(self.database.select(query, model_cls))
@@ -36,6 +36,7 @@ class MaterializedFieldsTest(unittest.TestCase):
             self.assertEqual(results[0].alias_int, instance.int_field)
             self.assertEqual(results[0].alias_str, instance.str_field)
             self.assertEqual(results[0].alias_date, instance.date_field)
+            self.assertEqual(results[0].alias_func, '08/30/16')
 
     def test_assignment_error(self):
         # I can't prevent assigning at all, in case db.select statements with model provided sets model fields.
@@ -64,5 +65,6 @@ class ModelWithAliasFields(Model):
     alias_str = StringField(alias=u'str_field')
     alias_int = Int32Field(alias='int_field')
     alias_date = DateField(alias='date_field')
+    alias_func = StringField(alias=F.formatDateTime(date_field, '%D'))
 
     engine = MergeTree('date_field', ('date_field',))

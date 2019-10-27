@@ -39,6 +39,10 @@ def unescape(value):
     return codecs.escape_decode(value)[0].decode('utf-8')
 
 
+def string_or_func(obj):
+    return obj.to_sql() if hasattr(obj, 'to_sql') else obj
+
+
 def parse_tsv(line):
     if PY3 and isinstance(line, binary_type):
         line = line.decode()

@@ -5,31 +5,33 @@ See: [ClickHouse Documentation](https://clickhouse.yandex/docs/en/data_types/)
 
 Currently the following field types are supported:
 
-| Class              | DB Type    | Pythonic Type       | Comments
-| ------------------ | ---------- | ------------------- | -----------------------------------------------------
-| StringField        | String     | unicode             | Encoded as UTF-8 when written to ClickHouse
-| FixedStringField   | String     | unicode             | Encoded as UTF-8 when written to ClickHouse
-| DateField          | Date       | datetime.date       | Range 1970-01-01 to 2105-12-31
-| DateTimeField      | DateTime   | datetime.datetime   | Minimal value is 1970-01-01 00:00:00; Always in UTC
-| Int8Field          | Int8       | int                 | Range -128 to 127
-| Int16Field         | Int16      | int                 | Range -32768 to 32767
-| Int32Field         | Int32      | int                 | Range -2147483648 to 2147483647
-| Int64Field         | Int64      | int/long            | Range -9223372036854775808 to 9223372036854775807
-| UInt8Field         | UInt8      | int                 | Range 0 to 255
-| UInt16Field        | UInt16     | int                 | Range 0 to 65535
-| UInt32Field        | UInt32     | int                 | Range 0 to 4294967295
-| UInt64Field        | UInt64     | int/long            | Range 0 to 18446744073709551615
-| Float32Field       | Float32    | float               |
-| Float64Field       | Float64    | float               |
-| DecimalField       | Decimal    | Decimal             | Pythonic values are rounded to fit the scale of the database field
-| Decimal32Field     | Decimal32  | Decimal             | Ditto
-| Decimal64Field     | Decimal64  | Decimal             | Ditto
-| Decimal128Field    | Decimal128 | Decimal             | Ditto
-| UUIDField          | UUID       | Decimal             |
-| Enum8Field         | Enum8      | Enum                | See below
-| Enum16Field        | Enum16     | Enum                | See below
-| ArrayField         | Array      | list                | See below
-| NullableField      | Nullable   | See below           | See below
+| Class              | DB Type    | Pythonic Type         | Comments
+| ------------------ | ---------- | --------------------- | -----------------------------------------------------
+| StringField        | String     | unicode               | Encoded as UTF-8 when written to ClickHouse
+| FixedStringField   | String     | unicode               | Encoded as UTF-8 when written to ClickHouse
+| DateField          | Date       | datetime.date         | Range 1970-01-01 to 2105-12-31
+| DateTimeField      | DateTime   | datetime.datetime     | Minimal value is 1970-01-01 00:00:00; Always in UTC
+| Int8Field          | Int8       | int                   | Range -128 to 127
+| Int16Field         | Int16      | int                   | Range -32768 to 32767
+| Int32Field         | Int32      | int                   | Range -2147483648 to 2147483647
+| Int64Field         | Int64      | int/long              | Range -9223372036854775808 to 9223372036854775807
+| UInt8Field         | UInt8      | int                   | Range 0 to 255
+| UInt16Field        | UInt16     | int                   | Range 0 to 65535
+| UInt32Field        | UInt32     | int                   | Range 0 to 4294967295
+| UInt64Field        | UInt64     | int/long              | Range 0 to 18446744073709551615
+| Float32Field       | Float32    | float                 |
+| Float64Field       | Float64    | float                 |
+| DecimalField       | Decimal    | Decimal               | Pythonic values are rounded to fit the scale of the database field
+| Decimal32Field     | Decimal32  | Decimal               | Ditto
+| Decimal64Field     | Decimal64  | Decimal               | Ditto
+| Decimal128Field    | Decimal128 | Decimal               | Ditto
+| UUIDField          | UUID       | uuid.UUID             |
+| IPv4Field          | IPv4       | ipaddress.IPv4Address |
+| IPv6Field          | IPv6       | ipaddress.IPv6Address |
+| Enum8Field         | Enum8      | Enum                  | See below
+| Enum16Field        | Enum16     | Enum                  | See below
+| ArrayField         | Array      | list                  | See below
+| NullableField      | Nullable   | See below             | See below
 
 DateTimeField and Time Zones
 ----------------------------
@@ -50,8 +52,6 @@ Working with enum fields
 ------------------------
 
 `Enum8Field` and `Enum16Field` provide support for working with ClickHouse enum columns. They accept strings or integers as values, and convert them to the matching Pythonic Enum member.
-
-Python 3.4 and higher supports Enums natively. When using previous Python versions you need to install the enum34 library.
 
 Example of a model with an enum field:
 

@@ -7,10 +7,12 @@ from calendar import timegm
 from decimal import Decimal, localcontext
 from uuid import UUID
 from logging import getLogger
-from .utils import escape, parse_array, comma_join
+from .utils import escape, parse_array, comma_join, string_or_func
 from .funcs import F, FunctionOperatorsMixin
+from ipaddress import IPv4Address, IPv6Address
 
 logger = getLogger('clickhouse_orm')
+
 
 class Field(FunctionOperatorsMixin):
     '''
@@ -25,10 +27,10 @@ class Field(FunctionOperatorsMixin):
     def __init__(self, default=None, alias=None, materialized=None, readonly=None, codec=None):
         assert (None, None) in {(default, alias), (alias, materialized), (default, materialized)}, \
             "Only one of default, alias and materialized parameters can be given"
-        assert alias is None or isinstance(alias, string_types) and alias != "",\
-            "Alias field must be a string, if given"
-        assert materialized is None or isinstance(materialized, string_types) and materialized != "",\
-            "Materialized field must be string, if given"
+        assert alias is None or isinstance(alias, F) or isinstance(alias, string_types) and alias != "",\
+            "Alias parameter must be a string or function object, if given"
+        assert materialized is None or isinstance(materialized, F) or isinstance(materialized, string_types) and materialized != "",\
+            "Materialized parameter must be a string or function object, if given"
         assert readonly is None or type(readonly) is bool, "readonly parameter must be bool if given"
         assert codec is None or isinstance(codec, string_types) and codec != "", \
             "Codec field must be string, if given"
@@ -85,9 +87,9 @@ class Field(FunctionOperatorsMixin):
     def _extra_params(self, db):
         sql = ''
         if self.alias:
-            sql += ' ALIAS %s' % self.alias
+            sql += ' ALIAS %s' % string_or_func(self.alias)
         elif self.materialized:
-            sql += ' MATERIALIZED %s' % self.materialized
+            sql += ' MATERIALIZED %s' % string_or_func(self.materialized)
         elif self.default:
             default = self.to_db_string(self.default)
             sql += ' DEFAULT %s' % default
@@ -511,12 +513,47 @@ class UUIDField(Field):
         return escape(str(value), quote)
 
 
+class IPv4Field(Field):
+
+    class_default = 0
+    db_type = 'IPv4'
+
+    def to_python(self, value, timezone_in_use):
+        if isinstance(value, IPv4Address):
+            return value
+        elif isinstance(value, (binary_type,) + string_types + integer_types):
+            return IPv4Address(value)
+        else:
+            raise ValueError('Invalid value for IPv4Address: %r' % value)
+
+    def to_db_string(self, value, quote=True):
+        return escape(str(value), quote)
+
+
+class IPv6Field(Field):
+
+    class_default = 0
+    db_type = 'IPv6'
+
+    def to_python(self, value, timezone_in_use):
+        if isinstance(value, IPv6Address):
+            return value
+        elif isinstance(value, (binary_type,) + string_types + integer_types):
+            return IPv6Address(value)
+        else:
+            raise ValueError('Invalid value for IPv6Address: %r' % value)
+
+    def to_db_string(self, value, quote=True):
+        return escape(str(value), quote)
+
+
 class NullableField(Field):
 
     class_default = None
 
     def __init__(self, inner_field, default=None, alias=None, materialized=None,
                  extra_null_values=None, codec=None):
+        assert isinstance(inner_field, Field), "The first argument of NullableField must be a Field instance. Not: {}".format(inner_field)
         self.inner_field = inner_field
         self._null_values = [None]
         if extra_null_values:

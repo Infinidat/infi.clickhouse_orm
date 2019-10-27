@@ -63,10 +63,10 @@ class FunctionOperatorsMixin(object):
     def __rmul__(self, other):
         return F.multiply(other, self)
 
-    def __div__(self, other):
+    def __truediv__(self, other):
         return F.divide(self, other)
 
-    def __rdiv__(self, other):
+    def __rtruediv__(self, other):
         return F.divide(other, self)
 
     def __mod__(self, other):
@@ -115,7 +115,7 @@ class F(Cond, FunctionOperatorsMixin):
         self.args = args
         self.is_binary_operator = False
 
-    def to_sql(self, *args):
+    def to_sql(self, *args): # FIXME why *args ?
         """
         Generates an SQL string for this function and its arguments.
         For example if the function name is a symbol of a binary operator:
@@ -129,10 +129,11 @@ class F(Cond, FunctionOperatorsMixin):
         else:
             prefix = self.name
             sep = ', '
-        arg_strs = (self.arg_to_sql(arg) for arg in self.args)
+        arg_strs = (F.arg_to_sql(arg) for arg in self.args)
         return prefix + '(' + sep.join(arg_strs) + ')'
 
-    def arg_to_sql(self, arg):
+    @staticmethod
+    def arg_to_sql(arg):
         """
         Converts a function argument to SQL string according to its type.
         Supports functions, model fields, strings, dates, datetimes, booleans,
@@ -156,7 +157,7 @@ class F(Cond, FunctionOperatorsMixin):
         if arg is None:
             return 'NULL'
         if is_iterable(arg):
-            return '[' + comma_join(self.arg_to_sql(x) for x in arg) + ']'
+            return '[' + comma_join(F.arg_to_sql(x) for x in arg) + ']'
         return six.text_type(arg)
 
     # Arithmetic functions
@@ -384,6 +385,70 @@ class F(Cond, FunctionOperatorsMixin):
     def formatDateTime(d, format, timezone=''):
         return F('formatDateTime', d, format, timezone)
 
+    @staticmethod
+    def addDays(d, n, timezone=None):
+        return F('addDays', d, n, timezone) if timezone else F('addDays', d, n)
+
+    @staticmethod
+    def addHours(d, n, timezone=None):
+        return F('addHours', d, n, timezone) if timezone else F('addHours', d, n)
+
+    @staticmethod
+    def addMinutes(d, n, timezone=None):
+        return F('addMinutes', d, n, timezone) if timezone else F('addMinutes', d, n)
+
+    @staticmethod
+    def addMonths(d, n, timezone=None):
+        return F('addMonths', d, n, timezone) if timezone else F('addMonths', d, n)
+
+    @staticmethod
+    def addQuarters(d, n, timezone=None):
+        return F('addQuarters', d, n, timezone) if timezone else F('addQuarters', d, n)
+
+    @staticmethod
+    def addSeconds(d, n, timezone=None):
+        return F('addSeconds', d, n, timezone) if timezone else F('addSeconds', d, n)
+
+    @staticmethod
+    def addWeeks(d, n, timezone=None):
+        return F('addWeeks', d, n, timezone) if timezone else F('addWeeks', d, n)
+
+    @staticmethod
+    def addYears(d, n, timezone=None):
+        return F('addYears', d, n, timezone) if timezone else F('addYears', d, n)
+
+    @staticmethod
+    def subtractDays(d, n, timezone=None):
+        return F('subtractDays', d, n, timezone) if timezone else F('subtractDays', d, n)
+
+    @staticmethod
+    def subtractHours(d, n, timezone=None):
+        return F('subtractHours', d, n, timezone) if timezone else F('subtractHours', d, n)
+
+    @staticmethod
+    def subtractMinutes(d, n, timezone=None):
+        return F('subtractMinutes', d, n, timezone) if timezone else F('subtractMinutes', d, n)
+
+    @staticmethod
+    def subtractMonths(d, n, timezone=None):
+        return F('subtractMonths', d, n, timezone) if timezone else F('subtractMonths', d, n)
+
+    @staticmethod
+    def subtractQuarters(d, n, timezone=None):
+        return F('subtractQuarters', d, n, timezone) if timezone else F('subtractQuarters', d, n)
+
+    @staticmethod
+    def subtractSeconds(d, n, timezone=None):
+        return F('subtractSeconds', d, n, timezone) if timezone else F('subtractSeconds', d, n)
+
+    @staticmethod
+    def subtractWeeks(d, n, timezone=None):
+        return F('subtractWeeks', d, n, timezone) if timezone else F('subtractWeeks', d, n)
+
+    @staticmethod
+    def subtractYears(d, n, timezone=None):
+        return F('subtractYears', d, n, timezone) if timezone else F('subtractYears', d, n)
+
     # Type conversion functions
 
     @staticmethod
@@ -501,6 +566,18 @@ class F(Cond, FunctionOperatorsMixin):
     @staticmethod
     def CAST(x, type):
         return F('CAST', x, type)
+
+    @staticmethod
+    def parseDateTimeBestEffort(d, timezone=None):
+        return F('parseDateTimeBestEffort', d, timezone) if timezone else F('parseDateTimeBestEffort', d)
+
+    @staticmethod
+    def parseDateTimeBestEffortOrNull(d, timezone=None):
+        return F('parseDateTimeBestEffortOrNull', d, timezone) if timezone else F('parseDateTimeBestEffortOrNull', d)
+
+    @staticmethod
+    def parseDateTimeBestEffortOrZero(d, timezone=None):
+        return F('parseDateTimeBestEffortOrZero', d, timezone) if timezone else F('parseDateTimeBestEffortOrZero', d)
 
     # Functions for working with strings
 
@@ -1162,6 +1239,47 @@ class F(Cond, FunctionOperatorsMixin):
     def UUIDStringToNum(s):
         return F('UUIDStringToNum', s)
 
+    # Functions for working with IP addresses
+
+    @staticmethod
+    def IPv4CIDRToRange(ipv4, cidr):
+        return F('IPv4CIDRToRange', ipv4, cidr)
+
+    @staticmethod
+    def IPv4NumToString(num):
+        return F('IPv4NumToString', num)
+
+    @staticmethod
+    def IPv4NumToStringClassC(num):
+        return F('IPv4NumToStringClassC', num)
+
+    @staticmethod
+    def IPv4StringToNum(s):
+        return F('IPv4StringToNum', s)
+
+    @staticmethod
+    def IPv4ToIPv6(ipv4):
+        return F('IPv4ToIPv6', ipv4)
+
+    @staticmethod
+    def IPv6CIDRToRange(ipv6, cidr):
+        return F('IPv6CIDRToRange', ipv6, cidr)
+
+    @staticmethod
+    def IPv6NumToString(num):
+        return F('IPv6NumToString', num)
+
+    @staticmethod
+    def IPv6StringToNum(s):
+        return F('IPv6StringToNum', s)
+
+    @staticmethod
+    def toIPv4(ipv4):
+        return F('toIPv4', ipv4)
+
+    @staticmethod
+    def toIPv6(ipv6):
+        return F('toIPv6', ipv6)
 
 
 
