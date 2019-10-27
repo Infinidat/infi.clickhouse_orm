@@ -208,7 +208,7 @@ class FuncsTestCase(TestCaseWithData):
         self._test_func(F.toRelativeMinuteNum(dt, 'Europe/Athens'), 25770922)
         self._test_func(F.toRelativeSecondNum(dt), 1546255353)
         self._test_func(F.toRelativeSecondNum(dt, 'Europe/Athens'), 1546255353)
-        self._test_func(F.now(), datetime.utcnow().replace(tzinfo=pytz.utc, microsecond=0))
+        self._test_func(F.now(), datetime.utcnow().replace(tzinfo=pytz.utc, microsecond=0)) # FIXME this may fail if the timing is just right
         self._test_func(F.today(), date.today())
         self._test_func(F.yesterday(), date.today() - timedelta(days=1))
         self._test_func(F.timeSlot(dt), datetime(2018, 12, 31, 11, 0, 0, tzinfo=pytz.utc))
@@ -294,6 +294,14 @@ class FuncsTestCase(TestCaseWithData):
         self._test_func(F.appendTrailingCharIfAbsent('Hello', '!'), 'Hello!')
         self._test_func(F.appendTrailingCharIfAbsent('Hello!', '!'), 'Hello!')
         self._test_func(F.convertCharset(F.convertCharset('Hello', 'latin1', 'utf16'), 'utf16', 'latin1'), 'Hello')
+        self._test_func(F.startsWith('aaa', 'aa'), True)
+        self._test_func(F.startsWith('aaa', 'bb'), False)
+        self._test_func(F.endsWith('aaa', 'aa'), True)
+        self._test_func(F.endsWith('aaa', 'bb'), False)
+        self._test_func(F.trimLeft(' abc '), 'abc ')
+        self._test_func(F.trimRight(' abc '), ' abc')
+        self._test_func(F.trimBoth(' abc '), 'abc')
+        self._test_func(F.CRC32('whoops'), 3361378926)
 
     def test_base64_functions(self):
         try:

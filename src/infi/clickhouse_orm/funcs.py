@@ -653,7 +653,31 @@ class F(Cond, FunctionOperatorsMixin):
     def tryBase64Decode(s):
         return F('tryBase64Decode', s)
 
-    # Functions for searching and replacing in strings
+    @staticmethod
+    def endsWith(s, suffix):
+        return F('endsWith', s, suffix)
+
+    @staticmethod
+    def startsWith(s, prefix):
+        return F('startsWith', s, prefix)
+
+    @staticmethod
+    def trimLeft(s):
+        return F('trimLeft', s)
+
+    @staticmethod
+    def trimRight(s):
+        return F('trimRight', s)
+
+    @staticmethod
+    def trimBoth(s):
+        return F('trimBoth', s)
+
+    @staticmethod
+    def CRC32(s):
+        return F('CRC32', s)
+
+    # Functions for replacing in strings
 
     @staticmethod
     def replace(haystack, pattern, replacement):
