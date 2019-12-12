@@ -1,6 +1,10 @@
 Change Log
 ==========
 
+Unreleased
+----------
+- Support LowCardinality columns in ad-hoc queries
+
 v1.2.0
 ------
 - Add support for per-field compression codecs (rbelio, Chocorean)
