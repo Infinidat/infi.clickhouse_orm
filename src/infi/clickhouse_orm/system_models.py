@@ -3,7 +3,6 @@ This file contains system readonly models that can be got from the database
 https://clickhouse.yandex/docs/en/system_tables/
 """
 from __future__ import unicode_literals
-from six import string_types
 
 from .database import Database
 from .fields import *
@@ -124,7 +123,7 @@ class SystemPart(Model):
         :return: A list of SystemPart objects
         """
         assert isinstance(database, Database), "database must be database.Database class instance"
-        assert isinstance(conditions, string_types), "conditions must be a string"
+        assert isinstance(conditions, str), "conditions must be a string"
         if conditions:
             conditions += " AND"
         field_names = ','.join(cls.fields())

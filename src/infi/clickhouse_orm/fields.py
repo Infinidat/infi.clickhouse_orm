@@ -1,5 +1,4 @@
 from __future__ import unicode_literals
-from six import string_types, text_type, binary_type, integer_types
 import datetime
 import iso8601
 import pytz
@@ -25,14 +24,14 @@ class Field(FunctionOperatorsMixin):
     db_type          = None # should be overridden by concrete subclasses
 
     def __init__(self, default=None, alias=None, materialized=None, readonly=None, codec=None):
-        assert (None, None) in {(default, alias), (alias, materialized), (default, materialized)}, \
+        assert [default, alias, materialized].count(None) >= 2, \
             "Only one of default, alias and materialized parameters can be given"
-        assert alias is None or isinstance(alias, F) or isinstance(alias, string_types) and alias != "",\
+        assert alias is None or isinstance(alias, F) or isinstance(alias, str) and alias != "",\
             "Alias parameter must be a string or function object, if given"
-        assert materialized is None or isinstance(materialized, F) or isinstance(materialized, string_types) and materialized != "",\
+        assert materialized is None or isinstance(materialized, F) or isinstance(materialized, str) and materialized != "",\
             "Materialized parameter must be a string or function object, if given"
         assert readonly is None or type(readonly) is bool, "readonly parameter must be bool if given"
-        assert codec is None or isinstance(codec, string_types) and codec != "", \
+        assert codec is None or isinstance(codec, str) and codec != "", \
             "Codec field must be string, if given"
 
         self.creation_counter = Field.creation_counter
@@ -140,9 +139,9 @@ class StringField(Field):
     db_type = 'String'
 
     def to_python(self, value, timezone_in_use):
-        if isinstance(value, text_type):
+        if isinstance(value, str):
             return value
-        if isinstance(value, binary_type):
+        if isinstance(value, bytes):
             return value.decode('UTF-8')
         raise ValueError('Invalid value for %s: %r' % (self.__class__.__name__, value))
 
@@ -159,7 +158,7 @@ class FixedStringField(StringField):
         return value.rstrip('\0')
 
     def validate(self, value):
-        if isinstance(value, text_type):
+        if isinstance(value, str):
             value = value.encode('UTF-8')
         if len(value) > self._length:
             raise ValueError('Value of %d bytes is too long for FixedStringField(%d)' % (len(value), self._length))
@@ -179,7 +178,7 @@ class DateField(Field):
             return value
         if isinstance(value, int):
             return DateField.class_default + datetime.timedelta(days=value)
-        if isinstance(value, string_types):
+        if isinstance(value, str):
             if value == '0000-00-00':
                 return DateField.min_value
             return datetime.datetime.strptime(value, '%Y-%m-%d').date()
@@ -204,7 +203,7 @@ class DateTimeField(Field):
             return datetime.datetime(value.year, value.month, value.day, tzinfo=pytz.utc)
         if isinstance(value, int):
             return datetime.datetime.utcfromtimestamp(value).replace(tzinfo=pytz.utc)
-        if isinstance(value, string_types):
+        if isinstance(value, str):
             if value == '0000-00-00 00:00:00':
                 return self.class_default
             if len(value) == 10:
@@ -217,7 +216,7 @@ class DateTimeField(Field):
                 # left the date naive in case of no tzinfo set
                 dt = iso8601.parse_date(value, default_timezone=None)
             except iso8601.ParseError as e:
-                raise ValueError(text_type(e))
+                raise ValueError(str(e))
 
             # convert naive to aware
             if dt.tzinfo is None or dt.tzinfo.utcoffset(dt) is None:
@@ -242,7 +241,7 @@ class BaseIntField(Field):
     def to_db_string(self, value, quote=True):
         # There's no need to call escape since numbers do not contain
         # special characters, and never need quoting
-        return text_type(value)
+        return str(value)
 
     def validate(self, value):
         self._range_check(value, self.min_value, self.max_value)
@@ -318,7 +317,7 @@ class BaseFloatField(Field):
     def to_db_string(self, value, quote=True):
         # There's no need to call escape since numbers do not contain
         # special characters, and never need quoting
-        return text_type(value)
+        return str(value)
 
 
 class Float32Field(BaseFloatField):
@@ -362,7 +361,7 @@ class DecimalField(Field):
     def to_db_string(self, value, quote=True):
         # There's no need to call escape since numbers do not contain
         # special characters, and never need quoting
-        return text_type(value)
+        return str(value)
 
     def _round(self, value):
         return value.quantize(self.exp)
@@ -407,9 +406,9 @@ class BaseEnumField(Field):
         if isinstance(value, self.enum_cls):
             return value
         try:
-            if isinstance(value, text_type):
+            if isinstance(value, str):
                 return self.enum_cls[value]
-            if isinstance(value, binary_type):
+            if isinstance(value, bytes):
                 return self.enum_cls[value.decode('UTF-8')]
             if isinstance(value, int):
                 return self.enum_cls(value)
@@ -467,9 +466,9 @@ class ArrayField(Field):
         super(ArrayField, self).__init__(default, alias, materialized, readonly, codec)
 
     def to_python(self, value, timezone_in_use):
-        if isinstance(value, text_type):
+        if isinstance(value, str):
             value = parse_array(value)
-        elif isinstance(value, binary_type):
+        elif isinstance(value, bytes):
             value = parse_array(value.decode('UTF-8'))
         elif not isinstance(value, (list, tuple)):
             raise ValueError('ArrayField expects list or tuple, not %s' % type(value))
@@ -498,11 +497,11 @@ class UUIDField(Field):
     def to_python(self, value, timezone_in_use):
         if isinstance(value, UUID):
             return value
-        elif isinstance(value, binary_type):
+        elif isinstance(value, bytes):
             return UUID(bytes=value)
-        elif isinstance(value, string_types):
+        elif isinstance(value, str):
             return UUID(value)
-        elif isinstance(value, integer_types):
+        elif isinstance(value, int):
             return UUID(int=value)
         elif isinstance(value, tuple):
             return UUID(fields=value)
@@ -521,7 +520,7 @@ class IPv4Field(Field):
     def to_python(self, value, timezone_in_use):
         if isinstance(value, IPv4Address):
             return value
-        elif isinstance(value, (binary_type,) + string_types + integer_types):
+        elif isinstance(value, (bytes, str, int)):
             return IPv4Address(value)
         else:
             raise ValueError('Invalid value for IPv4Address: %r' % value)
@@ -538,7 +537,7 @@ class IPv6Field(Field):
     def to_python(self, value, timezone_in_use):
         if isinstance(value, IPv6Address):
             return value
-        elif isinstance(value, (binary_type,) + string_types + integer_types):
+        elif isinstance(value, (bytes, str, int)):
             return IPv6Address(value)
         else:
             raise ValueError('Invalid value for IPv6Address: %r' % value)

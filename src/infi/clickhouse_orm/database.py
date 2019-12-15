@@ -8,7 +8,6 @@ from .utils import escape, parse_tsv, import_submodules
 from math import ceil
 import datetime
 from string import Template
-from six import PY3, string_types
 import pytz
 
 import logging
@@ -174,7 +173,7 @@ class Database(object):
         The name must be string, and the value is converted to string in case
         it isn't. To remove a setting, pass `None` as the value.
         '''
-        assert isinstance(name, string_types), 'Setting name must be a string'
+        assert isinstance(name, str), 'Setting name must be a string'
         if value is None:
             self.settings.pop(name, None)
         else:
@@ -187,7 +186,6 @@ class Database(object):
         - `model_instances`: any iterable containing instances of a single model class.
         - `batch_size`: number of records to send per chunk (use a lower number if your records are very large).
         '''
-        from six import next
         from io import BytesIO
         i = iter(model_instances)
         try:
@@ -338,7 +336,7 @@ class Database(object):
         return set(obj.module_name for obj in self.select(query))
 
     def _send(self, data, settings=None, stream=False):
-        if isinstance(data, string_types):
+        if isinstance(data, str):
             data = data.encode('utf-8')
             if self.log_statements:
                 logger.info(data)

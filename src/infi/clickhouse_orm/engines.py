@@ -1,7 +1,6 @@
 from __future__ import unicode_literals
 
 import logging
-import six
 
 from .utils import comma_join
 
@@ -37,7 +36,7 @@ class MergeTree(Engine):
     def __init__(self, date_col=None, order_by=(), sampling_expr=None,
                  index_granularity=8192, replica_table_path=None, replica_name=None, partition_key=None):
         assert type(order_by) in (list, tuple), 'order_by must be a list or tuple'
-        assert date_col is None or isinstance(date_col, six.string_types), 'date_col must be string if present'
+        assert date_col is None or isinstance(date_col, str), 'date_col must be string if present'
         assert partition_key is None or type(partition_key) in (list, tuple),\
             'partition_key must be tuple or list if present'
         assert (replica_table_path is None) == (replica_name is None), \
@@ -198,7 +197,7 @@ class Merge(Engine):
     """
 
     def __init__(self, table_regex):
-        assert isinstance(table_regex, six.string_types), "'table_regex' parameter must be string"
+        assert isinstance(table_regex, str), "'table_regex' parameter must be string"
         self.table_regex = table_regex
 
     def create_table_sql(self, db):

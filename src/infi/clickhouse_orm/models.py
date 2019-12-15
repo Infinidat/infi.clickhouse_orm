@@ -3,7 +3,7 @@ import sys
 from collections import OrderedDict
 from logging import getLogger
 
-from six import with_metaclass, reraise, iteritems
+from six import reraise
 import pytz
 
 from .fields import Field, StringField
@@ -31,8 +31,8 @@ class ModelBase(type):
         fields = base_fields
 
         # Build a list of fields, in the order they were listed in the class
-        fields.update({n: f for n, f in iteritems(attrs) if isinstance(f, Field)})
-        fields = sorted(iteritems(fields), key=lambda item: item[1].creation_counter)
+        fields.update({n: f for n, f in attrs.items() if isinstance(f, Field)})
+        fields = sorted(fields.items(), key=lambda item: item[1].creation_counter)
 
         # Build a dictionary of default values
         defaults = {n: f.to_python(f.default, pytz.UTC) for n, f in fields}
@@ -102,7 +102,7 @@ class ModelBase(type):
         return getattr(orm_fields, name)()
 
 
-class Model(with_metaclass(ModelBase)):
+class Model(metaclass=ModelBase):
     '''
     A base class for ORM models. Each model class represent a ClickHouse table. For example:
 
@@ -134,7 +134,7 @@ class Model(with_metaclass(ModelBase)):
         # Assign default values
         self.__dict__.update(self._defaults)
         # Assign field values from keyword arguments
-        for name, value in iteritems(kwargs):
+        for name, value in kwargs.items():
             field = self.get_field(name)
             if field:
                 setattr(self, name, value)
@@ -154,7 +154,7 @@ class Model(with_metaclass(ModelBase)):
             except ValueError:
                 tp, v, tb = sys.exc_info()
                 new_msg = "{} (field '{}')".format(v, name)
-                reraise(tp, tp(new_msg), tb)
+                raise tp.with_traceback(tp(new_msg), tb)
         super(Model, self).__setattr__(name, value)
 
     def set_database(self, db):
@@ -196,7 +196,7 @@ class Model(with_metaclass(ModelBase)):
         '''
         parts = ['CREATE TABLE IF NOT EXISTS `%s`.`%s` (' % (db.db_name, cls.table_name())]
         cols = []
-        for name, field in iteritems(cls.fields()):
+        for name, field in cls.fields().items():
             cols.append('    %s %s' % (name, field.get_sql(db=db)))
         parts.append(',\n'.join(cols))
         parts.append(')')
@@ -221,7 +221,6 @@ class Model(with_metaclass(ModelBase)):
         - `timezone_in_use`: the timezone to use when parsing dates and datetimes.
         - `database`: if given, sets the database that this instance belongs to.
         '''
-        from six import next
         values = iter(parse_tsv(line))
         kwargs = {}
         for name in field_names:
@@ -242,7 +241,7 @@ class Model(with_metaclass(ModelBase)):
         '''
         data = self.__dict__
         fields = self.fields(writable=not include_readonly)
-        return '\t'.join(field.to_db_string(data[name], quote=False) for name, field in iteritems(fields))
+        return '\t'.join(field.to_db_string(data[name], quote=False) for name, field in fields.items())
 
     def to_dict(self, include_readonly=True, field_names=None):
         '''
@@ -321,7 +320,7 @@ class MergeModel(Model):
         assert isinstance(cls.engine, Merge), "engine must be an instance of engines.Merge"
         parts = ['CREATE TABLE IF NOT EXISTS `%s`.`%s` (' % (db.db_name, cls.table_name())]
         cols = []
-        for name, field in iteritems(cls.fields()):
+        for name, field in cls.fields().items():
             if name != '_table':
                 cols.append('    %s %s' % (name, field.get_sql(db=db)))
         parts.append(',\n'.join(cols))

@@ -1,4 +1,3 @@
-import six
 from datetime import date, datetime, tzinfo
 import functools
 
@@ -144,21 +143,21 @@ class F(Cond, FunctionOperatorsMixin):
             return arg.to_sql()
         if isinstance(arg, Field):
             return "`%s`" % arg.name
-        if isinstance(arg, six.string_types):
+        if isinstance(arg, str):
             return StringField().to_db_string(arg)
         if isinstance(arg, datetime):
             return "toDateTime(%s)" % DateTimeField().to_db_string(arg)
         if isinstance(arg, date):
             return "toDate('%s')" % arg.isoformat()
         if isinstance(arg, bool):
-            return six.text_type(int(arg))
+            return str(int(arg))
         if isinstance(arg, tzinfo):
             return StringField().to_db_string(arg.tzname(None))
         if arg is None:
             return 'NULL'
         if is_iterable(arg):
             return '[' + comma_join(F.arg_to_sql(x) for x in arg) + ']'
-        return six.text_type(arg)
+        return str(arg)
 
     # Arithmetic functions
 

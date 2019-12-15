@@ -1,6 +1,5 @@
 from __future__ import unicode_literals
 
-import six
 import pytz
 from copy import copy, deepcopy
 from math import ceil
@@ -62,7 +61,7 @@ class InOperator(Operator):
         field = getattr(model_cls, field_name)
         if isinstance(value, QuerySet):
             value = value.as_sql()
-        elif isinstance(value, six.string_types):
+        elif isinstance(value, str):
             pass
         else:
             value = comma_join([self._value_to_sql(field, v) for v in value])
@@ -197,7 +196,7 @@ class Q(object):
     OR_MODE = 'OR'
 
     def __init__(self, *filter_funcs, **filter_fields):
-        self._conds = list(filter_funcs) + [self._build_cond(k, v) for k, v in six.iteritems(filter_fields)]
+        self._conds = list(filter_funcs) + [self._build_cond(k, v) for k, v in filter_fields.items()]
         self._children = []
         self._negate = False
         self._mode = self.AND_MODE
@@ -283,7 +282,6 @@ class Q(object):
         return q
 
 
-@six.python_2_unicode_compatible
 class QuerySet(object):
     """
     A queryset is an object that represents a database query using a specific `Model`.
@@ -328,12 +326,12 @@ class QuerySet(object):
         return self.as_sql()
 
     def __getitem__(self, s):
-        if isinstance(s, six.integer_types):
+        if isinstance(s, int):
             # Single index
             assert s >= 0, 'negative indexes are not supported'
             qs = copy(self)
             qs._limits = (s, 1)
-            return six.next(iter(qs))
+            return next(iter(qs))
         else:
             # Slice
             assert s.step in (None, 1), 'step is not supported in slices'

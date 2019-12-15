@@ -1,5 +1,4 @@
 from __future__ import unicode_literals
-from six import string_types, binary_type, text_type, PY3
 import codecs
 import re
 
@@ -28,11 +27,11 @@ def escape(value, quote=True):
     def escape_one(match):
         return SPECIAL_CHARS[match.group(0)]
 
-    if isinstance(value, string_types):
+    if isinstance(value, str):
         value = SPECIAL_CHARS_REGEX.sub(escape_one, value)
         if quote:
             value = "'" + value + "'"
-    return text_type(value)
+    return str(value)
 
 
 def unescape(value):
@@ -44,7 +43,7 @@ def string_or_func(obj):
 
 
 def parse_tsv(line):
-    if PY3 and isinstance(line, binary_type):
+    if isinstance(line, bytes):
         line = line.decode()
     if line and line[-1] == '\n':
         line = line[:-1]

@@ -86,7 +86,7 @@ class ModelTestCase(unittest.TestCase):
 
         self.assertEqual(
             "Invalid value for StringField: {} (field 'str_field')".format(repr(bad_value)),
-            text_type(cm.exception)
+            str(cm.exception)
         )
 
     def test_field_name_in_error_message_for_invalid_value_in_assignment(self):
@@ -97,7 +97,7 @@ class ModelTestCase(unittest.TestCase):
 
         self.assertEqual(
             "Invalid value for Float32Field - {} (field 'float_field')".format(repr(bad_value)),
-            text_type(cm.exception)
+            str(cm.exception)
         )
 
 
