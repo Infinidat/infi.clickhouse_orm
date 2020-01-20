@@ -432,6 +432,12 @@ class AggregateTestCase(TestCaseWithData):
         qs = Mdl.objects_in(self.database).filter(the__next__number__gt=1)
         self.assertEqual(qs.conditions_as_sql(), 'the__next__number > 1')
 
+    def test_limit_by(self):
+        qs = Person.objects_in(self.database).aggregate('first_name', 'last_name', 'height', n='count()').\
+            order_by('first_name', '-height').limit_by(1, 'first_name')
+        self.assertEqual(qs.count(), 94)
+        self.assertEqual(list(qs)[89].last_name, 'Bowen')
+
 
 Color = Enum('Color', u'red blue green yellow brown white black')
 

@@ -293,6 +293,8 @@ class QuerySet(object):
         self._grouping_with_totals = False
         self._fields = model_cls.fields().keys()
         self._limits = None
+        self._limit_by = None
+        self._limit_by_fields = None
         self._distinct = False
         self._final = False
 
@@ -332,6 +334,24 @@ class QuerySet(object):
             qs._limits = (start, stop - start)
             return qs
 
+    def limit_by(self, offset_limit, *fields):
+        if isinstance(offset_limit, six.integer_types):
+            # Single limit
+            assert offset_limit >= 0, 'negative limits are not supported'
+            qs = copy(self)
+            qs._limit_by = (0, offset_limit)
+            qs._limit_by_fields = fields
+            return qs
+        else:
+            # Offset, limit
+            offset = offset_limit[0]
+            limit = offset_limit[1]
+            assert offset >= 0 and limit >= 0, 'negative limits are not supported'
+            qs = copy(self)
+            qs._limit_by = (offset, limit)
+            qs._limit_by_fields = fields
+            return qs
+
     def select_fields_as_sql(self):
         """
         Returns the selected fields or expressions as a SQL string.
@@ -368,6 +388,10 @@ class QuerySet(object):
 
         if self._limits:
             sql += '\nLIMIT %d, %d' % self._limits
+
+        if self._limit_by:
+            sql += '\nLIMIT %d, %d' % self._limit_by
+            sql += ' BY %s' % comma_join('`%s`' % field for field in self._limit_by_fields)
 
         return sql
 
