@@ -52,8 +52,6 @@ def get_method_sig(method):
         default_arg = _get_default_arg(argspec.args, argspec.defaults, arg_index)
         if default_arg.has_default:
             val = default_arg.default_value
-            if isinstance(val, basestring):
-                val = '"' + val + '"'
             args.append("%s=%s" % (arg, val))
         else:
             args.append(arg)
@@ -73,45 +71,45 @@ def docstring(obj):
         indentation = min(len(line) - len(line.lstrip()) for line in lines if line.strip())
         # Output the lines without the indentation
         for line in lines:
-            print line[indentation:]
-        print
+            print(line[indentation:])
+        print()
 
 
 def class_doc(cls, list_methods=True):
     bases = ', '.join([b.__name__ for b in cls.__bases__])
-    print '###', cls.__name__
-    print
+    print('###', cls.__name__)
+    print()
     if bases != 'object':
-        print 'Extends', bases
-        print
+        print('Extends', bases)
+        print()
     docstring(cls)
-    for name, method in inspect.getmembers(cls, inspect.ismethod):
+    for name, method in inspect.getmembers(cls, lambda m: inspect.ismethod(m) or inspect.isfunction(m)):
         if name == '__init__':
             # Initializer
-            print '####', get_method_sig(method).replace(name, cls.__name__)
+            print('####', get_method_sig(method).replace(name, cls.__name__))
         elif name[0] == '_':
             # Private method
             continue
-        elif method.__self__ == cls:
+        elif hasattr(method, '__self__') and method.__self__ == cls:
             # Class method
             if not list_methods:
                 continue
-            print '#### %s.%s' % (cls.__name__, get_method_sig(method))
+            print('#### %s.%s' % (cls.__name__, get_method_sig(method)))
         else:
             # Regular method
             if not list_methods:
                 continue
-            print '####', get_method_sig(method)
-        print
+            print('####', get_method_sig(method))
+        print()
         docstring(method)
-        print
+        print()
 
 
 def module_doc(classes, list_methods=True):
     mdl = classes[0].__module__
-    print mdl
-    print '-' * len(mdl)
-    print
+    print(mdl)
+    print('-' * len(mdl))
+    print()
     for cls in classes:
         class_doc(cls, list_methods)
 
@@ -128,9 +126,9 @@ if __name__ == '__main__':
     from infi.clickhouse_orm import models
     from infi.clickhouse_orm import query
 
-    print 'Class Reference'
-    print '==============='
-    print
+    print('Class Reference')
+    print('===============')
+    print()
     module_doc([database.Database, database.DatabaseException])
     module_doc([models.Model, models.BufferModel, models.DistributedModel])
     module_doc(sorted([fields.Field] + all_subclasses(fields.Field), key=lambda x: x.__name__), False)
