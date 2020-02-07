@@ -890,6 +890,14 @@ Adds a FINAL modifier to table, meaning data will be collapsed to final version.
 Can be used with `CollapsingMergeTree` engine only.
 
 
+#### limit_by(offset_limit, *fields)
+
+
+Adds a LIMIT BY clause to the query.
+- `offset_limit`: either an integer specifying the limit, or a tuple of integers (offset, limit).
+- `fields`: the field names to use in the clause.
+
+
 #### only(*field_names)
 
 
@@ -1011,6 +1019,14 @@ Can be used with `CollapsingMergeTree` engine only.
 This method lets you specify the grouping fields explicitly. The `args` must
 be names of grouping fields or calculated fields that this queryset was
 created with.
+
+
+#### limit_by(offset_limit, *fields)
+
+
+Adds a LIMIT BY clause to the query.
+- `offset_limit`: either an integer specifying the limit, or a tuple of integers (offset, limit).
+- `fields`: the field names to use in the clause.
 
 
 #### only(*field_names)

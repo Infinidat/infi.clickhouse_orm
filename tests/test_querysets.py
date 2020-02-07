@@ -433,10 +433,21 @@ class AggregateTestCase(TestCaseWithData):
         self.assertEqual(qs.conditions_as_sql(), 'the__next__number > 1')
 
     def test_limit_by(self):
+        # Test without offset
         qs = Person.objects_in(self.database).aggregate('first_name', 'last_name', 'height', n='count()').\
             order_by('first_name', '-height').limit_by(1, 'first_name')
         self.assertEqual(qs.count(), 94)
         self.assertEqual(list(qs)[89].last_name, 'Bowen')
+        # Test with limit and offset, also mixing LIMIT with LIMIT BY
+        qs = Person.objects_in(self.database).filter(height__gt=1.67).order_by('height', 'first_name')
+        limited_qs = qs.limit_by((0, 3), 'height')
+        self.assertEquals([p.first_name for p in limited_qs[:3]], ['Amanda', 'Buffy', 'Dora'])
+        limited_qs = qs.limit_by((3, 3), 'height')
+        self.assertEquals([p.first_name for p in limited_qs[:3]], ['Elton', 'Josiah', 'Macaulay'])
+        limited_qs = qs.limit_by((6, 3), 'height')
+        self.assertEquals([p.first_name for p in limited_qs[:3]], ['Norman', 'Octavius', 'Oliver'])
+
+
 
 
 Color = Enum('Color', u'red blue green yellow brown white black')
