@@ -215,6 +215,4 @@ class DatabaseTestCase(TestCaseWithData):
         from infi.clickhouse_orm.models import ModelBase
         query = "SELECT DISTINCT type FROM system.columns"
         for row in self.database.select(query):
-            if row.type in ('IPv4', 'IPv6'):
-                continue # unsupported yet
             ModelBase.create_ad_hoc_field(row.type)

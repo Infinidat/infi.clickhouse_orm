@@ -351,7 +351,7 @@ class QuerySet(object):
         - `offset_limit`: either an integer specifying the limit, or a tuple of integers (offset, limit).
         - `fields`: the field names to use in the clause.
         """
-        if isinstance(offset_limit, six.integer_types):
+        if isinstance(offset_limit, int):
             # Single limit
             offset_limit = (0, offset_limit)
         offset = offset_limit[0]

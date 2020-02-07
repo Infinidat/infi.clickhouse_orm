@@ -87,10 +87,12 @@ class ModelBase(type):
         if db_type.startswith('FixedString'):
             length = int(db_type[12 : -1])
             return orm_fields.FixedStringField(length)
-        # Decimal
+        # Decimal / Decimal32 / Decimal64 / Decimal128
         if db_type.startswith('Decimal'):
-            precision, scale = [int(n.strip()) for n in db_type[8 : -1].split(',')]
-            return orm_fields.DecimalField(precision, scale)
+            p = db_type.index('(')
+            args = [int(n.strip()) for n in db_type[p + 1 : -1].split(',')]
+            field_class = getattr(orm_fields, db_type[:p] + 'Field')
+            return field_class(*args)
         # Nullable
         if db_type.startswith('Nullable'):
             inner_field = cls.create_ad_hoc_field(db_type[9 : -1])
