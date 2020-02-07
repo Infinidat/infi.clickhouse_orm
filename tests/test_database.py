@@ -209,3 +209,12 @@ class DatabaseTestCase(TestCaseWithData):
         # Remove the setting and see that now it works
         self.database.add_setting('max_columns_to_read', None)
         list(self.database.select('SELECT * from system.tables'))
+
+    def test_create_ad_hoc_field(self):
+        # Tests that create_ad_hoc_field works for all column types in the database
+        from infi.clickhouse_orm.models import ModelBase
+        query = "SELECT DISTINCT type FROM system.columns"
+        for row in self.database.select(query):
+            if row.type in ('IPv4', 'IPv6'):
+                continue # unsupported yet
+            ModelBase.create_ad_hoc_field(row.type)

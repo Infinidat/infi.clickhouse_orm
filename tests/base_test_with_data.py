@@ -35,7 +35,7 @@ class TestCaseWithData(unittest.TestCase):
 class Person(Model):
 
     first_name = StringField()
-    last_name = StringField()
+    last_name = LowCardinalityField(StringField())
     birthday = DateField()
     height = Float32Field()
     passport = NullableField(UInt32Field())
