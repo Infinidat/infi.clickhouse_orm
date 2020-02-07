@@ -1,8 +1,8 @@
 Change Log
 ==========
 
-Unreleased
-----------
+v1.3.0
+------
 - Support LowCardinality columns in ad-hoc queries
 - Support for LIMIT BY in querysets (utapyngo)
 
