@@ -4,7 +4,7 @@ import datetime
 import pytz
 
 from infi.clickhouse_orm.database import Database
-from infi.clickhouse_orm.models import Model
+from infi.clickhouse_orm.models import Model, NO_VALUE
 from infi.clickhouse_orm.fields import *
 from infi.clickhouse_orm.engines import *
 from infi.clickhouse_orm.utils import parse_tsv
@@ -67,7 +67,7 @@ class CompressedFieldsTestCase(unittest.TestCase):
             "int64_field": 100,
             "float_field": 7.0,
             "datetime_field": datetime.datetime(1970, 1, 1, 0, 0, 0, tzinfo=pytz.utc),
-            "alias_field": 0.0,
+            "alias_field": NO_VALUE,
             'string_field': 'dozo',
             'nullable_field': None,
             'uint64_field': 0,

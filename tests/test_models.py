@@ -65,7 +65,7 @@ class ModelTestCase(unittest.TestCase):
             "int_field": 100,
             "float_field": 7.0,
             "datetime_field": datetime.datetime(1970, 1, 1, 0, 0, 0, tzinfo=pytz.utc),
-            "alias_field": 0.0,
+            "alias_field": NO_VALUE,
             "str_field": "dozo",
             "default_func": NO_VALUE
         })
