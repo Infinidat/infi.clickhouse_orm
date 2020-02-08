@@ -209,6 +209,13 @@ Returns `None` unless the instance was read from the database or written to it.
 Gets a `Field` instance given its name, or `None` if not found.
 
 
+#### Model.has_funcs_as_defaults()
+
+
+Return True if some of the model's fields use a function expression
+as a default value. This requires special handling when inserting instances.
+
+
 #### Model.is_read_only()
 
 
@@ -242,6 +249,12 @@ class name converted to lowercase. Override this if you want to use
 a different table name.
 
 
+#### to_db_string()
+
+
+Returns the instance as a bytestring ready to be inserted into the database.
+
+
 #### to_dict(include_readonly=True, field_names=None)
 
 
@@ -249,6 +262,15 @@ Returns the instance's column values as a dict.
 
 - `include_readonly`: if false, returns only fields that can be inserted into database.
 - `field_names`: an iterable of field names to return (optional)
+
+
+#### to_tskv(include_readonly=True)
+
+
+Returns the instance's column keys and values as a tab-separated line. A newline is not included.
+Fields that were not assigned a value are omitted.
+
+- `include_readonly`: if false, returns only fields that can be inserted into database.
 
 
 #### to_tsv(include_readonly=True)
@@ -317,6 +339,13 @@ Returns `None` unless the instance was read from the database or written to it.
 Gets a `Field` instance given its name, or `None` if not found.
 
 
+#### BufferModel.has_funcs_as_defaults()
+
+
+Return True if some of the model's fields use a function expression
+as a default value. This requires special handling when inserting instances.
+
+
 #### BufferModel.is_read_only()
 
 
@@ -350,6 +379,12 @@ class name converted to lowercase. Override this if you want to use
 a different table name.
 
 
+#### to_db_string()
+
+
+Returns the instance as a bytestring ready to be inserted into the database.
+
+
 #### to_dict(include_readonly=True, field_names=None)
 
 
@@ -357,6 +392,15 @@ Returns the instance's column values as a dict.
 
 - `include_readonly`: if false, returns only fields that can be inserted into database.
 - `field_names`: an iterable of field names to return (optional)
+
+
+#### to_tskv(include_readonly=True)
+
+
+Returns the instance's column keys and values as a tab-separated line. A newline is not included.
+Fields that were not assigned a value are omitted.
+
+- `include_readonly`: if false, returns only fields that can be inserted into database.
 
 
 #### to_tsv(include_readonly=True)
@@ -458,6 +502,13 @@ Returns `None` unless the instance was read from the database or written to it.
 Gets a `Field` instance given its name, or `None` if not found.
 
 
+#### DistributedModel.has_funcs_as_defaults()
+
+
+Return True if some of the model's fields use a function expression
+as a default value. This requires special handling when inserting instances.
+
+
 #### DistributedModel.is_read_only()
 
 
@@ -487,6 +538,12 @@ class name converted to lowercase. Override this if you want to use
 a different table name.
 
 
+#### to_db_string()
+
+
+Returns the instance as a bytestring ready to be inserted into the database.
+
+
 #### to_dict(include_readonly=True, field_names=None)
 
 
@@ -494,6 +551,15 @@ Returns the instance's column values as a dict.
 
 - `include_readonly`: if false, returns only fields that can be inserted into database.
 - `field_names`: an iterable of field names to return (optional)
+
+
+#### to_tskv(include_readonly=True)
+
+
+Returns the instance's column keys and values as a tab-separated line. A newline is not included.
+Fields that were not assigned a value are omitted.
+
+- `include_readonly`: if false, returns only fields that can be inserted into database.
 
 
 #### to_tsv(include_readonly=True)
@@ -605,6 +671,8 @@ Extends BaseEnumField
 
 ### Field
 
+Extends FunctionOperatorsMixin
+
 
 Abstract base class for all field types.
 
@@ -630,6 +698,20 @@ Extends BaseFloatField
 Extends BaseFloatField
 
 #### Float64Field(default=None, alias=None, materialized=None, readonly=None, codec=None)
+
+
+### IPv4Field
+
+Extends Field
+
+#### IPv4Field(default=None, alias=None, materialized=None, readonly=None, codec=None)
+
+
+### IPv6Field
+
+Extends Field
+
+#### IPv6Field(default=None, alias=None, materialized=None, readonly=None, codec=None)
 
 
 ### Int16Field
@@ -781,11 +863,11 @@ https://clickhouse.yandex/docs/en/table_engines/distributed.html
 #### Distributed(cluster, table=None, sharding_key=None)
 
 
-:param cluster: what cluster to access data from
-:param table: underlying table that actually stores data.
+- `cluster`: what cluster to access data from
+- `table`: underlying table that actually stores data.
 If you are not specifying any table here, ensure that it can be inferred
 from your model's superclass (see models.DistributedModel.fix_engine_table)
-:param sharding_key: how to distribute data among shards when inserting
+- `sharding_key`: how to distribute data among shards when inserting
 straightly into Distributed table, optional
 
 
@@ -874,6 +956,9 @@ in the results will be omitted.
 
 Returns a copy of this queryset that excludes all rows matching the conditions.
 Pass `prewhere=True` to apply the conditions as PREWHERE instead of WHERE.
+
+
+#### extra(**kwargs)
 
 
 #### filter(*q, **kwargs)
@@ -999,6 +1084,9 @@ Returns a copy of this queryset that excludes all rows matching the conditions.
 Pass `prewhere=True` to apply the conditions as PREWHERE instead of WHERE.
 
 
+#### extra(**kwargs)
+
+
 #### filter(*q, **kwargs)
 
 
@@ -1073,5 +1161,1078 @@ Returns the selected fields or expressions as a SQL string.
 Adds WITH TOTALS modifier ot GROUP BY, making query return extra row
 with aggregate function calculated across all the rows. More information:
 https://clickhouse.yandex/docs/en/query_language/select/#with-totals-modifier
+
+
+infi.clickhouse_orm.funcs
+-------------------------
+
+### F
+
+Extends Cond, FunctionOperatorsMixin
+
+
+Represents a database function call and its arguments.
+It doubles as a query condition when the function returns a boolean result.
+
+#### CAST(type)
+
+
+#### CRC32()
+
+
+#### IPv4CIDRToRange(cidr)
+
+
+#### IPv4NumToString()
+
+
+#### IPv4NumToStringClassC()
+
+
+#### IPv4StringToNum()
+
+
+#### IPv4ToIPv6()
+
+
+#### IPv6CIDRToRange(cidr)
+
+
+#### IPv6NumToString()
+
+
+#### IPv6StringToNum()
+
+
+#### MD5()
+
+
+#### SHA1()
+
+
+#### SHA224()
+
+
+#### SHA256()
+
+
+#### URLHash(n=None)
+
+
+#### UUIDNumToString()
+
+
+#### UUIDStringToNum()
+
+
+#### F(name, *args)
+
+
+Initializer.
+
+
+#### abs()
+
+
+#### acos()
+
+
+#### addDays(n, timezone=None)
+
+
+#### addHours(n, timezone=None)
+
+
+#### addMinutes(n, timezone=None)
+
+
+#### addMonths(n, timezone=None)
+
+
+#### addQuarters(n, timezone=None)
+
+
+#### addSeconds(n, timezone=None)
+
+
+#### addWeeks(n, timezone=None)
+
+
+#### addYears(n, timezone=None)
+
+
+#### alphaTokens()
+
+
+#### appendTrailingCharIfAbsent(c)
+
+
+#### array()
+
+
+#### arrayAll()
+
+
+#### arrayConcat()
+
+
+#### arrayCount()
+
+
+#### arrayCumSum()
+
+
+#### arrayCumSumNonNegative()
+
+
+#### arrayDifference()
+
+
+#### arrayDistinct()
+
+
+#### arrayElement(n)
+
+
+#### arrayEnumerate()
+
+
+#### arrayEnumerateDense()
+
+
+#### arrayEnumerateDenseRanked()
+
+
+#### arrayEnumerateUniq()
+
+
+#### arrayEnumerateUniqRanked()
+
+
+#### arrayExists()
+
+
+#### arrayIntersect()
+
+
+#### arrayJoin()
+
+
+#### arrayPopBack()
+
+
+#### arrayPopFront()
+
+
+#### arrayPushBack(x)
+
+
+#### arrayPushFront(x)
+
+
+#### arrayReduce(*args)
+
+
+#### arrayResize(size, extender=None)
+
+
+#### arrayReverse()
+
+
+#### arrayReverseSort()
+
+
+#### arraySlice(offset, length=None)
+
+
+#### arraySort()
+
+
+#### arrayStringConcat(sep=None)
+
+
+#### arraySum()
+
+
+#### arrayUniq()
+
+
+#### asin()
+
+
+#### atan()
+
+
+#### base64Decode()
+
+
+#### base64Encode()
+
+
+#### bitAnd(y)
+
+
+#### bitNot()
+
+
+#### bitOr(y)
+
+
+#### bitRotateLeft(y)
+
+
+#### bitRotateRight(y)
+
+
+#### bitShiftLeft(y)
+
+
+#### bitShiftRight(y)
+
+
+#### bitTest(y)
+
+
+#### bitTestAll(*args)
+
+
+#### bitTestAny(*args)
+
+
+#### bitXor(y)
+
+
+#### bitmapAnd(y)
+
+
+#### bitmapAndCardinality(y)
+
+
+#### bitmapAndnot(y)
+
+
+#### bitmapAndnotCardinality(y)
+
+
+#### bitmapBuild()
+
+
+#### bitmapCardinality()
+
+
+#### bitmapContains(needle)
+
+
+#### bitmapHasAll(y)
+
+
+#### bitmapHasAny(y)
+
+
+#### bitmapOr(y)
+
+
+#### bitmapOrCardinality(y)
+
+
+#### bitmapToArray()
+
+
+#### bitmapXor(y)
+
+
+#### bitmapXorCardinality(y)
+
+
+#### bitmaskToArray()
+
+
+#### bitmaskToList()
+
+
+#### cbrt()
+
+
+#### ceiling(n=None)
+
+
+#### ceiling(n=None)
+
+
+#### cityHash64()
+
+
+#### concat()
+
+
+#### convertCharset(from_charset, to_charset)
+
+
+#### cos()
+
+
+#### countEqual(x)
+
+
+#### divide(**kwargs)
+
+
+#### e()
+
+
+#### empty()
+
+
+#### emptyArrayDate()
+
+
+#### emptyArrayDateTime()
+
+
+#### emptyArrayFloat32()
+
+
+#### emptyArrayFloat64()
+
+
+#### emptyArrayInt16()
+
+
+#### emptyArrayInt32()
+
+
+#### emptyArrayInt64()
+
+
+#### emptyArrayInt8()
+
+
+#### emptyArrayString()
+
+
+#### emptyArrayToSingle()
+
+
+#### emptyArrayUInt16()
+
+
+#### emptyArrayUInt32()
+
+
+#### emptyArrayUInt64()
+
+
+#### emptyArrayUInt8()
+
+
+#### endsWith(suffix)
+
+
+#### equals(**kwargs)
+
+
+#### erf()
+
+
+#### erfc()
+
+
+#### exp()
+
+
+#### exp10()
+
+
+#### exp2()
+
+
+#### farmHash64()
+
+
+#### floor(n=None)
+
+
+#### formatDateTime(format, timezone="")
+
+
+#### gcd(b)
+
+
+#### generateUUIDv4()
+
+
+#### greater(**kwargs)
+
+
+#### greaterOrEquals(**kwargs)
+
+
+#### halfMD5()
+
+
+#### has(x)
+
+
+#### hasAll(x)
+
+
+#### hasAny(x)
+
+
+#### hex()
+
+
+#### hiveHash()
+
+
+#### indexOf(x)
+
+
+#### intDiv(b)
+
+
+#### intDivOrZero(b)
+
+
+#### intExp10()
+
+
+#### intExp2()
+
+
+#### intHash32()
+
+
+#### intHash64()
+
+
+#### javaHash()
+
+
+#### jumpConsistentHash(buckets)
+
+
+#### lcm(b)
+
+
+#### length()
+
+
+#### lengthUTF8()
+
+
+#### less(**kwargs)
+
+
+#### lessOrEquals(**kwargs)
+
+
+#### lgamma()
+
+
+#### log()
+
+
+#### log()
+
+
+#### log10()
+
+
+#### log2()
+
+
+#### lower()
+
+
+#### lowerUTF8()
+
+
+#### metroHash64()
+
+
+#### minus(**kwargs)
+
+
+#### modulo(**kwargs)
+
+
+#### multiply(**kwargs)
+
+
+#### murmurHash2_32()
+
+
+#### murmurHash2_64()
+
+
+#### murmurHash3_128()
+
+
+#### murmurHash3_32()
+
+
+#### murmurHash3_64()
+
+
+#### negate()
+
+
+#### notEmpty()
+
+
+#### notEquals(**kwargs)
+
+
+#### now()
+
+
+#### parseDateTimeBestEffort(timezone=None)
+
+
+#### parseDateTimeBestEffortOrNull(timezone=None)
+
+
+#### parseDateTimeBestEffortOrZero(timezone=None)
+
+
+#### pi()
+
+
+#### plus(**kwargs)
+
+
+#### power(y)
+
+
+#### power(y)
+
+
+#### rand()
+
+
+#### rand64()
+
+
+#### randConstant()
+
+
+#### range()
+
+
+#### regexpQuoteMeta()
+
+
+#### replace(pattern, replacement)
+
+
+#### replaceAll(pattern, replacement)
+
+
+#### replaceOne(pattern, replacement)
+
+
+#### replaceRegexpAll(pattern, replacement)
+
+
+#### replaceRegexpOne(pattern, replacement)
+
+
+#### reverse()
+
+
+#### reverseUTF8()
+
+
+#### round(n=None)
+
+
+#### roundAge()
+
+
+#### roundDown(y)
+
+
+#### roundDuration()
+
+
+#### roundToExp2()
+
+
+#### sin()
+
+
+#### sipHash128()
+
+
+#### sipHash64()
+
+
+#### splitByChar(s)
+
+
+#### splitByString(s)
+
+
+#### sqrt()
+
+
+#### startsWith(prefix)
+
+
+#### substring(offset, length)
+
+
+#### substringUTF8(offset, length)
+
+
+#### subtractDays(n, timezone=None)
+
+
+#### subtractHours(n, timezone=None)
+
+
+#### subtractMinutes(n, timezone=None)
+
+
+#### subtractMonths(n, timezone=None)
+
+
+#### subtractQuarters(n, timezone=None)
+
+
+#### subtractSeconds(n, timezone=None)
+
+
+#### subtractWeeks(n, timezone=None)
+
+
+#### subtractYears(n, timezone=None)
+
+
+#### tan()
+
+
+#### tgamma()
+
+
+#### timeSlot()
+
+
+#### timeSlots(duration)
+
+
+#### toDate()
+
+
+#### toDateTime()
+
+
+#### toDayOfMonth()
+
+
+#### toDayOfWeek()
+
+
+#### toDecimal128(scale)
+
+
+#### toDecimal32(scale)
+
+
+#### toDecimal64(scale)
+
+
+#### toFixedString(length)
+
+
+#### toFloat32()
+
+
+#### toFloat32OrZero()
+
+
+#### toFloat64()
+
+
+#### toFloat64OrZero()
+
+
+#### toHour()
+
+
+#### toIPv4()
+
+
+#### toIPv6()
+
+
+#### toInt16()
+
+
+#### toInt16OrZero()
+
+
+#### toInt32()
+
+
+#### toInt32OrZero()
+
+
+#### toInt64()
+
+
+#### toInt64OrZero()
+
+
+#### toInt8()
+
+
+#### toInt8OrZero()
+
+
+#### toMinute()
+
+
+#### toMonday()
+
+
+#### toMonth()
+
+
+#### toRelativeDayNum(timezone="")
+
+
+#### toRelativeHourNum(timezone="")
+
+
+#### toRelativeMinuteNum(timezone="")
+
+
+#### toRelativeMonthNum(timezone="")
+
+
+#### toRelativeSecondNum(timezone="")
+
+
+#### toRelativeWeekNum(timezone="")
+
+
+#### toRelativeYearNum(timezone="")
+
+
+#### toSecond()
+
+
+#### toStartOfDay()
+
+
+#### toStartOfFifteenMinutes()
+
+
+#### toStartOfFiveMinute()
+
+
+#### toStartOfHour()
+
+
+#### toStartOfMinute()
+
+
+#### toStartOfMonth()
+
+
+#### toStartOfQuarter()
+
+
+#### toStartOfYear()
+
+
+#### toString()
+
+
+#### toStringCutToZero()
+
+
+#### toTime(timezone="")
+
+
+#### toUInt16()
+
+
+#### toUInt16OrZero()
+
+
+#### toUInt32()
+
+
+#### toUInt32OrZero()
+
+
+#### toUInt64()
+
+
+#### toUInt64OrZero()
+
+
+#### toUInt8()
+
+
+#### toUInt8OrZero()
+
+
+#### toUUID()
+
+
+#### toYear()
+
+
+#### to_sql(*args)
+
+
+Generates an SQL string for this function and its arguments.
+For example if the function name is a symbol of a binary operator:
+    (2.54 * `height`)
+For other functions:
+    gcd(12, 300)
+
+
+#### today()
+
+
+#### trimBoth()
+
+
+#### trimLeft()
+
+
+#### trimRight()
+
+
+#### tryBase64Decode()
+
+
+#### unhex()
+
+
+#### upper()
+
+
+#### upperUTF8()
+
+
+#### xxHash32()
+
+
+#### xxHash64()
+
+
+#### yesterday()
+
+
+infi.clickhouse_orm.system_models
+---------------------------------
+
+### SystemPart
+
+Extends Model
+
+
+Contains information about parts of a table in the MergeTree family.
+This model operates only fields, described in the reference. Other fields are ignored.
+https://clickhouse.yandex/docs/en/system_tables/system.parts/
+
+#### SystemPart(**kwargs)
+
+
+Creates a model instance, using keyword arguments as field values.
+Since values are immediately converted to their Pythonic type,
+invalid values will cause a `ValueError` to be raised.
+Unrecognized field names will cause an `AttributeError`.
+
+
+#### attach(settings=None)
+
+
+ Add a new part or partition from the 'detached' directory to the table.
+
+- `settings`: Settings for executing request to ClickHouse over db.raw() method
+
+Returns: SQL Query
+
+
+#### SystemPart.create_table_sql(db)
+
+
+Returns the SQL command for creating a table for this model.
+
+
+#### detach(settings=None)
+
+
+Move a partition to the 'detached' directory and forget it.
+
+- `settings`: Settings for executing request to ClickHouse over db.raw() method
+
+Returns: SQL Query
+
+
+#### drop(settings=None)
+
+
+Delete a partition
+
+- `settings`: Settings for executing request to ClickHouse over db.raw() method
+
+Returns: SQL Query
+
+
+#### SystemPart.drop_table_sql(db)
+
+
+Returns the SQL command for deleting this model's table.
+
+
+#### fetch(zookeeper_path, settings=None)
+
+
+Download a partition from another server.
+
+- `zookeeper_path`: Path in zookeeper to fetch from
+- `settings`: Settings for executing request to ClickHouse over db.raw() method
+
+Returns: SQL Query
+
+
+#### SystemPart.fields(writable=False)
+
+
+Returns an `OrderedDict` of the model's fields (from name to `Field` instance).
+If `writable` is true, only writable fields are included.
+Callers should not modify the dictionary.
+
+
+#### freeze(settings=None)
+
+
+Create a backup of a partition.
+
+- `settings`: Settings for executing request to ClickHouse over db.raw() method
+
+Returns: SQL Query
+
+
+#### SystemPart.from_tsv(line, field_names, timezone_in_use=UTC, database=None)
+
+
+Create a model instance from a tab-separated line. The line may or may not include a newline.
+The `field_names` list must match the fields defined in the model, but does not have to include all of them.
+
+- `line`: the TSV-formatted data.
+- `field_names`: names of the model fields in the data.
+- `timezone_in_use`: the timezone to use when parsing dates and datetimes.
+- `database`: if given, sets the database that this instance belongs to.
+
+
+#### SystemPart.get(database, conditions="")
+
+
+Get all data from system.parts table
+
+- `database`: A database object to fetch data from.
+- `conditions`: WHERE clause conditions. Database condition is added automatically
+
+Returns: A list of SystemPart objects
+
+
+#### SystemPart.get_active(database, conditions="")
+
+
+Gets active data from system.parts table
+
+- `database`: A database object to fetch data from.
+- `conditions`: WHERE clause conditions. Database and active conditions are added automatically
+
+Returns: A list of SystemPart objects
+
+
+#### get_database()
+
+
+Gets the `Database` that this model instance belongs to.
+Returns `None` unless the instance was read from the database or written to it.
+
+
+#### get_field(name)
+
+
+Gets a `Field` instance given its name, or `None` if not found.
+
+
+#### SystemPart.has_funcs_as_defaults()
+
+
+Return True if some of the model's fields use a function expression
+as a default value. This requires special handling when inserting instances.
+
+
+#### SystemPart.is_read_only()
+
+
+Returns true if the model is marked as read only.
+
+
+#### SystemPart.is_system_model()
+
+
+Returns true if the model represents a system table.
+
+
+#### SystemPart.objects_in(database)
+
+
+Returns a `QuerySet` for selecting instances of this model class.
+
+
+#### set_database(db)
+
+
+Sets the `Database` that this model instance belongs to.
+This is done automatically when the instance is read from the database or written to it.
+
+
+#### SystemPart.table_name()
+
+
+#### to_db_string()
+
+
+Returns the instance as a bytestring ready to be inserted into the database.
+
+
+#### to_dict(include_readonly=True, field_names=None)
+
+
+Returns the instance's column values as a dict.
+
+- `include_readonly`: if false, returns only fields that can be inserted into database.
+- `field_names`: an iterable of field names to return (optional)
+
+
+#### to_tskv(include_readonly=True)
+
+
+Returns the instance's column keys and values as a tab-separated line. A newline is not included.
+Fields that were not assigned a value are omitted.
+
+- `include_readonly`: if false, returns only fields that can be inserted into database.
+
+
+#### to_tsv(include_readonly=True)
+
+
+Returns the instance's column values as a tab-separated line. A newline is not included.
+
+- `include_readonly`: if false, returns only fields that can be inserted into database.
 
 

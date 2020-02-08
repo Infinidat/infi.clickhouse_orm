@@ -30,13 +30,17 @@
       * [Pagination](querysets.md#pagination)
       * [Aggregation](querysets.md#aggregation)
 
+   * [Field Options](field_options.md#field-options)
+      * [default](field_options.md#default)
+      * [alias / materialized](field_options.md#alias-/-materialized)
+      * [codec](field_options.md#codec)
+      * [readonly](field_options.md#readonly)
+
    * [Field Types](field_types.md#field-types)
       * [DateTimeField and Time Zones](field_types.md#datetimefield-and-time-zones)
       * [Working with enum fields](field_types.md#working-with-enum-fields)
       * [Working with array fields](field_types.md#working-with-array-fields)
-      * [Working with materialized and alias fields](field_types.md#working-with-materialized-and-alias-fields)
       * [Working with nullable fields](field_types.md#working-with-nullable-fields)
-      * [Working with field compression codecs](field_types.md#working-with-field-compression-codecs)
       * [Working with LowCardinality fields](field_types.md#working-with-lowcardinality-fields)
       * [Creating custom field types](field_types.md#creating-custom-field-types)
 
@@ -84,6 +88,8 @@
          * [FixedStringField](class_reference.md#fixedstringfield)
          * [Float32Field](class_reference.md#float32field)
          * [Float64Field](class_reference.md#float64field)
+         * [IPv4Field](class_reference.md#ipv4field)
+         * [IPv6Field](class_reference.md#ipv6field)
          * [Int16Field](class_reference.md#int16field)
          * [Int32Field](class_reference.md#int32field)
          * [Int64Field](class_reference.md#int64field)
@@ -111,4 +117,8 @@
       * [infi.clickhouse_orm.query](class_reference.md#infi.clickhouse_orm.query)
          * [QuerySet](class_reference.md#queryset)
          * [AggregateQuerySet](class_reference.md#aggregatequeryset)
+      * [infi.clickhouse_orm.funcs](class_reference.md#infi.clickhouse_orm.funcs)
+         * [F](class_reference.md#f)
+      * [infi.clickhouse_orm.system_models](class_reference.md#infi.clickhouse_orm.system_models)
+         * [SystemPart](class_reference.md#systempart)
 

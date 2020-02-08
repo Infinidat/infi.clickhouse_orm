@@ -1,4 +1,4 @@
-from HTMLParser import HTMLParser
+from html.parser import HTMLParser
 import sys
 
 
@@ -18,7 +18,7 @@ class HeadersToMarkdownParser(HTMLParser):
         if tag.lower() in HEADER_TAGS:
             indent = '   ' * int(self.inside[1])
             fragment = self.text.lower().replace(' ', '-')
-            print '%s* [%s](%s#%s)' % (indent, self.text, sys.argv[1], fragment)
+            print('%s* [%s](%s#%s)' % (indent, self.text, sys.argv[1], fragment))
             self.inside = None
             self.text = ''
 
@@ -28,4 +28,4 @@ class HeadersToMarkdownParser(HTMLParser):
 
 
 HeadersToMarkdownParser().feed(sys.stdin.read())
-print
+print('')

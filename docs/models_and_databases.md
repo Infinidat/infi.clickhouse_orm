@@ -31,6 +31,8 @@ Each field has a "natural" default value - empty string for string fields, zero 
 
         first_name = fields.StringField(default="anonymous")
 
+For additional details see [here](field_options.md).
+
 ### Null values
 
 To allow null values in a field, wrap it inside a `NullableField`:
@@ -39,25 +41,27 @@ To allow null values in a field, wrap it inside a `NullableField`:
 
 In this case, the default value for that field becomes `null` unless otherwise specified.
 
+For more information about `NullableField` see [Field Types](field_types.md).
+
 ### Materialized fields
 
 The value of a materialized field is calculated from other fields in the model. For example:
 
-        year_born = fields.Int16Field(materialized="toYear(birthday)")
+        year_born = fields.Int16Field(materialized=F.toYear(birthday))
 
 Materialized fields are read-only, meaning that their values are not sent to the database when inserting records.
 
-It is not possible to specify a default value for a materialized field.
+For additional details see [here](field_options.md).
 
 ### Alias fields
 
 An alias field is a field whose value is calculated by ClickHouse on the fly, as a function of other fields. It is not physically stored by the database. For example:
 
-        weekday_born = field.UInt8Field(alias="toDayOfWeek(birthday)")
+        weekday_born = field.UInt8Field(alias=F.toDayOfWeek(birthday))
 
 Alias fields are read-only, meaning that their values are not sent to the database when inserting records.
 
-It is not possible to specify a default value for an alias field.
+For additional details see [here](field_options.md).
 
 ### Table Names
 
@@ -121,19 +125,19 @@ Reading from the Database
 Loading model instances from the database is simple:
 
     for person in db.select("SELECT * FROM my_test_db.person", model_class=Person):
-        print person.first_name, person.last_name
+        print(person.first_name, person.last_name)
 
 Do not include a `FORMAT` clause in the query, since the ORM automatically sets the format to `TabSeparatedWithNamesAndTypes`.
 
 It is possible to select only a subset of the columns, and the rest will receive their default values:
 
     for person in db.select("SELECT first_name FROM my_test_db.person WHERE last_name='Smith'", model_class=Person):
-        print person.first_name
+        print(person.first_name)
 
 The ORM provides a way to build simple queries without writing SQL by hand. The previous snippet can be written like this:
 
     for person in Person.objects_in(db).filter(last_name='Smith').only('first_name'):
-        print person.first_name
+        print(person.first_name)
 
 See [Querysets](querysets.md) for more information.
 
@@ -144,7 +148,7 @@ Reading without a Model
 When running a query, specifying a model class is not required. In case you do not provide a model class, an ad-hoc class will be defined based on the column names and types returned by the query:
 
     for row in db.select("SELECT max(height) as max_height FROM my_test_db.person"):
-        print row.max_height
+        print(row.max_height)
 
 This is a very convenient feature that saves you the need to define a model for each query, while still letting you work with Pythonic column values and an elegant syntax.
 
@@ -180,9 +184,9 @@ It is possible to paginate through model instances:
 
     >>> order_by = 'first_name, last_name'
     >>> page = db.paginate(Person, order_by, page_num=1, page_size=10)
-    >>> print page.number_of_objects
+    >>> print(page.number_of_objects)
     2507
-    >>> print page.pages_total
+    >>> print(page.pages_total)
     251
     >>> for person in page.objects:
     >>>     # do something
@@ -204,4 +208,4 @@ Note that `order_by` must be chosen so that the ordering is unique, otherwise th
 
 ---
 
-[<< Overview](index.md) | [Table of Contents](toc.md) | [Querysets >>](querysets.md)
+[<< Overview](index.md) | [Table of Contents](toc.md) | [Expressions >>](expressions.md)

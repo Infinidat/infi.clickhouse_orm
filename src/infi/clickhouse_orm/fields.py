@@ -74,9 +74,10 @@ class Field(FunctionOperatorsMixin):
     def get_sql(self, with_default_expression=True, db=None):
         '''
         Returns an SQL expression describing the field (e.g. for CREATE TABLE).
-        :param with_default_expression: If True, adds default value to sql.
+
+        - `with_default_expression`: If True, adds default value to sql.
             It doesn't affect fields with alias and materialized values.
-        :param db: Database, used for checking supported features.
+        - `db`: Database, used for checking supported features.
         '''
         sql = self.db_type
         if with_default_expression:
@@ -102,8 +103,10 @@ class Field(FunctionOperatorsMixin):
         """
         Checks if the instance if one of the types provided or if any of the inner_field child is one of the types
         provided, returns True if field or any inner_field is one of ths provided, False otherwise
-        :param types: Iterable of types to check inclusion of instance
-        :return: Boolean
+
+        - `types`: Iterable of types to check inclusion of instance
+
+        Returns: Boolean
         """
         if isinstance(self, types):
             return True

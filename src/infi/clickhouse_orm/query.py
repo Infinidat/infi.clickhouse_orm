@@ -205,7 +205,7 @@ class Q(object):
     def is_empty(self):
         """
         Checks if there are any conditions in Q object
-        :return: Boolean
+        Returns: Boolean
         """
         return not bool(self._conds or self._children)
 

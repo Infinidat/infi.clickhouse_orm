@@ -110,9 +110,16 @@ class F(Cond, FunctionOperatorsMixin):
     It doubles as a query condition when the function returns a boolean result.
     """
     def __init__(self, name, *args):
+        """
+        Initializer.
+
+        """
         self.name = name
         self.args = args
         self.is_binary_operator = False
+
+    def __repr__(self):
+        return self.to_sql()
 
     def to_sql(self, *args): # FIXME why *args ?
         """
@@ -128,11 +135,11 @@ class F(Cond, FunctionOperatorsMixin):
         else:
             prefix = self.name
             sep = ', '
-        arg_strs = (F.arg_to_sql(arg) for arg in self.args)
+        arg_strs = (F._arg_to_sql(arg) for arg in self.args)
         return prefix + '(' + sep.join(arg_strs) + ')'
 
     @staticmethod
-    def arg_to_sql(arg):
+    def _arg_to_sql(arg):
         """
         Converts a function argument to SQL string according to its type.
         Supports functions, model fields, strings, dates, datetimes, booleans,
@@ -156,7 +163,7 @@ class F(Cond, FunctionOperatorsMixin):
         if arg is None:
             return 'NULL'
         if is_iterable(arg):
-            return '[' + comma_join(F.arg_to_sql(x) for x in arg) + ']'
+            return '[' + comma_join(F._arg_to_sql(x) for x in arg) + ']'
         return str(arg)
 
     # Arithmetic functions

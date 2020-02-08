@@ -216,11 +216,11 @@ class Distributed(Engine):
     """
     def __init__(self, cluster, table=None, sharding_key=None):
         """
-        :param cluster: what cluster to access data from
-        :param table: underlying table that actually stores data.
+        - `cluster`: what cluster to access data from
+        - `table`: underlying table that actually stores data.
         If you are not specifying any table here, ensure that it can be inferred
         from your model's superclass (see models.DistributedModel.fix_engine_table)
-        :param sharding_key: how to distribute data among shards when inserting
+        - `sharding_key`: how to distribute data among shards when inserting
         straightly into Distributed table, optional
         """
         self.cluster = cluster

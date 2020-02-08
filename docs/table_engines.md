@@ -1,7 +1,7 @@
 Table Engines
 =============
 
-See: [ClickHouse Documentation](https://clickhouse.yandex/docs/en/table_engines/)
+See: [ClickHouse Documentation](https://clickhouse.tech/docs/en/operations/table_engines/)
 
 Each model must have an engine instance, used when creating the table in ClickHouse.
 

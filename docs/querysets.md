@@ -8,7 +8,7 @@ A queryset is an object that represents a database query using a specific Model.
 This queryset matches all Person instances in the database. You can get these instances using iteration:
 
     for person in qs:
-        print person.first_name, person.last_name
+        print(person.first_name, person.last_name)
 
 Filtering
 ---------
@@ -128,7 +128,7 @@ Adds a DISTINCT clause to the query, meaning that any duplicate rows in the resu
 Final
 --------
 
-This method can be used only with CollapsingMergeTree engine.
+This method can be used only with `CollapsingMergeTree` engine.
 Adds a FINAL modifier to the query, meaning data is selected fully "collapsed" by sign field.
 
     >>> Person.objects_in(database).count()
@@ -162,9 +162,9 @@ Similar to `Database.paginate`, you can go over the queryset results one page at
 
     >>> qs = Person.objects_in(database).order_by('last_name', 'first_name')
     >>> page = qs.paginate(page_num=1, page_size=10)
-    >>> print page.number_of_objects
+    >>> print(page.number_of_objects)
     2507
-    >>> print page.pages_total
+    >>> print(page.pages_total)
     251
     >>> for person in page.objects:
     >>>     # do something
@@ -185,9 +185,9 @@ Aggregation
 It is possible to use aggregation functions over querysets using the `aggregate` method. The simplest form of aggregation works over all rows in the queryset:
 
     >>> qs = Person.objects_in(database).aggregate(average_height='avg(height)')
-    >>> print qs.count()
+    >>> print(qs.count())
     1
-    >>> for row in qs: print row.average_height
+    >>> for row in qs: print(row.average_height)
     1.71
 
 The returned row or rows are no longer instances of the base model (`Person` in this example), but rather instances of an ad-hoc model that includes only the fields specified in the call to `aggregate`.
@@ -215,7 +215,7 @@ To achieve this, you can use `with_totals` method. It will return extra row (las
 values aggregated for all rows suitable for filters.
 
     qs = Person.objects_in(database).aggregate('first_name', num='count()').with_totals().order_by('-count')[:3]
-    >>> print qs.count()
+    >>> print(qs.count())
     4
     >>> for row in qs:
     >>>     print("'{}': {}".format(row.first_name, row.count))
@@ -225,4 +225,4 @@ values aggregated for all rows suitable for filters.
 
 ---
 
-[<< Models and Databases](models_and_databases.md) | [Table of Contents](toc.md) | [Field Types >>](field_types.md)
+[<< Expressions](expressions.md) | [Table of Contents](toc.md) | [Field Options >>](field_options.md)
