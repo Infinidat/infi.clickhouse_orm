@@ -3,22 +3,22 @@ Field Types
 
 See: [ClickHouse Documentation](https://clickhouse.yandex/docs/en/data_types/)
 
-Currently the following field types are supported:
+The following field types are supported:
 
 | Class              | DB Type    | Pythonic Type         | Comments
 | ------------------ | ---------- | --------------------- | -----------------------------------------------------
-| StringField        | String     | unicode               | Encoded as UTF-8 when written to ClickHouse
-| FixedStringField   | String     | unicode               | Encoded as UTF-8 when written to ClickHouse
+| StringField        | String     | str                   | Encoded as UTF-8 when written to ClickHouse
+| FixedStringField   | FixedString| str                   | Encoded as UTF-8 when written to ClickHouse
 | DateField          | Date       | datetime.date         | Range 1970-01-01 to 2105-12-31
 | DateTimeField      | DateTime   | datetime.datetime     | Minimal value is 1970-01-01 00:00:00; Always in UTC
 | Int8Field          | Int8       | int                   | Range -128 to 127
 | Int16Field         | Int16      | int                   | Range -32768 to 32767
 | Int32Field         | Int32      | int                   | Range -2147483648 to 2147483647
-| Int64Field         | Int64      | int/long              | Range -9223372036854775808 to 9223372036854775807
+| Int64Field         | Int64      | int                   | Range -9223372036854775808 to 9223372036854775807
 | UInt8Field         | UInt8      | int                   | Range 0 to 255
 | UInt16Field        | UInt16     | int                   | Range 0 to 65535
 | UInt32Field        | UInt32     | int                   | Range 0 to 4294967295
-| UInt64Field        | UInt64     | int/long              | Range 0 to 18446744073709551615
+| UInt64Field        | UInt64     | int                   | Range 0 to 18446744073709551615
 | Float32Field       | Float32    | float                 |
 | Float64Field       | Float64    | float                 |
 | DecimalField       | Decimal    | Decimal               | Pythonic values are rounded to fit the scale of the database field
@@ -33,6 +33,113 @@ Currently the following field types are supported:
 | ArrayField         | Array      | list                  | See below
 | NullableField      | Nullable   | See below             | See below
 
+Field Options
+----------------
+All field types accept the following arguments:
+
+ - default
+ - alias
+ - materialized
+ - readonly
+ - codec
+
+Note that `default`, `alias` and `materialized` are mutually exclusive - you cannot use more than one of them in a single field.
+
+### default
+
+Specifies a default value to use for the field. If not given, the field will have a default value based on its type: empty string for string fields, zero for numeric fields, etc.
+The default value can be a Python value suitable for the field type, or an expression. For example:
+```python
+class Event(models.Model):
+
+    name = fields.StringField(default="EVENT")
+    repeated = fields.UInt32Field(default=1)
+    created = fields.DateTimeField(default=F.now())
+
+    engine = engines.Memory()
+    ...
+```
+When creating a model instance, any fields you do not specify get their default value. Fields that use a default expression are assigned a sentinel value of `infi.clickhouse_orm.models.NO_VALUE` instead. For example:
+```python
+>>> event = Event()
+>>> print(event.to_dict())
+{'name': 'EVENT', 'repeated': 1, 'created': <NO_VALUE>}
+```
+:warning: Due to a bug in ClickHouse versions prior to 20.1.2.4, insertion of records with expressions for default values may fail.
+
+### alias / materialized
+
+The `alias` and `materialized` attributes expect an expression that gets calculated by the database. The difference is that `alias` fields are calculated on the fly, while `materialized` fields are calculated when the record is inserted, and are stored on disk.
+You can use any expression, and can refer to other model fields. For example:
+```python
+class Event(models.Model):
+
+    created = fields.DateTimeField()
+    created_date = fields.DateTimeField(materialized=F.toDate(created))
+    name = fields.StringField()
+    normalized_name = fields.StringField(alias=F.upper(F.trim(name)))
+
+    engine = engines.Memory()
+```
+For backwards compatibility with older versions of the ORM, you can pass the expression as an SQL string:
+```python
+    created_date = fields.DateTimeField(materialized="toDate(created)")
+```
+Both field types can't be inserted into the database directly, so they are ignored when using the `Database.insert()` method. ClickHouse does not return the field values if you use `"SELECT * FROM ..."` - you have to list these field names explicitly in the query.
+
+Usage:
+```python
+obj = Event(created=datetime.now(), name='MyEvent')
+db = Database('my_test_db')
+db.insert([obj])
+# All values will be retrieved from database
+db.select('SELECT created, created_date, username, name FROM $db.event', model_class=Event)
+# created_date and username will contain a default value
+db.select('SELECT * FROM $db.event', model_class=Event)
+```
+When creating a model instance, any alias or materialized fields are assigned a sentinel value of `infi.clickhouse_orm.models.NO_VALUE` since their real values can only be known after insertion to the database.
+
+### readonly
+
+This attribute is set automatically for fields with `alias` or `materialized` attributes, you do not need to pass it yourself.
+
+### codec
+This attribute specifies the compression algorithm to use for the field (instead of the default data compression algorithm defined in server settings).
+
+Supported compression algorithms:
+
+| Codec                | Argument                                   | Comment
+| -------------------- | -------------------------------------------| ----------------------------------------------------
+| NONE                 | None                                       | No compression.
+| LZ4                  | None                                       | LZ4 compression.
+| LZ4HC(`level`)       | Possible `level` range: [3, 12].           | Default value: 9. Greater values stands for better compression and higher CPU usage. Recommended value range: [4,9].
+| ZSTD(`level`)        | Possible `level`range: [1, 22].            | Default value: 1. Greater values stands for better compression and higher CPU usage. Levels >= 20, should be used with caution, as they require more memory.
+| Delta(`delta_bytes`) | Possible `delta_bytes` range: 1, 2, 4 , 8. | Default value for `delta_bytes` is `sizeof(type)` if it is equal to 1, 2,4 or 8 and equals to 1 otherwise.
+
+Codecs can be combined by separating their names with commas. The default database codec is not included into pipeline (if it should be applied to a field, you have to specify it explicitly in pipeline).
+
+Recommended usage for codecs:
+- When values for particular metric do not differ significantly from point to point, delta-encoding allows to reduce disk space usage significantly.
+- DateTime works great with pipeline of Delta, ZSTD and the column size can be compressed to 2-3% of its original size (given a smooth datetime data)
+- Numeric types usually enjoy best compression rates with ZSTD
+- String types enjoy good compression rates with LZ4HC
+
+Example:
+```python
+class Stats(models.Model):
+
+    id                  = fields.UInt64Field(codec='ZSTD(10)')
+    timestamp           = fields.DateTimeField(codec='Delta,ZSTD')
+    timestamp_date      = fields.DateField(codec='Delta(4),ZSTD(22)')
+    metadata_id         = fields.Int64Field(codec='LZ4')
+    status              = fields.StringField(codec='LZ4HC(10)')
+    calculation         = fields.NullableField(fields.Float32Field(), codec='ZSTD')
+    alerts              = fields.ArrayField(fields.FixedStringField(length=15), codec='Delta(2),LZ4HC')
+
+    engine = MergeTree('timestamp_date', ('id', 'timestamp'))
+```
+Note: This feature is supported on ClickHouse version 19.1.16 and above. Codec arguments will be ignored by the ORM for older versions of ClickHouse.
+
 DateTimeField and Time Zones
 ----------------------------
 
@@ -45,8 +152,7 @@ A `DateTimeField` can be assigned values from one of the following types:
 
 The assigned value always gets converted to a timezone-aware `datetime` in UTC. If the assigned value is a timezone-aware `datetime` in another timezone, it will be converted to UTC. Otherwise, the assigned value is assumed to already be in UTC.
 
-DateTime values that are read from the database are also converted to UTC. ClickHouse formats them according to the timezone of the server, and the ORM makes the necessary conversions. This requires a ClickHouse
-version which is new enough to support the `timezone()` function, otherwise it is assumed to be using UTC. In any case, we recommend settings the server timezone to UTC in order to prevent confusion.
+DateTime values that are read from the database are also converted to UTC. ClickHouse formats them according to the timezone of the server, and the ORM makes the necessary conversions. This requires a ClickHouse version which is new enough to support the `timezone()` function, otherwise it is assumed to be using UTC. In any case, we recommend settings the server timezone to UTC in order to prevent confusion.
 
 Working with enum fields
 ------------------------
@@ -89,36 +195,6 @@ data = SensorData(date=date.today(), temperatures=[25.5, 31.2, 28.7], humidity_l
 
 Note that multidimensional arrays are not supported yet by the ORM.
 
-Working with materialized and alias fields
-------------------------------------------
-
-ClickHouse provides an opportunity to create MATERIALIZED and ALIAS Fields.
-
-See documentation [here](https://clickhouse.yandex/docs/en/query_language/queries/#default-values).
-
-Both field types can't be inserted into the database directly, so they are ignored when using the `Database.insert()` method. ClickHouse does not return the field values if you use `"SELECT * FROM ..."` - you have to list these field names explicitly in the query.
-
-Usage:
-
-```python
-class Event(models.Model):
-
-    created = fields.DateTimeField()
-    created_date = fields.DateTimeField(materialized='toDate(created)')
-    name = fields.StringField()
-    username = fields.StringField(alias='name')
-
-    engine = engines.MergeTree('created_date', ('created_date', 'created'))
-
-obj = Event(created=datetime.now(), name='MyEvent')
-db = Database('my_test_db')
-db.insert([obj])
-# All values will be retrieved from database
-db.select('SELECT created, created_date, username, name FROM $db.event', model_class=Event)
-# created_date and username will contain a default value
-db.select('SELECT * FROM $db.event', model_class=Event)
-```
-
 Working with nullable fields
 ----------------------------
 [ClickHouse provides a NULL value support](https://clickhouse.yandex/docs/en/data_types/nullable).
@@ -148,46 +224,6 @@ to `None`.
 NOTE: `ArrayField` of `NullableField` is not supported. Also `EnumField` cannot be nullable.
 
 NOTE: Using `Nullable` almost always negatively affects performance, keep this in mind when designing your databases.
-
-Working with field compression codecs
--------------------------------------
-Besides default data compression, defined in server settings, per-field specification is also available.
-
-Supported compression algorithms:
-
-| Codec                | Argument                                   | Comment
-| -------------------- | -------------------------------------------| ----------------------------------------------------
-| NONE                 | None                                       | No compression.
-| LZ4                  | None                                       | LZ4 compression.
-| LZ4HC(`level`)       | Possible `level` range: [3, 12].           | Default value: 9. Greater values stands for better compression and higher CPU usage. Recommended value range: [4,9].
-| ZSTD(`level`)        | Possible `level`range: [1, 22].            | Default value: 1. Greater values stands for better compression and higher CPU usage. Levels >= 20, should be used with caution, as they require more memory.
-| Delta(`delta_bytes`) | Possible `delta_bytes` range: 1, 2, 4 , 8. | Default value for `delta_bytes` is `sizeof(type)` if it is equal to 1, 2,4 or 8 and equals to 1 otherwise.
-
-Codecs can be combined in a pipeline. Default table codec is not included into pipeline (if it should be applied to a field, you have to specify it explicitly in pipeline).
-
-Recommended usage for codecs:
-- Usually, values for particular metric, stored in path does not differ significantly from point to point. Using delta-encoding allows to reduce disk space usage significantly.
-- DateTime works great with pipeline of Delta, ZSTD and the column size can be compressed to 2-3% of its original size (given a smooth datetime data)
-- Numeric types usually enjoy best compression rates with ZSTD
-- String types enjoy good compression rates with LZ4HC
-
-Usage:
-```python
-class Stats(models.Model):
-
-    id                  = fields.UInt64Field(codec='ZSTD(10)')
-    timestamp           = fields.DateTimeField(codec='Delta,ZSTD')
-    timestamp_date      = fields.DateField(codec='Delta(4),ZSTD(22)')
-    metadata_id         = fields.Int64Field(codec='LZ4')
-    status              = fields.StringField(codec='LZ4HC(10)')
-    calculation         = fields.NullableField(fields.Float32Field(), codec='ZSTD')
-    alerts              = fields.ArrayField(fields.FixedStringField(length=15), codec='Delta(2),LZ4HC')
-
-    engine = MergeTree('timestamp_date', ('id', 'timestamp'))
-
-```
-
-Note: This feature is supported on ClickHouse version 19.1.16 and above. Codec arguments will be ignored by the ORM for older versions of ClickHouse.
 
 Working with LowCardinality fields
 ----------------------------------

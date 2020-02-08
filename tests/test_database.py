@@ -1,8 +1,12 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 import unittest
+import datetime
 
 from infi.clickhouse_orm.database import ServerError, DatabaseException
+from infi.clickhouse_orm.models import Model
+from infi.clickhouse_orm.engines import Memory
+from infi.clickhouse_orm.fields import *
 from .base_test_with_data import *
 
 
@@ -25,6 +29,19 @@ class DatabaseTestCase(TestCaseWithData):
 
     def test_insert__medium_batches(self):
         self._insert_and_check(self._sample_data(), len(data), batch_size=100)
+
+    def test_insert__funcs_as_default_values(self):
+        class TestModel(Model):
+            a = DateTimeField(default=datetime.datetime(2020, 1, 1))
+            b = DateField(default=F.toDate(a))
+            c = Int32Field(default=7)
+            d = Int32Field(default=c * 5)
+            engine = Memory()
+        self.database.create_table(TestModel)
+        self.database.insert([TestModel()])
+        t = TestModel.objects_in(self.database)[0]
+        self.assertEqual(str(t.b), '2020-01-01')
+        self.assertEqual(t.d, 35)
 
     def test_count(self):
         self.database.insert(self._sample_data())

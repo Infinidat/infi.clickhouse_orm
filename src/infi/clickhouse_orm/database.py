@@ -199,20 +199,19 @@ class Database(object):
 
         fields_list = ','.join(
             ['`%s`' % name for name in first_instance.fields(writable=True)])
+        fmt = 'TSKV' if model_class.has_funcs_as_defaults() else 'TabSeparated'
+        query = 'INSERT INTO $table (%s) FORMAT %s\n' % (fields_list, fmt)
 
         def gen():
             buf = BytesIO()
-            query = 'INSERT INTO $table (%s) FORMAT TabSeparated\n' % fields_list
             buf.write(self._substitute(query, model_class).encode('utf-8'))
             first_instance.set_database(self)
-            buf.write(first_instance.to_tsv(include_readonly=False).encode('utf-8'))
-            buf.write('\n'.encode('utf-8'))
+            buf.write(first_instance.to_db_string())
             # Collect lines in batches of batch_size
             lines = 2
             for instance in i:
                 instance.set_database(self)
-                buf.write(instance.to_tsv(include_readonly=False).encode('utf-8'))
-                buf.write('\n'.encode('utf-8'))
+                buf.write(instance.to_db_string())
                 lines += 1
                 if lines >= batch_size:
                     # Return the current batch of lines

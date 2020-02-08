@@ -9,9 +9,21 @@ import pytz
 from .fields import Field, StringField
 from .utils import parse_tsv
 from .query import QuerySet
+from .funcs import F
 from .engines import Merge, Distributed
 
 logger = getLogger('clickhouse_orm')
+
+
+class NoValue:
+    '''
+    A sentinel for fields with an expression for a default value,
+    that were not assigned a value yet.
+    '''
+    def __repr__(self):
+        return '<NO_VALUE>'
+
+NO_VALUE = NoValue()
 
 
 class ModelBase(type):
@@ -35,13 +47,23 @@ class ModelBase(type):
         fields = sorted(fields.items(), key=lambda item: item[1].creation_counter)
 
         # Build a dictionary of default values
-        defaults = {n: f.to_python(f.default, pytz.UTC) for n, f in fields}
+        defaults = {}
+        has_funcs_as_defaults = False
+        for n, f in fields:
+            if f.alias or f.materialized:
+                defaults[n] = NO_VALUE
+            elif isinstance(f.default, F):
+                defaults[n] = NO_VALUE
+                has_funcs_as_defaults = True
+            else:
+                defaults[n] = f.to_python(f.default, pytz.UTC)
 
         attrs = dict(
             attrs,
             _fields=OrderedDict(fields),
             _writable_fields=OrderedDict([f for f in fields if not f[1].readonly]),
-            _defaults=defaults
+            _defaults=defaults,
+            _has_funcs_as_defaults=has_funcs_as_defaults
         )
         model = super(ModelBase, cls).__new__(cls, str(name), bases, attrs)
 
@@ -196,6 +218,14 @@ class Model(metaclass=ModelBase):
         return cls.__name__.lower()
 
     @classmethod
+    def has_funcs_as_defaults(cls):
+        '''
+        Return True if some of the model's fields use a function expression
+        as a default value. This requires special handling when inserting instances.
+        '''
+        return cls._has_funcs_as_defaults
+
+    @classmethod
     def create_table_sql(cls, db):
         '''
         Returns the SQL command for creating a table for this model.
@@ -248,6 +278,29 @@ class Model(metaclass=ModelBase):
         data = self.__dict__
         fields = self.fields(writable=not include_readonly)
         return '\t'.join(field.to_db_string(data[name], quote=False) for name, field in fields.items())
+
+    def to_tskv(self, include_readonly=True):
+        '''
+        Returns the instance's column keys and values as a tab-separated line. A newline is not included.
+        Fields that were not assigned a value are omitted.
+
+        - `include_readonly`: if false, returns only fields that can be inserted into database.
+        '''
+        data = self.__dict__
+        fields = self.fields(writable=not include_readonly)
+        parts = []
+        for name, field in fields.items():
+            if data[name] != NO_VALUE:
+                parts.append(name + '=' + field.to_db_string(data[name], quote=False))
+        return '\t'.join(parts)
+
+    def to_db_string(self):
+        '''
+        Returns the instance as a bytestring ready to be inserted into the database.
+        '''
+        s = self.to_tskv(False) if self._has_funcs_as_defaults else self.to_tsv(False)
+        s += '\n'
+        return s.encode('utf-8')
 
     def to_dict(self, include_readonly=True, field_names=None):
         '''
@@ -409,3 +462,5 @@ class DistributedModel(Model):
                 db.db_name, cls.table_name(), cls.engine.table_name),
             'ENGINE = ' + cls.engine.create_table_sql(db)]
         return '\n'.join(parts)
+
+

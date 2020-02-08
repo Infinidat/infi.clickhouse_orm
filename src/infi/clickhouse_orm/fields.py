@@ -89,6 +89,8 @@ class Field(FunctionOperatorsMixin):
             sql += ' ALIAS %s' % string_or_func(self.alias)
         elif self.materialized:
             sql += ' MATERIALIZED %s' % string_or_func(self.materialized)
+        elif isinstance(self.default, F):
+            sql += ' DEFAULT %s' % self.default.to_sql()
         elif self.default:
             default = self.to_db_string(self.default)
             sql += ' DEFAULT %s' % default
@@ -111,26 +113,6 @@ class Field(FunctionOperatorsMixin):
                 return True
             inner_field = getattr(inner_field, 'inner_field', None)
         return False
-
-    # Support comparison operators (for use in querysets)
-
-    def __lt__(self, other):
-        return F.less(self, other)
-
-    def __le__(self, other):
-        return F.lessOrEquals(self, other)
-
-    def __eq__(self, other):
-        return F.equals(self, other)
-
-    def __ne__(self, other):
-        return F.notEquals(self, other)
-
-    def __gt__(self, other):
-        return F.greater(self, other)
-
-    def __ge__(self, other):
-        return F.greaterOrEquals(self, other)
 
 
 class StringField(Field):

@@ -3,9 +3,10 @@ import unittest
 import datetime
 import pytz
 
-from infi.clickhouse_orm.models import Model
+from infi.clickhouse_orm.models import Model, NO_VALUE
 from infi.clickhouse_orm.fields import *
 from infi.clickhouse_orm.engines import *
+from infi.clickhouse_orm.funcs import F
 
 
 class ModelTestCase(unittest.TestCase):
@@ -18,6 +19,7 @@ class ModelTestCase(unittest.TestCase):
         self.assertEqual(instance.str_field, 'dozo')
         self.assertEqual(instance.int_field, 17)
         self.assertEqual(instance.float_field, 0)
+        self.assertEqual(instance.default_func, NO_VALUE)
 
     def test_assignment(self):
         # Check that all fields are assigned during construction
@@ -64,14 +66,16 @@ class ModelTestCase(unittest.TestCase):
             "float_field": 7.0,
             "datetime_field": datetime.datetime(1970, 1, 1, 0, 0, 0, tzinfo=pytz.utc),
             "alias_field": 0.0,
-            'str_field': 'dozo'
+            "str_field": "dozo",
+            "default_func": NO_VALUE
         })
         self.assertDictEqual(instance.to_dict(include_readonly=False), {
             "date_field": datetime.date(1973, 12, 6),
             "int_field": 100,
             "float_field": 7.0,
             "datetime_field": datetime.datetime(1970, 1, 1, 0, 0, 0, tzinfo=pytz.utc),
-            'str_field': 'dozo'
+            "str_field": "dozo",
+            "default_func": NO_VALUE
         })
         self.assertDictEqual(
             instance.to_dict(include_readonly=False, field_names=('int_field', 'alias_field', 'datetime_field')), {
@@ -109,5 +113,6 @@ class SimpleModel(Model):
     int_field = Int32Field(default=17)
     float_field = Float32Field()
     alias_field = Float32Field(alias='float_field')
+    default_func = Float32Field(default=F.sqrt(float_field) + 17)
 
     engine = MergeTree('date_field', ('int_field', 'date_field'))

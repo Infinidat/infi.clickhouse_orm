@@ -3,7 +3,7 @@ import unittest
 from datetime import date
 
 from infi.clickhouse_orm.database import Database
-from infi.clickhouse_orm.models import Model
+from infi.clickhouse_orm.models import Model, NO_VALUE
 from infi.clickhouse_orm.fields import *
 from infi.clickhouse_orm.engines import *
 
@@ -55,6 +55,10 @@ class AliasFieldsTest(unittest.TestCase):
 
         with self.assertRaises(AssertionError):
             StringField(alias='str_field', materialized='str_field')
+
+    def test_default_value(self):
+        instance = ModelWithAliasFields()
+        self.assertEqual(instance.alias_str, NO_VALUE)
 
 
 class ModelWithAliasFields(Model):
