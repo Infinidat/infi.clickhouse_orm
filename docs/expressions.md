@@ -6,7 +6,7 @@ One of the ORM's core concepts is _expressions_, which are composed using functi
 
 - When defining [field options](field_options.md) - `default`, `alias` and `materialized`.
 - In [table engine](table_engines.md) parameters for engines in the `MergeTree` family.
-- In [queryset](querysets.md) methods such as `filter`, `exclude`, `order_by`, `extra`, `aggregate` and `limit_by`.
+- In [queryset](querysets.md) methods such as `filter`, `exclude`, `order_by`, `aggregate` and `limit_by`.
 
 Using Expressions
 -----------------

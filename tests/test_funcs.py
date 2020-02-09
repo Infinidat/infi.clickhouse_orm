@@ -30,6 +30,15 @@ class FuncsTestCase(TestCaseWithData):
             self.assertEqual(result[0].value, expected_value)
         return result[0].value if result else None
 
+    def _test_aggr(self, func, expected_value=None):
+        qs = Person.objects_in(self.database).aggregate(value=func)
+        logger.info(qs.as_sql())
+        result = list(qs)
+        logger.info('\t==> %s', result[0].value if result else '<empty>')
+        if expected_value is not None:
+            self.assertEqual(result[0].value, expected_value)
+        return result[0].value if result else None
+
     def test_func_to_sql(self):
         # No args
         self.assertEqual(F('func').to_sql(), 'func()')
@@ -514,3 +523,28 @@ class FuncsTestCase(TestCaseWithData):
         # These require support for tuples:
         # self._test_func(F.IPv4CIDRToRange(F.toIPv4('192.168.5.2'), 16), ['192.168.0.0','192.168.255.255'])
         # self._test_func(F.IPv6CIDRToRange(x, y))
+
+    def test_aggregate_funcs(self):
+        self._test_aggr(F.any(Person.first_name))
+        self._test_aggr(F.anyHeavy(Person.first_name))
+        self._test_aggr(F.anyLast(Person.first_name))
+        self._test_aggr(F.argMin(Person.first_name, Person.height))
+        self._test_aggr(F.argMax(Person.first_name, Person.height))
+        self._test_aggr(F.round(F.avg(Person.height), 4), sum(p.height for p in self._sample_data()) / 100)
+        self._test_aggr(F.corr(Person.height, Person.height), 1)
+        self._test_aggr(F.count(), 100)
+        self._test_aggr(F.round(F.covarPop(Person.height, Person.height), 2), 0)
+        self._test_aggr(F.round(F.covarSamp(Person.height, Person.height), 2), 0)
+        self._test_aggr(F.kurtPop(Person.height))
+        self._test_aggr(F.kurtSamp(Person.height))
+        self._test_aggr(F.min(Person.height), 1.59)
+        self._test_aggr(F.max(Person.height), 1.80)
+        self._test_aggr(F.skewPop(Person.height))
+        self._test_aggr(F.skewSamp(Person.height))
+        self._test_aggr(F.round(F.sum(Person.height), 4), sum(p.height for p in self._sample_data()))
+        self._test_aggr(F.uniq(Person.first_name, Person.last_name), 100)
+        self._test_aggr(F.uniqExact(Person.first_name, Person.last_name), 100)
+        self._test_aggr(F.uniqHLL12(Person.first_name, Person.last_name), 99)
+        self._test_aggr(F.varPop(Person.height))
+        self._test_aggr(F.varSamp(Person.height))
+

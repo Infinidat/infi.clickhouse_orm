@@ -1311,7 +1311,95 @@ class F(Cond, FunctionOperatorsMixin):
     def toIPv6(ipv6):
         return F('toIPv6', ipv6)
 
+    # Aggregate functions
 
+    @staticmethod
+    def any(x):
+        return F('any', x)
+
+    @staticmethod
+    def anyHeavy(x):
+        return F('anyHeavy', x)
+
+    @staticmethod
+    def anyLast(x):
+        return F('anyLast', x)
+
+    @staticmethod
+    def argMax(x, y):
+        return F('argMax', x, y)
+
+    @staticmethod
+    def argMin(x, y):
+        return F('argMin', x, y)
+
+    @staticmethod
+    def avg(x):
+        return F('avg', x)
+
+    @staticmethod
+    def corr(x, y):
+        return F('corr', x, y)
+
+    @staticmethod
+    def count():
+        return F('count')
+
+    @staticmethod
+    def covarPop(x, y):
+        return F('covarPop', x, y)
+
+    @staticmethod
+    def covarSamp(x, y):
+        return F('covarSamp', x, y)
+
+    @staticmethod
+    def kurtPop(x):
+        return F('kurtPop', x)
+
+    @staticmethod
+    def kurtSamp(x):
+        return F('kurtSamp', x)
+
+    @staticmethod
+    def min(x):
+        return F('min', x)
+
+    @staticmethod
+    def max(x):
+        return F('max', x)
+
+    @staticmethod
+    def skewPop(x):
+        return F('skewPop', x)
+
+    @staticmethod
+    def skewSamp(x):
+        return F('skewSamp', x)
+
+    @staticmethod
+    def sum(x):
+        return F('sum', x)
+
+    @staticmethod
+    def uniq(*args):
+        return F('uniq', *args)
+
+    @staticmethod
+    def uniqExact(*args):
+        return F('uniqExact', *args)
+
+    @staticmethod
+    def uniqHLL12(*args):
+        return F('uniqHLL12', *args)
+
+    @staticmethod
+    def varPop(x):
+        return F('varPop', x)
+
+    @staticmethod
+    def varSamp(x):
+        return F('varSamp', x)
 
 
     # Higher-order functions

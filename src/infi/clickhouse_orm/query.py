@@ -5,12 +5,11 @@ from copy import copy, deepcopy
 from math import ceil
 from .engines import CollapsingMergeTree
 from datetime import date, datetime
-from .utils import comma_join
+from .utils import comma_join, string_or_func
 
 
 # TODO
 # - check that field names are valid
-# - operators for arrays: length, has, empty
 
 class Operator(object):
     """
@@ -345,11 +344,11 @@ class QuerySet(object):
             qs._limits = (start, stop - start)
             return qs
 
-    def limit_by(self, offset_limit, *fields):
+    def limit_by(self, offset_limit, *fields_or_expr):
         """
         Adds a LIMIT BY clause to the query.
         - `offset_limit`: either an integer specifying the limit, or a tuple of integers (offset, limit).
-        - `fields`: the field names to use in the clause.
+        - `fields_or_expr`: the field names or expressions to use in the clause.
         """
         if isinstance(offset_limit, int):
             # Single limit
@@ -359,7 +358,7 @@ class QuerySet(object):
         assert offset >= 0 and limit >= 0, 'negative limits are not supported'
         qs = copy(self)
         qs._limit_by = (offset, limit)
-        qs._limit_by_fields = fields
+        qs._limit_by_fields = fields_or_expr
         return qs
 
     def select_fields_as_sql(self):
@@ -403,7 +402,7 @@ class QuerySet(object):
 
         if self._limit_by:
             sql += '\nLIMIT %d, %d' % self._limit_by
-            sql += ' BY %s' % comma_join('`%s`' % field for field in self._limit_by_fields)
+            sql += ' BY %s' % comma_join(string_or_func(field) for field in self._limit_by_fields)
 
         if self._limits:
             sql += '\nLIMIT %d, %d' % self._limits

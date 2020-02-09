@@ -339,6 +339,22 @@ class AggregateTestCase(TestCaseWithData):
             self.assertAlmostEqual(row.average_height, 1.675, places=4)
             self.assertEqual(row.count, 2)
 
+    def test_aggregate_with_filter__funcs(self):
+        # When filter comes before aggregate
+        qs = Person.objects_in(self.database).filter(Person.first_name=='Warren').aggregate(average_height=F.avg(Person.height), count=F.count())
+        print(qs.as_sql())
+        self.assertEqual(qs.count(), 1)
+        for row in qs:
+            self.assertAlmostEqual(row.average_height, 1.675, places=4)
+            self.assertEqual(row.count, 2)
+        # When filter comes after aggregate
+        qs = Person.objects_in(self.database).aggregate(average_height=F.avg(Person.height), count=F.count()).filter(Person.first_name=='Warren')
+        print(qs.as_sql())
+        self.assertEqual(qs.count(), 1)
+        for row in qs:
+            self.assertAlmostEqual(row.average_height, 1.675, places=4)
+            self.assertEqual(row.count, 2)
+
     def test_aggregate_with_implicit_grouping(self):
         qs = Person.objects_in(self.database).aggregate('first_name', average_height='avg(height)', count='count()')
         print(qs.as_sql())
@@ -451,6 +467,11 @@ class AggregateTestCase(TestCaseWithData):
         # Test without offset
         qs = Person.objects_in(self.database).aggregate('first_name', 'last_name', 'height', n='count()').\
             order_by('first_name', '-height').limit_by(1, 'first_name')
+        self.assertEqual(qs.count(), 94)
+        self.assertEqual(list(qs)[89].last_name, 'Bowen')
+        # Test with funcs
+        qs = Person.objects_in(self.database).aggregate('first_name', 'last_name', 'height', n=F.count()).\
+            order_by('first_name', '-height').limit_by(1, F.upper(Person.first_name))
         self.assertEqual(qs.count(), 94)
         self.assertEqual(list(qs)[89].last_name, 'Bowen')
         # Test with limit and offset, also mixing LIMIT with LIMIT BY
