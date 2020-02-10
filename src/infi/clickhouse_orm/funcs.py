@@ -1,7 +1,9 @@
 from datetime import date, datetime, tzinfo
-import functools
+from functools import wraps
+from inspect import signature, Parameter
+from types import FunctionType
 
-from .utils import is_iterable, comma_join
+from .utils import is_iterable, comma_join, NO_VALUE
 from .query import Cond
 
 
@@ -9,12 +11,35 @@ def binary_operator(func):
     """
     Decorates a function to mark it as a binary operator.
     """
-    @functools.wraps(func)
+    @wraps(func)
     def wrapper(*args, **kwargs):
         ret = func(*args, **kwargs)
         ret.is_binary_operator = True
         return ret
     return wrapper
+
+
+def type_conversion(func):
+    """
+    Decorates a function to mark it as a type conversion function.
+    """
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        return func(*args, **kwargs)
+    wrapper.f_type = 'type_conversion'
+    return wrapper
+
+
+def aggregate(func):
+    """
+    Decorates a function to mark it as an aggregate function.
+    """
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        return func(*args, **kwargs)
+    wrapper.f_type = 'aggregate'
+    return wrapper
+
 
 
 class FunctionOperatorsMixin(object):
@@ -104,7 +129,57 @@ class FunctionOperatorsMixin(object):
         return F._not(self)
 
 
-class F(Cond, FunctionOperatorsMixin):
+class FMeta(type):
+
+    FUNCTION_COMBINATORS = {
+        'type_conversion': [
+            {'suffix': 'OrZero'},
+            {'suffix': 'OrNull'},
+        ],
+        'aggregate': [
+            {'suffix': 'OrDefault'},
+            {'suffix': 'OrNull'},
+            {'suffix': 'If', 'args': ['cond']},
+            {'suffix': 'OrDefaultIf', 'args': ['cond']},
+            {'suffix': 'OrNullIf', 'args': ['cond']},
+        ]
+    }
+
+    def __init__(cls, name, bases, dct):
+        for name, obj in dct.items():
+            if hasattr(obj, '__func__'):
+                f_type = getattr(obj.__func__, 'f_type', '')
+                for combinator in FMeta.FUNCTION_COMBINATORS.get(f_type, []):
+                    new_name = name + combinator['suffix']
+                    FMeta._add_func(cls, obj.__func__, new_name, combinator.get('args'))
+
+    @staticmethod
+    def _add_func(cls, base_func, new_name, extra_args):
+        """
+        Adds a new func to the cls, based on the signature of the given base_func but with a new name.
+        """
+        # Get the function's signature
+        sig = signature(base_func)
+        new_sig = str(sig)[1 : -1] # omit the parentheses
+        args = comma_join(sig.parameters)
+        # Add extra args
+        if extra_args:
+            if args:
+                args = comma_join([args] + extra_args)
+                new_sig = comma_join([new_sig] + extra_args)
+            else:
+                args = comma_join(extra_args)
+                new_sig = comma_join(extra_args)
+        # Get default values for args
+        argdefs = tuple(p.default for p in sig.parameters.values() if p.default != Parameter.empty)
+        # Build the new function
+        new_code = compile(f'def {new_name}({new_sig}): return F("{new_name}", {args})', __file__, 'exec')
+        new_func = FunctionType(code=new_code.co_consts[0], globals=globals(), name=new_name, argdefs=argdefs)
+        # Attach to class
+        setattr(cls, new_name, new_func)
+
+
+class F(Cond, FunctionOperatorsMixin, metaclass=FMeta):
     """
     Represents a database function call and its arguments.
     It doubles as a query condition when the function returns a boolean result.
@@ -135,7 +210,7 @@ class F(Cond, FunctionOperatorsMixin):
         else:
             prefix = self.name
             sep = ', '
-        arg_strs = (F._arg_to_sql(arg) for arg in self.args)
+        arg_strs = (F._arg_to_sql(arg) for arg in self.args if arg != NO_VALUE)
         return prefix + '(' + sep.join(arg_strs) + ')'
 
     @staticmethod
@@ -392,168 +467,143 @@ class F(Cond, FunctionOperatorsMixin):
         return F('formatDateTime', d, format, timezone)
 
     @staticmethod
-    def addDays(d, n, timezone=None):
-        return F('addDays', d, n, timezone) if timezone else F('addDays', d, n)
+    def addDays(d, n, timezone=NO_VALUE):
+        return F('addDays', d, n, timezone)
 
     @staticmethod
-    def addHours(d, n, timezone=None):
-        return F('addHours', d, n, timezone) if timezone else F('addHours', d, n)
+    def addHours(d, n, timezone=NO_VALUE):
+        return F('addHours', d, n, timezone)
 
     @staticmethod
-    def addMinutes(d, n, timezone=None):
-        return F('addMinutes', d, n, timezone) if timezone else F('addMinutes', d, n)
+    def addMinutes(d, n, timezone=NO_VALUE):
+        return F('addMinutes', d, n, timezone)
 
     @staticmethod
-    def addMonths(d, n, timezone=None):
-        return F('addMonths', d, n, timezone) if timezone else F('addMonths', d, n)
+    def addMonths(d, n, timezone=NO_VALUE):
+        return F('addMonths', d, n, timezone)
 
     @staticmethod
-    def addQuarters(d, n, timezone=None):
-        return F('addQuarters', d, n, timezone) if timezone else F('addQuarters', d, n)
+    def addQuarters(d, n, timezone=NO_VALUE):
+        return F('addQuarters', d, n, timezone)
 
     @staticmethod
-    def addSeconds(d, n, timezone=None):
-        return F('addSeconds', d, n, timezone) if timezone else F('addSeconds', d, n)
+    def addSeconds(d, n, timezone=NO_VALUE):
+        return F('addSeconds', d, n, timezone)
 
     @staticmethod
-    def addWeeks(d, n, timezone=None):
-        return F('addWeeks', d, n, timezone) if timezone else F('addWeeks', d, n)
+    def addWeeks(d, n, timezone=NO_VALUE):
+        return F('addWeeks', d, n, timezone)
 
     @staticmethod
-    def addYears(d, n, timezone=None):
-        return F('addYears', d, n, timezone) if timezone else F('addYears', d, n)
+    def addYears(d, n, timezone=NO_VALUE):
+        return F('addYears', d, n, timezone)
 
     @staticmethod
-    def subtractDays(d, n, timezone=None):
-        return F('subtractDays', d, n, timezone) if timezone else F('subtractDays', d, n)
+    def subtractDays(d, n, timezone=NO_VALUE):
+        return F('subtractDays', d, n, timezone)
 
     @staticmethod
-    def subtractHours(d, n, timezone=None):
-        return F('subtractHours', d, n, timezone) if timezone else F('subtractHours', d, n)
+    def subtractHours(d, n, timezone=NO_VALUE):
+        return F('subtractHours', d, n, timezone)
 
     @staticmethod
-    def subtractMinutes(d, n, timezone=None):
-        return F('subtractMinutes', d, n, timezone) if timezone else F('subtractMinutes', d, n)
+    def subtractMinutes(d, n, timezone=NO_VALUE):
+        return F('subtractMinutes', d, n, timezone)
 
     @staticmethod
-    def subtractMonths(d, n, timezone=None):
-        return F('subtractMonths', d, n, timezone) if timezone else F('subtractMonths', d, n)
+    def subtractMonths(d, n, timezone=NO_VALUE):
+        return F('subtractMonths', d, n, timezone)
 
     @staticmethod
-    def subtractQuarters(d, n, timezone=None):
-        return F('subtractQuarters', d, n, timezone) if timezone else F('subtractQuarters', d, n)
+    def subtractQuarters(d, n, timezone=NO_VALUE):
+        return F('subtractQuarters', d, n, timezone)
 
     @staticmethod
-    def subtractSeconds(d, n, timezone=None):
-        return F('subtractSeconds', d, n, timezone) if timezone else F('subtractSeconds', d, n)
+    def subtractSeconds(d, n, timezone=NO_VALUE):
+        return F('subtractSeconds', d, n, timezone)
 
     @staticmethod
-    def subtractWeeks(d, n, timezone=None):
-        return F('subtractWeeks', d, n, timezone) if timezone else F('subtractWeeks', d, n)
+    def subtractWeeks(d, n, timezone=NO_VALUE):
+        return F('subtractWeeks', d, n, timezone)
 
     @staticmethod
-    def subtractYears(d, n, timezone=None):
-        return F('subtractYears', d, n, timezone) if timezone else F('subtractYears', d, n)
+    def subtractYears(d, n, timezone=NO_VALUE):
+        return F('subtractYears', d, n, timezone)
 
     # Type conversion functions
 
     @staticmethod
+    @type_conversion
     def toUInt8(x):
         return F('toUInt8', x)
 
     @staticmethod
+    @type_conversion
     def toUInt16(x):
         return F('toUInt16', x)
 
     @staticmethod
+    @type_conversion
     def toUInt32(x):
         return F('toUInt32', x)
 
     @staticmethod
+    @type_conversion
     def toUInt64(x):
         return F('toUInt64', x)
 
     @staticmethod
+    @type_conversion
     def toInt8(x):
         return F('toInt8', x)
 
     @staticmethod
+    @type_conversion
     def toInt16(x):
         return F('toInt16', x)
 
     @staticmethod
+    @type_conversion
     def toInt32(x):
         return F('toInt32', x)
 
     @staticmethod
+    @type_conversion
     def toInt64(x):
         return F('toInt64', x)
 
     @staticmethod
+    @type_conversion
     def toFloat32(x):
         return F('toFloat32', x)
 
     @staticmethod
+    @type_conversion
     def toFloat64(x):
         return F('toFloat64', x)
 
     @staticmethod
-    def toUInt8OrZero(x):
-        return F('toUInt8OrZero', x)
-
-    @staticmethod
-    def toUInt16OrZero(x):
-        return F('toUInt16OrZero', x)
-
-    @staticmethod
-    def toUInt32OrZero(x):
-        return F('toUInt32OrZero', x)
-
-    @staticmethod
-    def toUInt64OrZero(x):
-        return F('toUInt64OrZero', x)
-
-    @staticmethod
-    def toInt8OrZero(x):
-        return F('toInt8OrZero', x)
-
-    @staticmethod
-    def toInt16OrZero(x):
-        return F('toInt16OrZero', x)
-
-    @staticmethod
-    def toInt32OrZero(x):
-        return F('toInt32OrZero', x)
-
-    @staticmethod
-    def toInt64OrZero(x):
-        return F('toInt64OrZero', x)
-
-    @staticmethod
-    def toFloat32OrZero(x):
-        return F('toFloat32OrZero', x)
-
-    @staticmethod
-    def toFloat64OrZero(x):
-        return F('toFloat64OrZero', x)
-
-    @staticmethod
+    @type_conversion
     def toDecimal32(x, scale):
         return F('toDecimal32', x, scale)
 
     @staticmethod
+    @type_conversion
     def toDecimal64(x, scale):
         return F('toDecimal64', x, scale)
 
     @staticmethod
+    @type_conversion
     def toDecimal128(x, scale):
         return F('toDecimal128', x, scale)
 
     @staticmethod
+    @type_conversion
     def toDate(x):
         return F('toDate', x)
 
     @staticmethod
+    @type_conversion
     def toDateTime(x):
         return F('toDateTime', x)
 
@@ -574,16 +624,9 @@ class F(Cond, FunctionOperatorsMixin):
         return F('CAST', x, type)
 
     @staticmethod
-    def parseDateTimeBestEffort(d, timezone=None):
-        return F('parseDateTimeBestEffort', d, timezone) if timezone else F('parseDateTimeBestEffort', d)
-
-    @staticmethod
-    def parseDateTimeBestEffortOrNull(d, timezone=None):
-        return F('parseDateTimeBestEffortOrNull', d, timezone) if timezone else F('parseDateTimeBestEffortOrNull', d)
-
-    @staticmethod
-    def parseDateTimeBestEffortOrZero(d, timezone=None):
-        return F('parseDateTimeBestEffortOrZero', d, timezone) if timezone else F('parseDateTimeBestEffortOrZero', d)
+    @type_conversion
+    def parseDateTimeBestEffort(d, timezone=NO_VALUE):
+        return F('parseDateTimeBestEffort', d, timezone)
 
     # Functions for working with strings
 
@@ -1314,90 +1357,112 @@ class F(Cond, FunctionOperatorsMixin):
     # Aggregate functions
 
     @staticmethod
+    @aggregate
     def any(x):
         return F('any', x)
 
     @staticmethod
+    @aggregate
     def anyHeavy(x):
         return F('anyHeavy', x)
 
     @staticmethod
+    @aggregate
     def anyLast(x):
         return F('anyLast', x)
 
     @staticmethod
+    @aggregate
     def argMax(x, y):
         return F('argMax', x, y)
 
     @staticmethod
+    @aggregate
     def argMin(x, y):
         return F('argMin', x, y)
 
     @staticmethod
+    @aggregate
     def avg(x):
         return F('avg', x)
 
     @staticmethod
+    @aggregate
     def corr(x, y):
         return F('corr', x, y)
 
     @staticmethod
+    @aggregate
     def count():
         return F('count')
 
     @staticmethod
+    @aggregate
     def covarPop(x, y):
         return F('covarPop', x, y)
 
     @staticmethod
+    @aggregate
     def covarSamp(x, y):
         return F('covarSamp', x, y)
 
     @staticmethod
+    @aggregate
     def kurtPop(x):
         return F('kurtPop', x)
 
     @staticmethod
+    @aggregate
     def kurtSamp(x):
         return F('kurtSamp', x)
 
     @staticmethod
+    @aggregate
     def min(x):
         return F('min', x)
 
     @staticmethod
+    @aggregate
     def max(x):
         return F('max', x)
 
     @staticmethod
+    @aggregate
     def skewPop(x):
         return F('skewPop', x)
 
     @staticmethod
+    @aggregate
     def skewSamp(x):
         return F('skewSamp', x)
 
     @staticmethod
+    @aggregate
     def sum(x):
         return F('sum', x)
 
     @staticmethod
+    @aggregate
     def uniq(*args):
         return F('uniq', *args)
 
     @staticmethod
+    @aggregate
     def uniqExact(*args):
         return F('uniqExact', *args)
 
     @staticmethod
+    @aggregate
     def uniqHLL12(*args):
         return F('uniqHLL12', *args)
 
     @staticmethod
+    @aggregate
     def varPop(x):
         return F('varPop', x)
 
     @staticmethod
+    @aggregate
     def varSamp(x):
         return F('varSamp', x)
 

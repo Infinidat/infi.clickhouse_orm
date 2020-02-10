@@ -7,23 +7,12 @@ from six import reraise
 import pytz
 
 from .fields import Field, StringField
-from .utils import parse_tsv
+from .utils import parse_tsv, NO_VALUE
 from .query import QuerySet
 from .funcs import F
 from .engines import Merge, Distributed
 
 logger = getLogger('clickhouse_orm')
-
-
-class NoValue:
-    '''
-    A sentinel for fields with an expression for a default value,
-    that were not assigned a value yet.
-    '''
-    def __repr__(self):
-        return '<NO_VALUE>'
-
-NO_VALUE = NoValue()
 
 
 class ModelBase(type):

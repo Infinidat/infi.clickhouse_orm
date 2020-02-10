@@ -4,6 +4,7 @@ from .test_querysets import SampleModel
 from datetime import date, datetime, tzinfo, timedelta
 from ipaddress import IPv4Address, IPv6Address
 from infi.clickhouse_orm.database import ServerError
+from infi.clickhouse_orm.utils import NO_VALUE
 
 
 class FuncsTestCase(TestCaseWithData):
@@ -21,21 +22,21 @@ class FuncsTestCase(TestCaseWithData):
         self.assertEqual(count, expected_count)
         self.assertEqual(qs.count(), expected_count)
 
-    def _test_func(self, func, expected_value=None):
+    def _test_func(self, func, expected_value=NO_VALUE):
         sql = 'SELECT %s AS value' % func.to_sql()
         logger.info(sql)
         result = list(self.database.select(sql))
         logger.info('\t==> %s', result[0].value if result else '<empty>')
-        if expected_value is not None:
+        if expected_value != NO_VALUE:
             self.assertEqual(result[0].value, expected_value)
         return result[0].value if result else None
 
-    def _test_aggr(self, func, expected_value=None):
+    def _test_aggr(self, func, expected_value=NO_VALUE):
         qs = Person.objects_in(self.database).aggregate(value=func)
         logger.info(qs.as_sql())
         result = list(qs)
         logger.info('\t==> %s', result[0].value if result else '<empty>')
-        if expected_value is not None:
+        if expected_value != NO_VALUE:
             self.assertEqual(result[0].value, expected_value)
         return result[0].value if result else None
 
@@ -316,7 +317,7 @@ class FuncsTestCase(TestCaseWithData):
         try:
             self._test_func(F.base64Decode(F.base64Encode('Hello')), 'Hello')
             self._test_func(F.tryBase64Decode(F.base64Encode('Hello')), 'Hello')
-            self._test_func(F.tryBase64Decode(':-)'), None)
+            self._test_func(F.tryBase64Decode(':-)'))
         except ServerError as e:
             # ClickHouse version that doesn't support these functions
             raise unittest.SkipTest(e.message)
@@ -548,3 +549,27 @@ class FuncsTestCase(TestCaseWithData):
         self._test_aggr(F.varPop(Person.height))
         self._test_aggr(F.varSamp(Person.height))
 
+    def test_aggregate_funcs__or_default(self):
+        self.database.raw('TRUNCATE TABLE person')
+        self._test_aggr(F.countOrDefault(), 0)
+        self._test_aggr(F.maxOrDefault(Person.height), 0)
+
+    def test_aggregate_funcs__or_null(self):
+        self.database.raw('TRUNCATE TABLE person')
+        self._test_aggr(F.countOrNull(), None)
+        self._test_aggr(F.maxOrNull(Person.height), None)
+
+    def test_aggregate_funcs__if(self):
+        self._test_aggr(F.argMinIf(Person.first_name, Person.height, Person.last_name > 'H'))
+        self._test_aggr(F.countIf(Person.last_name > 'H'), 57)
+        self._test_aggr(F.minIf(Person.height, Person.last_name > 'H'), 1.6)
+
+    def test_aggregate_funcs__or_default_if(self):
+        self._test_aggr(F.argMinOrDefaultIf(Person.first_name, Person.height, Person.last_name > 'Z'))
+        self._test_aggr(F.countOrDefaultIf(Person.last_name > 'Z'), 0)
+        self._test_aggr(F.minOrDefaultIf(Person.height, Person.last_name > 'Z'), 0)
+
+    def test_aggregate_funcs__or_null_if(self):
+        self._test_aggr(F.argMinOrNullIf(Person.first_name, Person.height, Person.last_name > 'Z'))
+        self._test_aggr(F.countOrNullIf(Person.last_name > 'Z'), None)
+        self._test_aggr(F.minOrNullIf(Person.height, Person.last_name > 'Z'), None)

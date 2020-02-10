@@ -112,3 +112,14 @@ def is_iterable(obj):
         return True
     except TypeError:
         return False
+
+
+class NoValue:
+    '''
+    A sentinel for fields with an expression for a default value,
+    that were not assigned a value yet.
+    '''
+    def __repr__(self):
+        return 'NO_VALUE'
+
+NO_VALUE = NoValue()
