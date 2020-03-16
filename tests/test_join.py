@@ -30,8 +30,8 @@ class JoinTest(unittest.TestCase):
         self.print_res("SELECT b FROM $db.{} ALL LEFT JOIN $db.{} USING id".format(Foo.table_name(), Bar.table_name()))
 
     def test_with_subquery(self):
-        self.print_res("SELECT b FROM {} ALL LEFT JOIN (SELECT * from {}) USING id".format(Foo.table_name(), Bar.table_name()))
-        self.print_res("SELECT b FROM $db.{} ALL LEFT JOIN (SELECT * from $db.{}) USING id".format(Foo.table_name(), Bar.table_name()))
+        self.print_res("SELECT b FROM {} ALL LEFT JOIN (SELECT * from {}) subquery USING id".format(Foo.table_name(), Bar.table_name()))
+        self.print_res("SELECT b FROM $db.{} ALL LEFT JOIN (SELECT * from $db.{}) subquery USING id".format(Foo.table_name(), Bar.table_name()))
 
 
 class Foo(models.Model):
