@@ -39,7 +39,7 @@ class ReadonlyTestCase(TestCaseWithData):
         self.assertEqual(exc.code, 164)
         print(exc.message)
         if self.database.server_version >= (20, 3):
-            self.assertTrue(exc.message.startswith('default: Cannot execute query in readonly mode'))
+            self.assertTrue('Cannot execute query in readonly mode' in exc.message)
         elif drop_table:
             self.assertTrue(exc.message.startswith('Cannot drop table in readonly mode'))
         else:
