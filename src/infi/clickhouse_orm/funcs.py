@@ -22,6 +22,8 @@ def binary_operator(func):
 def type_conversion(func):
     """
     Decorates a function to mark it as a type conversion function.
+    The metaclass automatically generates "OrZero" and "OrNull" combinators
+    for the decorated function.
     """
     @wraps(func)
     def wrapper(*args, **kwargs):
@@ -33,6 +35,8 @@ def type_conversion(func):
 def aggregate(func):
     """
     Decorates a function to mark it as an aggregate function.
+    The metaclass automatically generates combinators such as "OrDefault",
+    "OrNull", "If" etc. for the decorated function.
     """
     @wraps(func)
     def wrapper(*args, **kwargs):
@@ -40,6 +44,36 @@ def aggregate(func):
     wrapper.f_type = 'aggregate'
     return wrapper
 
+
+def with_utf8_support(func):
+    """
+    Decorates a function to mark it as a string function that has a UTF8 variant.
+    The metaclass automatically generates a "UTF8" combinator for the decorated function.
+    """
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        return func(*args, **kwargs)
+    wrapper.f_type = 'with_utf8_support'
+    return wrapper
+
+
+def parametric(func):
+    """
+    Decorates a function to convert it to a parametric function, such
+    as `quantile(level)(expr)`.
+    """
+    @wraps(func)
+    def wrapper(*parameters):
+        @wraps(func)
+        def inner(*args, **kwargs):
+            f = func(*args, **kwargs)
+            # Append the parameter to the function name
+            parameters_str = comma_join([str(p) for p in parameters])
+            f.name = '%s(%s)' % (f.name, parameters_str)
+            return f
+        return inner
+    wrapper.f_parametric = True
+    return wrapper
 
 
 class FunctionOperatorsMixin(object):
@@ -93,6 +127,12 @@ class FunctionOperatorsMixin(object):
     def __rtruediv__(self, other):
         return F.divide(other, self)
 
+    def __floordiv__(self, other):
+        return F.intDiv(self, other)
+
+    def __rfloordiv__(self, other):
+        return F.intDiv(other, self)
+
     def __mod__(self, other):
         return F.modulo(self, other)
 
@@ -139,9 +179,12 @@ class FMeta(type):
         'aggregate': [
             {'suffix': 'OrDefault'},
             {'suffix': 'OrNull'},
-            {'suffix': 'If', 'args': ['cond']},
+            {'suffix': 'If',          'args': ['cond']},
             {'suffix': 'OrDefaultIf', 'args': ['cond']},
-            {'suffix': 'OrNullIf', 'args': ['cond']},
+            {'suffix': 'OrNullIf',    'args': ['cond']},
+        ],
+        'with_utf8_support': [
+            {'suffix': 'UTF8'},
         ]
     }
 
@@ -175,6 +218,9 @@ class FMeta(type):
         # Build the new function
         new_code = compile(f'def {new_name}({new_sig}): return F("{new_name}", {args})', __file__, 'exec')
         new_func = FunctionType(code=new_code.co_consts[0], globals=globals(), name=new_name, argdefs=argdefs)
+        # If base_func was parametric, new_func should be too
+        if getattr(base_func, 'f_parametric', False):
+            new_func = parametric(new_func)
         # Attach to class
         setattr(cls, new_name, new_func)
 
@@ -351,8 +397,28 @@ class F(Cond, FunctionOperatorsMixin, metaclass=FMeta):
         return F('toYear', d)
 
     @staticmethod
+    def toISOYear(d, timezone=''):
+        return F('toISOYear', d, timezone)
+
+    @staticmethod
+    def toQuarter(d, timezone=''):
+        return F('toQuarter', d, timezone)
+
+    @staticmethod
     def toMonth(d):
         return F('toMonth', d)
+
+    @staticmethod
+    def toWeek(d, mode=0, timezone=''):
+        return F('toWeek', d, mode, timezone)
+
+    @staticmethod
+    def toISOWeek(d, timezone=''):
+        return F('toISOWeek', d, timezone)
+
+    @staticmethod
+    def toDayOfYear(d):
+        return F('toDayOfYear', d)
 
     @staticmethod
     def toDayOfMonth(d):
@@ -391,6 +457,18 @@ class F(Cond, FunctionOperatorsMixin, metaclass=FMeta):
         return F('toStartOfYear', d)
 
     @staticmethod
+    def toStartOfISOYear(d):
+        return F('toStartOfISOYear', d)
+
+    @staticmethod
+    def toStartOfTenMinutes(d):
+        return F('toStartOfTenMinutes', d)
+
+    @staticmethod
+    def toStartOfWeek(d, mode=0):
+        return F('toStartOfWeek', d)
+
+    @staticmethod
     def toStartOfMinute(d):
         return F('toStartOfMinute', d)
 
@@ -413,6 +491,26 @@ class F(Cond, FunctionOperatorsMixin, metaclass=FMeta):
     @staticmethod
     def toTime(d, timezone=''):
         return F('toTime', d, timezone)
+
+    @staticmethod
+    def toTimeZone(dt, timezone):
+        return F('toTimeZone', dt, timezone)
+
+    @staticmethod
+    def toUnixTimestamp(dt, timezone=''):
+        return F('toUnixTimestamp', dt, timezone)
+
+    @staticmethod
+    def toYYYYMM(dt, timezone=''):
+        return F('toYYYYMM', dt, timezone)
+
+    @staticmethod
+    def toYYYYMMDD(dt, timezone=''):
+        return F('toYYYYMMDD', dt, timezone)
+
+    @staticmethod
+    def toYYYYMMDDhhmmss(dt, timezone=''):
+        return F('toYYYYMMDDhhmmss', dt, timezone)
 
     @staticmethod
     def toRelativeYearNum(d, timezone=''):
@@ -639,48 +737,33 @@ class F(Cond, FunctionOperatorsMixin, metaclass=FMeta):
         return F('notEmpty', s)
 
     @staticmethod
+    @with_utf8_support
     def length(s):
         return F('length', s)
 
     @staticmethod
-    def lengthUTF8(s):
-        return F('lengthUTF8', s)
-
-    @staticmethod
+    @with_utf8_support
     def lower(s):
         return F('lower', s)
 
     @staticmethod
+    @with_utf8_support
     def upper(s):
         return F('upper', s)
 
     @staticmethod
-    def lowerUTF8(s):
-        return F('lowerUTF8', s)
-
-    @staticmethod
-    def upperUTF8(s):
-        return F('upperUTF8', s)
-
-    @staticmethod
+    @with_utf8_support
     def reverse(s):
         return F('reverse', s)
-
-    @staticmethod
-    def reverseUTF8(s):
-        return F('reverseUTF8', s)
 
     @staticmethod
     def concat(*args):
         return F('concat', *args)
 
     @staticmethod
+    @with_utf8_support
     def substring(s, offset, length):
         return F('substring', s, offset, length)
-
-    @staticmethod
-    def substringUTF8(s, offset, length):
-        return F('substringUTF8', s, offset, length)
 
     @staticmethod
     def appendTrailingCharIfAbsent(s, c):
@@ -725,6 +808,58 @@ class F(Cond, FunctionOperatorsMixin, metaclass=FMeta):
     @staticmethod
     def CRC32(s):
         return F('CRC32', s)
+
+    # Functions for searching in strings
+
+    @staticmethod
+    @with_utf8_support
+    def position(haystack, needle):
+        return F('position', haystack, needle)
+
+    @staticmethod
+    @with_utf8_support
+    def positionCaseInsensitive(haystack, needle):
+        return F('positionCaseInsensitive', haystack, needle)
+
+    @staticmethod
+    def like(haystack, pattern):
+        return F('like', haystack, pattern)
+
+    @staticmethod
+    def notLike(haystack, pattern):
+        return F('notLike', haystack, pattern)
+
+    @staticmethod
+    def match(haystack, pattern):
+        return F('match', haystack, pattern)
+
+    @staticmethod
+    def extract(haystack, pattern):
+        return F('extract', haystack, pattern)
+
+    @staticmethod
+    def extractAll(haystack, pattern):
+        return F('extractAll', haystack, pattern)
+
+    @staticmethod
+    @with_utf8_support
+    def ngramDistance(haystack, needle):
+        return F('ngramDistance', haystack, needle)
+
+    @staticmethod
+    @with_utf8_support
+    def ngramDistanceCaseInsensitive(haystack, needle):
+        return F('ngramDistanceCaseInsensitive', haystack, needle)
+
+    @staticmethod
+    @with_utf8_support
+    def ngramSearch(haystack, needle):
+        return F('ngramSearch', haystack, needle)
+
+    @staticmethod
+    @with_utf8_support
+    def ngramSearchCaseInsensitive(haystack, needle):
+        return F('ngramSearchCaseInsensitive', haystack, needle)
 
     # Functions for replacing in strings
 
@@ -1012,11 +1147,11 @@ class F(Cond, FunctionOperatorsMixin, metaclass=FMeta):
 
     @staticmethod
     def arrayResize(array, size, extender=None):
-        return F('arrayResize',array, size, extender) if extender is not None else F('arrayResize', array, size)
+        return F('arrayResize', array, size, extender) if extender is not None else F('arrayResize', array, size)
 
     @staticmethod
     def arraySlice(array, offset, length=None):
-        return F('arraySlice',array, offset, length) if length is not None else F('arraySlice', array, offset)
+        return F('arraySlice', array, offset, length) if length is not None else F('arraySlice', array, offset)
 
     @staticmethod
     def arrayUniq(*args):
@@ -1466,45 +1601,159 @@ class F(Cond, FunctionOperatorsMixin, metaclass=FMeta):
     def varSamp(x):
         return F('varSamp', x)
 
-
-    # Higher-order functions
-
-    # arrayMap: Function arrayMap needs at least 2 argument; passed 0. (version 19.8.3.8 (official build)) (42)
+    @staticmethod
+    @aggregate
+    @parametric
+    def quantile(expr):
+        return F('quantile', expr)
 
     @staticmethod
-    def arrayCount(*args):
-        return F('arrayCount', *args)
+    @aggregate
+    @parametric
+    def quantileDeterministic(expr, determinator):
+        return F('quantileDeterministic', expr, determinator)
 
     @staticmethod
-    def arraySum(*args):
-        return F('arraySum', *args)
+    @aggregate
+    @parametric
+    def quantileExact(expr):
+        return F('quantileExact', expr)
 
     @staticmethod
-    def arrayExists(*args):
-        return F('arrayExists', *args)
+    @aggregate
+    @parametric
+    def quantileExactWeighted(expr, weight):
+        return F('quantileExactWeighted', expr, weight)
 
     @staticmethod
-    def arrayAll(*args):
-        return F('arrayAll', *args)
-
-    # arrayFilter: Function arrayFilter needs at least 2 argument; passed 0. (version 19.8.3.8 (official build)) (42)
-
-    # arrayFirst: Function arrayFirst needs at least 2 argument; passed 0. (version 19.8.3.8 (official build)) (42)
-
-    # arrayFirstIndex: Function arrayFirstIndex needs at least 2 argument; passed 0. (version 19.8.3.8 (official build)) (42)
+    @aggregate
+    @parametric
+    def quantileTiming(expr):
+        return F('quantileTiming', expr)
 
     @staticmethod
-    def arrayCumSum(*args):
-        return F('arrayCumSum', *args)
+    @aggregate
+    @parametric
+    def quantileTimingWeighted(expr, weight):
+        return F('quantileTimingWeighted', expr, weight)
 
     @staticmethod
-    def arrayCumSumNonNegative(*args):
-        return F('arrayCumSumNonNegative', *args)
+    @aggregate
+    @parametric
+    def quantileTDigest(expr):
+        return F('quantileTDigest', expr)
 
     @staticmethod
-    def arraySort(*args):
-        return F('arraySort', *args)
+    @aggregate
+    @parametric
+    def quantileTDigestWeighted(expr, weight):
+        return F('quantileTDigestWeighted', expr, weight)
 
     @staticmethod
-    def arrayReverseSort(*args):
-        return F('arrayReverseSort', *args)
+    @aggregate
+    @parametric
+    def quantiles(expr):
+        return F('quantiles', expr)
+
+    @staticmethod
+    @aggregate
+    @parametric
+    def quantilesDeterministic(expr, determinator):
+        return F('quantilesDeterministic', expr, determinator)
+
+    @staticmethod
+    @aggregate
+    @parametric
+    def quantilesExact(expr):
+        return F('quantilesExact', expr)
+
+    @staticmethod
+    @aggregate
+    @parametric
+    def quantilesExactWeighted(expr, weight):
+        return F('quantilesExactWeighted', expr, weight)
+
+    @staticmethod
+    @aggregate
+    @parametric
+    def quantilesTiming(expr):
+        return F('quantilesTiming', expr)
+
+    @staticmethod
+    @aggregate
+    @parametric
+    def quantilesTimingWeighted(expr, weight):
+        return F('quantilesTimingWeighted', expr, weight)
+
+    @staticmethod
+    @aggregate
+    @parametric
+    def quantilesTDigest(expr):
+        return F('quantilesTDigest', expr)
+
+    @staticmethod
+    @aggregate
+    @parametric
+    def quantilesTDigestWeighted(expr, weight):
+        return F('quantilesTDigestWeighted', expr, weight)
+
+    @staticmethod
+    @aggregate
+    @parametric
+    def topK(expr):
+        return F('topK', expr)
+
+    @staticmethod
+    @aggregate
+    @parametric
+    def topKWeighted(expr, weight):
+        return F('topKWeighted', expr, weight)
+
+    # Null handling functions
+
+    @staticmethod
+    def ifNull(x, y):
+        return F('ifNull', x, y)
+
+    @staticmethod
+    def nullIf(x, y):
+        return F('nullIf', x, y)
+
+    @staticmethod
+    def isNotNull(x):
+        return F('isNotNull', x)
+
+    @staticmethod
+    def isNull(x):
+        return F('isNull', x)
+
+    @staticmethod
+    def coalesce(*args):
+        return F('coalesce', *args)
+
+    # Misc functions
+
+    @staticmethod
+    def ifNotFinite(x, y):
+        return F('ifNotFinite', x, y)
+
+    @staticmethod
+    def isFinite(x):
+        return F('isFinite', x)
+
+    @staticmethod
+    def isInfinite(x):
+        return F('isInfinite', x)
+
+    @staticmethod
+    def isNaN(x):
+        return F('isNaN', x)
+
+    @staticmethod
+    def least(x, y):
+        return F('least', x, y)
+
+    @staticmethod
+    def greatest(x, y):
+        return F('greatest', x, y)
+

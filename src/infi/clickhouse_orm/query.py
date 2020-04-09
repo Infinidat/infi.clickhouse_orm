@@ -301,7 +301,6 @@ class QuerySet(object):
         self._grouping_fields = []
         self._grouping_with_totals = False
         self._fields = model_cls.fields().keys()
-        self._extra = {}
         self._limits = None
         self._limit_by = None
         self._limit_by_fields = None
@@ -368,8 +367,6 @@ class QuerySet(object):
         fields = '*'
         if self._fields:
             fields = comma_join('`%s`' % field for field in self._fields)
-        for name, func in self._extra.items():
-            fields += ', %s AS %s' % (func.to_sql(), name)
         return fields
 
     def as_sql(self):
@@ -455,11 +452,6 @@ class QuerySet(object):
         """
         qs = copy(self)
         qs._fields = field_names
-        return qs
-
-    def extra(self, **kwargs):
-        qs = copy(self)
-        qs._extra = kwargs
         return qs
 
     def _filter_or_exclude(self, *q, **kwargs):
