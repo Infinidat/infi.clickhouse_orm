@@ -26,7 +26,9 @@ class ReadonlyTestCase(TestCaseWithData):
                 self.database.drop_database()
             self._check_db_readonly_err(cm.exception, drop_table=True)
         except ServerError as e:
-            if e.code == 192 and e.message.startswith('Unknown user'):
+            if e.code == 192 and e.message.startswith('Unknown user'): # ClickHouse version < 20.3
+                raise unittest.SkipTest('Database user "%s" is not defined' % username)
+            elif e.code == 516 and e.message.startswith('readonly: Authentication failed'): # ClickHouse version >= 20.3
                 raise unittest.SkipTest('Database user "%s" is not defined' % username)
             else:
                 raise
@@ -35,7 +37,10 @@ class ReadonlyTestCase(TestCaseWithData):
 
     def _check_db_readonly_err(self, exc, drop_table=None):
         self.assertEqual(exc.code, 164)
-        if drop_table:
+        print(exc.message)
+        if self.database.server_version >= (20, 3):
+            self.assertTrue('Cannot execute query in readonly mode' in exc.message)
+        elif drop_table:
             self.assertTrue(exc.message.startswith('Cannot drop table in readonly mode'))
         else:
             self.assertTrue(exc.message.startswith('Cannot insert into table in readonly mode'))
