@@ -375,10 +375,9 @@ class QuerySet(object):
         """
         distinct = 'DISTINCT ' if self._distinct else ''
         final = ' FINAL' if self._final else ''
-        table_name = self._model_cls.table_name()
-        if not self._model_cls.is_system_model():
-            table_name = '`%s`' % table_name
-
+        table_name = '`%s`' % self._model_cls.table_name()
+        if self._model_cls.is_system_model():
+            table_name = '`system`.' + table_name
         params = (distinct, self.select_fields_as_sql(), table_name, final)
         sql = u'SELECT %s%s\nFROM %s%s' % params
 

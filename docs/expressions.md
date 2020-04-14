@@ -58,6 +58,16 @@ class Person(Model):
     ...
 ```
 
+### Parametric functions
+
+Some of ClickHouse's aggregate functions can accept not only argument columns, but a set of parameters - constants for initialization. The syntax is two pairs of brackets instead of one. The first is for parameters, and the second is for arguments. For example:
+```python
+# Most common last names
+F.topK(5)(Person.last_name)
+# Find 90th, 95th and 99th percentile of heights
+F.quantiles(0.9, 0.95, 0.99)(Person.height)
+```
+
 ### Creating new "functions"
 
 Since expressions are just Python objects until they get converted to SQL, it is possible to invent new "functions" by combining existing ones into useful building blocks. For example, we can create a reusable expression that takes a string and trims whitespace, converts it to uppercase, and changes blanks to underscores:

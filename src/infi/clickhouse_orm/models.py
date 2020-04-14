@@ -68,7 +68,7 @@ class ModelBase(type):
         # fields is a list of tuples (name, db_type)
         # Check if model exists in cache
         fields = list(fields)
-        cache_key = str(fields)
+        cache_key = model_name + ' ' + str(fields)
         if cache_key in cls.ad_hoc_model_cache:
             return cls.ad_hoc_model_cache[cache_key]
         # Create an ad hoc model class

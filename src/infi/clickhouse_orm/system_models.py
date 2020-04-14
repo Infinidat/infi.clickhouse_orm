@@ -51,7 +51,7 @@ class SystemPart(Model):
 
     @classmethod
     def table_name(cls):
-        return 'system.parts'
+        return 'parts'
 
     """
     Next methods return SQL for some operations, which can be done with partitions
@@ -141,8 +141,8 @@ class SystemPart(Model):
         if conditions:
             conditions += " AND"
         field_names = ','.join(cls.fields())
-        return database.select("SELECT %s FROM %s WHERE %s database='%s'" %
-                               (field_names,  cls.table_name(), conditions, database.db_name), model_class=cls)
+        return database.select("SELECT %s FROM `system`.%s WHERE %s database='%s'" %
+                               (field_names, cls.table_name(), conditions, database.db_name), model_class=cls)
 
     @classmethod
     def get_active(cls, database, conditions=""):

@@ -165,6 +165,24 @@ class Database(object):
         r = self._send(sql % (self.db_name, model_class.table_name()))
         return r.text.strip() == '1'
 
+    def get_model_for_table(self, table_name, system_table=False):
+        '''
+        Generates a model class from an existing table in the database.
+        This can be used for querying tables which don't have a corresponding model class,
+        for example system tables.
+
+        - `table_name`: the table to create a model for
+        - `system_table`: whether the table is a system table, or belongs to the current database
+        '''
+        db_name = 'system' if system_table else self.db_name
+        sql = "DESCRIBE `%s`.`%s` FORMAT TSV" % (db_name, table_name)
+        lines = self._send(sql).iter_lines()
+        fields = [parse_tsv(line)[:2] for line in lines]
+        model = ModelBase.create_ad_hoc_model(fields, table_name)
+        if system_table:
+            model._system = model._readonly = True
+        return model
+
     def add_setting(self, name, value):
         '''
         Adds a database setting that will be sent with every request.
@@ -363,7 +381,7 @@ class Database(object):
             mapping = dict(db="`%s`" % self.db_name)
             if model_class:
                 if model_class.is_system_model():
-                    mapping['table'] = model_class.table_name()
+                    mapping['table'] = "`system`.`%s`" % model_class.table_name()
                 else:
                     mapping['table'] = "`%s`.`%s`" % (self.db_name, model_class.table_name())
             query = Template(query).safe_substitute(mapping)

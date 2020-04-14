@@ -166,8 +166,12 @@ class DatabaseTestCase(TestCaseWithData):
             Database(self.database.db_name, username='default', password='wrong')
 
         exc = cm.exception
-        self.assertEqual(exc.code, 193)
-        self.assertTrue(exc.message.startswith('Wrong password for user default'))
+        print(exc.code, exc.message)
+        self.assertIn(exc.code, (193, 516))
+        if exc.code == 193:
+            self.assertTrue('Wrong password for user default' in exc.message)
+        else:
+            self.assertTrue('default: Authentication failed: password is incorrect' in exc.message)
 
     def test_nonexisting_db(self):
         db = Database('db_not_here', autocreate=False)
@@ -233,3 +237,28 @@ class DatabaseTestCase(TestCaseWithData):
         query = "SELECT DISTINCT type FROM system.columns"
         for row in self.database.select(query):
             ModelBase.create_ad_hoc_field(row.type)
+
+    def test_get_model_for_table(self):
+        # Tests that get_model_for_table works for a non-system model
+        model = self.database.get_model_for_table('person')
+        self.assertFalse(model.is_system_model())
+        self.assertFalse(model.is_read_only())
+        self.assertEqual(model.table_name(), 'person')
+        # Read a few records
+        list(model.objects_in(self.database)[:10])
+        # Inserts should work too
+        self.database.insert([
+            model(first_name='aaa', last_name='bbb', height=1.77)
+        ])
+
+    def test_get_model_for_table__system(self):
+        # Tests that get_model_for_table works for all system tables
+        query = "SELECT name FROM system.tables WHERE database='system'"
+        for row in self.database.select(query):
+            print(row.name)
+            model = self.database.get_model_for_table(row.name, system_table=True)
+            self.assertTrue(model.is_system_model())
+            self.assertTrue(model.is_read_only())
+            self.assertEqual(model.table_name(), row.name)
+            # Read a few records
+            list(model.objects_in(self.database)[:10])
