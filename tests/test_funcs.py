@@ -104,6 +104,13 @@ class FuncsTestCase(TestCaseWithData):
         self._test_qs(qs.exclude(birthday=F.today()), 100)
         self._test_qs(qs.filter(birthday__between=['1970-01-01', F.today()]), 100)
 
+    def test_in_and_not_in(self):
+        qs = Person.objects_in(self.database)
+        self._test_qs(qs.filter(Person.first_name.isIn(['Ciaran', 'Elton'])), 4)
+        self._test_qs(qs.filter(~Person.first_name.isIn(['Ciaran', 'Elton'])), 96)
+        self._test_qs(qs.filter(Person.first_name.isNotIn(['Ciaran', 'Elton'])), 96)
+        self._test_qs(qs.exclude(Person.first_name.isIn(['Ciaran', 'Elton'])), 96)
+
     def test_comparison_operators(self):
         one = F.plus(1, 0)
         two = F.plus(1, 1)
@@ -247,7 +254,7 @@ class FuncsTestCase(TestCaseWithData):
         self._test_func(F.toRelativeSecondNum(dt), 1546255353)
         self._test_func(F.toRelativeSecondNum(dt, 'Europe/Athens'), 1546255353)
         self._test_func(F.now(), datetime.utcnow().replace(tzinfo=pytz.utc, microsecond=0)) # FIXME this may fail if the timing is just right
-        self._test_func(F.today(), date.today())
+        self._test_func(F.today(), date.today())  # FIXME this may fail if the timing is just right
         self._test_func(F.yesterday(), date.today() - timedelta(days=1))
         self._test_func(F.timeSlot(dt), datetime(2018, 12, 31, 11, 0, 0, tzinfo=pytz.utc))
         self._test_func(F.timeSlots(dt, 300), [datetime(2018, 12, 31, 11, 0, 0, tzinfo=pytz.utc)])
@@ -285,6 +292,9 @@ class FuncsTestCase(TestCaseWithData):
         self._test_func(F.subtractWeeks(dt, 3, 'Europe/Athens'))
         self._test_func(F.subtractYears(d, 3))
         self._test_func(F.subtractYears(dt, 3, 'Europe/Athens'))
+        self._test_func(F.now() + F.toIntervalSecond(3) + F.toIntervalMinute(3) + F.toIntervalHour(3) + F.toIntervalDay(3))
+        self._test_func(F.now() + F.toIntervalWeek(3) + F.toIntervalMonth(3) + F.toIntervalQuarter(3) + F.toIntervalYear(3))
+        self._test_func(F.now() + F.toIntervalSecond(3000) - F.toIntervalDay(3000) == F.now() + timedelta(seconds=3000, days=-3000))
 
     def test_type_conversion_functions(self):
         for f in (F.toUInt8, F.toUInt16, F.toUInt32, F.toUInt64, F.toInt8, F.toInt16, F.toInt32, F.toInt64, F.toFloat32, F.toFloat64):

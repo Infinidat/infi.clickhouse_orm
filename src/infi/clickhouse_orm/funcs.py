@@ -1,4 +1,4 @@
-from datetime import date, datetime, tzinfo
+from datetime import date, datetime, tzinfo, timedelta
 from functools import wraps
 from inspect import signature, Parameter
 from types import FunctionType
@@ -168,6 +168,12 @@ class FunctionOperatorsMixin(object):
     def __invert__(self):
         return F._not(self)
 
+    def isIn(self, others):
+        return F._in(self, others)
+
+    def isNotIn(self, others):
+        return F._notIn(self, others)
+
 
 class FMeta(type):
 
@@ -242,7 +248,7 @@ class F(Cond, FunctionOperatorsMixin, metaclass=FMeta):
     def __repr__(self):
         return self.to_sql()
 
-    def to_sql(self, *args): # FIXME why *args ?
+    def to_sql(self, *args):
         """
         Generates an SQL string for this function and its arguments.
         For example if the function name is a symbol of a binary operator:
@@ -263,7 +269,7 @@ class F(Cond, FunctionOperatorsMixin, metaclass=FMeta):
     def _arg_to_sql(arg):
         """
         Converts a function argument to SQL string according to its type.
-        Supports functions, model fields, strings, dates, datetimes, booleans,
+        Supports functions, model fields, strings, dates, datetimes, timedeltas, booleans,
         None, numbers, timezones, arrays/iterables.
         """
         from .fields import Field, StringField, DateTimeField, DateField
@@ -277,6 +283,8 @@ class F(Cond, FunctionOperatorsMixin, metaclass=FMeta):
             return "toDateTime(%s)" % DateTimeField().to_db_string(arg)
         if isinstance(arg, date):
             return "toDate('%s')" % arg.isoformat()
+        if isinstance(arg, timedelta):
+            return "toIntervalSecond(%d)" % int(arg.total_seconds())
         if isinstance(arg, bool):
             return str(int(arg))
         if isinstance(arg, tzinfo):
@@ -389,6 +397,18 @@ class F(Cond, FunctionOperatorsMixin, metaclass=FMeta):
     @staticmethod
     def _not(a):
         return F('not', a)
+
+    # in / not in
+
+    @staticmethod
+    @binary_operator
+    def _in(a, b):
+        return F('IN', a, b)
+
+    @staticmethod
+    @binary_operator
+    def _notIn(a, b):
+        return F('NOT IN', a, b)
 
     # Functions for working with dates and times
 
@@ -627,6 +647,39 @@ class F(Cond, FunctionOperatorsMixin, metaclass=FMeta):
     @staticmethod
     def subtractYears(d, n, timezone=NO_VALUE):
         return F('subtractYears', d, n, timezone)
+
+    @staticmethod
+    def toIntervalSecond(number):
+        return F('toIntervalSecond', number)
+
+    @staticmethod
+    def toIntervalMinute(number):
+        return F('toIntervalMinute', number)
+
+    @staticmethod
+    def toIntervalHour(number):
+        return F('toIntervalHour', number)
+
+    @staticmethod
+    def toIntervalDay(number):
+        return F('toIntervalDay', number)
+
+    @staticmethod
+    def toIntervalWeek(number):
+        return F('toIntervalWeek', number)
+
+    @staticmethod
+    def toIntervalMonth(number):
+        return F('toIntervalMonth', number)
+
+    @staticmethod
+    def toIntervalQuarter(number):
+        return F('toIntervalQuarter', number)
+
+    @staticmethod
+    def toIntervalYear(number):
+        return F('toIntervalYear', number)
+
 
     # Type conversion functions
 

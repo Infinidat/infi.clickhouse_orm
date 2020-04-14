@@ -30,7 +30,7 @@ toDayOfWeek(today())
 
 ### Operators
 
-ORM expressions support Python's standard arithmetic operators, so you can compose expressions using `+`, `-`, `*`, `/` and `%`. For example:
+ORM expressions support Python's standard arithmetic operators, so you can compose expressions using `+`, `-`, `*`, `/`, `//` and `%`. For example:
 ```python
 # A random integer between 1 and 10
 F.rand() % 10 + 1
@@ -75,11 +75,12 @@ class Event(Model):
 
 ### Which functions are available?
 
-ClickHouse has many hundreds of functions, and new ones often get added. If you encounter a function that the database supports but is not available in the `F` class, please report this via a GitHub issue. You can still use the function by providing its name:
+ClickHouse has many hundreds of functions, and new ones often get added. Many, but not all of them, are already covered by the ORM. If you encounter a function that the database supports but is not available in the `F` class, please report this via a GitHub issue. You can still use the function by providing its name:
 ```python
 expr = F("someFunctionName", arg1, arg2, ...)
 ```
 
+Note that higher-order database functions (those that use lambda expressions) are not supported.
 ---
 
 [<< Models and Databases](models_and_databases.md) | [Table of Contents](toc.md) | [Querysets >>](querysets.md)
