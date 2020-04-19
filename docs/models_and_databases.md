@@ -152,6 +152,12 @@ When running a query, specifying a model class is not required. In case you do n
 
 This is a very convenient feature that saves you the need to define a model for each query, while still letting you work with Pythonic column values and an elegant syntax.
 
+It is also possible to generate a model class on the fly for an existing table in the database using `get_model_for_table`. This is particulary useful for querying system tables, for example:
+
+    QueryLog = db.get_model_for_table('query_log', system_table=True)
+    for row in QueryLog.objects_in(db).filter(QueryLog.query_duration_ms > 10000):
+        print(row.query)
+
 SQL Placeholders
 ----------------
 

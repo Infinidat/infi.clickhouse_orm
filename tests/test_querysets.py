@@ -469,9 +469,9 @@ class AggregateTestCase(TestCaseWithData):
             order_by('first_name', '-height').limit_by(1, 'first_name')
         self.assertEqual(qs.count(), 94)
         self.assertEqual(list(qs)[89].last_name, 'Bowen')
-        # Test with funcs
-        qs = Person.objects_in(self.database).aggregate('first_name', 'last_name', 'height', n=F.count()).\
-            order_by('first_name', '-height').limit_by(1, F.upper(Person.first_name))
+        # Test with funcs and fields
+        qs = Person.objects_in(self.database).aggregate(Person.first_name, Person.last_name, Person.height, n=F.count()).\
+            order_by(Person.first_name, '-height').limit_by(1, F.upper(Person.first_name))
         self.assertEqual(qs.count(), 94)
         self.assertEqual(list(qs)[89].last_name, 'Bowen')
         # Test with limit and offset, also mixing LIMIT with LIMIT BY

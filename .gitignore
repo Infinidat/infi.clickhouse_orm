@@ -59,6 +59,7 @@ src/infi/clickhouse_orm/__version__.py
 bootstrap.py
 
 htmldocs/
+cover/
 
 # tox
 .tox/

@@ -42,6 +42,9 @@ class Field(FunctionOperatorsMixin):
         self.readonly = bool(self.alias or self.materialized or readonly)
         self.codec = codec
 
+    def __str__(self):
+        return self.name
+
     def to_python(self, value, timezone_in_use):
         '''
         Converts the input value into the expected Python data type, raising ValueError if the

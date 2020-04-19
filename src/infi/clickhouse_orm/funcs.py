@@ -4,7 +4,7 @@ from inspect import signature, Parameter
 from types import FunctionType
 
 from .utils import is_iterable, comma_join, NO_VALUE
-from .query import Cond
+from .query import Cond, QuerySet
 
 
 def binary_operator(func):
@@ -276,7 +276,7 @@ class F(Cond, FunctionOperatorsMixin, metaclass=FMeta):
         if isinstance(arg, F):
             return arg.to_sql()
         if isinstance(arg, Field):
-            return "`%s`" % arg.name
+            return "`%s`" % arg
         if isinstance(arg, str):
             return StringField().to_db_string(arg)
         if isinstance(arg, datetime):
@@ -291,6 +291,8 @@ class F(Cond, FunctionOperatorsMixin, metaclass=FMeta):
             return StringField().to_db_string(arg.tzname(None))
         if arg is None:
             return 'NULL'
+        if isinstance(arg, QuerySet):
+            return "(%s)" % arg
         if is_iterable(arg):
             return '[' + comma_join(F._arg_to_sql(x) for x in arg) + ']'
         return str(arg)
@@ -340,7 +342,7 @@ class F(Cond, FunctionOperatorsMixin, metaclass=FMeta):
 
     @staticmethod
     def gcd(a, b):
-        return F('gcd',a, b)
+        return F('gcd', a, b)
 
     @staticmethod
     def lcm(a, b):

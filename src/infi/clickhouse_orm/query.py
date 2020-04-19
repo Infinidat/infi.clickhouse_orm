@@ -410,7 +410,7 @@ class QuerySet(object):
         Returns the contents of the query's `ORDER BY` clause as a string.
         """
         return comma_join([
-            '%s DESC' % field[1:] if field[0] == '-' else field
+            '%s DESC' % field[1:] if isinstance(field, str) and field[0] == '-' else str(field)
             for field in self._order_by
         ])
 
@@ -624,7 +624,7 @@ class AggregateQuerySet(QuerySet):
         """
         Returns the selected fields or expressions as a SQL string.
         """
-        return comma_join(list(self._fields) + ['%s AS %s' % (v, k) for k, v in self._calculated_fields.items()])
+        return comma_join([str(f) for f in self._fields] + ['%s AS %s' % (v, k) for k, v in self._calculated_fields.items()])
 
     def __iter__(self):
         return self._database.select(self.as_sql()) # using an ad-hoc model

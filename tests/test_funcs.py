@@ -110,6 +110,9 @@ class FuncsTestCase(TestCaseWithData):
         self._test_qs(qs.filter(~Person.first_name.isIn(['Ciaran', 'Elton'])), 96)
         self._test_qs(qs.filter(Person.first_name.isNotIn(['Ciaran', 'Elton'])), 96)
         self._test_qs(qs.exclude(Person.first_name.isIn(['Ciaran', 'Elton'])), 96)
+        # In subquery
+        subquery = qs.filter(F.startsWith(Person.last_name, 'M')).only(Person.first_name)
+        self._test_qs(qs.filter(Person.first_name.isIn(subquery)), 4)
 
     def test_comparison_operators(self):
         one = F.plus(1, 0)
@@ -174,8 +177,8 @@ class FuncsTestCase(TestCaseWithData):
         self._test_func(0 | one, 1)
         # ^
         self._test_func(one ^ one, 0)
-        #############self._test_func(one ^ 0, 1)
-        #############self._test_func(0 ^ one, 1)
+        self._test_func(one ^ 0, 1)
+        self._test_func(0 ^ one, 1)
         # ~
         self._test_func(~one, 0)
         self._test_func(~~one, 1)
@@ -416,6 +419,10 @@ class FuncsTestCase(TestCaseWithData):
         self._test_func(F.power(x, y))
         self._test_func(F.intExp10(x))
         self._test_func(F.intExp2(x))
+        self._test_func(F.intDivOrZero(x, y))
+        self._test_func(F.abs(x))
+        self._test_func(F.gcd(x, y))
+        self._test_func(F.lcm(x, y))
 
     def test_rounding_functions(self):
         x = 22.22222
@@ -578,9 +585,10 @@ class FuncsTestCase(TestCaseWithData):
         self._test_func(F.IPv6NumToString(F.IPv6StringToNum('2a02:6b8::11')), '2a02:6b8::11')
         self._test_func(F.toIPv4('10.20.30.40'), IPv4Address('10.20.30.40'))
         self._test_func(F.toIPv6('2001:438:ffff::407d:1bc1'), IPv6Address('2001:438:ffff::407d:1bc1'))
-        # These require support for tuples:
-        # self._test_func(F.IPv4CIDRToRange(F.toIPv4('192.168.5.2'), 16), ['192.168.0.0','192.168.255.255'])
-        # self._test_func(F.IPv6CIDRToRange(x, y))
+        self._test_func(F.IPv4CIDRToRange(F.toIPv4('192.168.5.2'), 16),
+                        [IPv4Address('192.168.0.0'), IPv4Address('192.168.255.255')])
+        self._test_func(F.IPv6CIDRToRange(F.toIPv6('2001:0db8:0000:85a3:0000:0000:ac1f:8001'), 32),
+                        [IPv6Address('2001:db8::'), IPv6Address('2001:db8:ffff:ffff:ffff:ffff:ffff:ffff')])
 
     def test_aggregate_funcs(self):
         self._test_aggr(F.any(Person.first_name))
@@ -632,25 +640,39 @@ class FuncsTestCase(TestCaseWithData):
         self._test_aggr(F.minOrNullIf(Person.height, Person.last_name > 'Z'), None)
 
     def test_quantile_funcs(self):
+        cond = Person.last_name > 'H'
+        weight_expr = F.toUInt32(F.round(Person.height))
+        # Quantile
         self._test_aggr(F.quantile(0.9)(Person.height))
         self._test_aggr(F.quantileOrDefault(0.9)(Person.height))
         self._test_aggr(F.quantileOrNull(0.9)(Person.height))
-        self._test_aggr(F.quantileIf(0.9)(Person.height, Person.last_name > 'H'))
-        self._test_aggr(F.quantileOrDefaultIf(0.9)(Person.height, Person.last_name > 'H'))
-        self._test_aggr(F.quantileOrNullIf(0.9)(Person.height, Person.last_name > 'H'))
+        self._test_aggr(F.quantileIf(0.9)(Person.height, cond))
+        self._test_aggr(F.quantileOrDefaultIf(0.9)(Person.height, cond))
+        self._test_aggr(F.quantileOrNullIf(0.9)(Person.height, cond))
         self._test_aggr(F.quantileDeterministic(0.9)(Person.height, 17))
+        self._test_aggr(F.quantileExact(0.9)(Person.height))
         self._test_aggr(F.quantileExactOrDefault(0.9)(Person.height))
-        weight_expr = F.toUInt32(F.round(Person.height))
+        # Quantile weighted
+        self._test_aggr(F.quantileExactWeighted(0.9)(Person.height, weight_expr))
         self._test_aggr(F.quantileExactWeightedOrNull(0.9)(Person.height, weight_expr))
-        self._test_aggr(F.quantileTimingIf(0.9)(Person.height, Person.last_name > 'H'))
-        self._test_aggr(F.quantileTimingWeightedOrDefaultIf(0.9)(Person.height, weight_expr, Person.last_name > 'H'))
-        self._test_aggr(F.quantileTDigestOrNullIf(0.9)(Person.height, Person.last_name > 'H'))
+        self._test_aggr(F.quantileTiming(0.9)(Person.height))
+        self._test_aggr(F.quantileTimingIf(0.9)(Person.height, cond))
+        self._test_aggr(F.quantileTimingWeighted(0.9)(Person.height, weight_expr))
+        self._test_aggr(F.quantileTimingWeightedOrDefaultIf(0.9)(Person.height, weight_expr, cond))
+        self._test_aggr(F.quantileTDigest(0.9)(Person.height))
+        self._test_aggr(F.quantileTDigestOrNullIf(0.9)(Person.height, cond))
         self._test_aggr(F.quantileTDigestWeighted(0.9)(Person.height, weight_expr))
+        # Quantiles
         self._test_aggr(F.quantiles(0.9, 0.95, 0.99)(Person.height))
+        self._test_aggr(F.quantilesDeterministic(0.9, 0.95, 0.99)(Person.height, 17))
+        self._test_aggr(F.quantilesExact(0.9, 0.95, 0.99)(Person.height))
         self._test_aggr(F.quantilesExactWeighted(0.9, 0.95, 0.99)(Person.height, weight_expr))
-        self._test_aggr(F.quantilesTimingIf(0.9, 0.95, 0.99)(Person.height, Person.last_name > 'H'))
-        self._test_aggr(F.quantilesTimingWeightedOrDefaultIf(0.9, 0.95, 0.99)(Person.height, weight_expr, Person.last_name > 'H'))
-        self._test_aggr(F.quantilesTDigestIf(0.9, 0.95, 0.99)(Person.height, Person.last_name > 'H'))
+        self._test_aggr(F.quantilesTiming(0.9, 0.95, 0.99)(Person.height))
+        self._test_aggr(F.quantilesTimingIf(0.9, 0.95, 0.99)(Person.height, cond))
+        self._test_aggr(F.quantilesTimingWeighted(0.9, 0.95, 0.99)(Person.height, weight_expr))
+        self._test_aggr(F.quantilesTimingWeightedOrDefaultIf(0.9, 0.95, 0.99)(Person.height, weight_expr, cond))
+        self._test_aggr(F.quantilesTDigest(0.9, 0.95, 0.99)(Person.height))
+        self._test_aggr(F.quantilesTDigestIf(0.9, 0.95, 0.99)(Person.height, cond))
         self._test_aggr(F.quantilesTDigestWeighted(0.9, 0.95, 0.99)(Person.height, weight_expr))
 
     def test_top_k_funcs(self):

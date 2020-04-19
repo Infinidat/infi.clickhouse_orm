@@ -52,19 +52,19 @@ def parse_tsv(line):
 
 def parse_array(array_string):
     """
-    Parse an array string as returned by clickhouse. For example:
+    Parse an array or tuple string as returned by clickhouse. For example:
         "['hello', 'world']" ==> ["hello", "world"]
-        "[1,2,3]"            ==> [1, 2, 3]
+        "(1,2,3)"            ==> [1, 2, 3]
     """
     # Sanity check
-    if len(array_string) < 2 or array_string[0] != '[' or array_string[-1] != ']':
+    if len(array_string) < 2 or array_string[0] not in '[(' or array_string[-1] not in '])':
         raise ValueError('Invalid array string: "%s"' % array_string)
     # Drop opening brace
     array_string = array_string[1:]
     # Go over the string, lopping off each value at the beginning until nothing is left
     values = []
     while True:
-        if array_string == ']':
+        if array_string in '])':
             # End of array
             return values
         elif array_string[0] in ', ':
