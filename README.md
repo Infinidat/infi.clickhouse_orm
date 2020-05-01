@@ -12,6 +12,7 @@ from infi.clickhouse_orm.database import Database
 from infi.clickhouse_orm.models import Model
 from infi.clickhouse_orm.fields import *
 from infi.clickhouse_orm.engines import Memory
+from infi.clickhouse_orm.funcs import F
 
 class CPUStats(Model):
 
@@ -45,13 +46,13 @@ Querying the table is easy, using either the query builder or raw SQL:
 
 ```python
 # Calculate what percentage of the time CPU 1 was over 95% busy
-total = CPUStats.objects_in(db).filter(cpu_id=1).count()
-busy = CPUStats.objects_in(db).filter(cpu_id=1, cpu_percent__gt=95).count()
-print 'CPU 1 was busy {:.2f}% of the time'.format(busy * 100.0 / total)
+total = CPUStats.objects_in(db).filter(CPUStats.cpu_id == 1).count()
+busy = CPUStats.objects_in(db).filter(CPUStats.cpu_id == 1, CPUStats.cpu_percent > 95).count()
+print('CPU 1 was busy {:.2f}% of the time'.format(busy * 100.0 / total))
 
 # Calculate the average usage per CPU
-for row in CPUStats.objects_in(db).aggregate('cpu_id', average='avg(cpu_percent)'):
-    print 'CPU {row.cpu_id}: {row.average:.2f}%'.format(row=row)
+for row in CPUStats.objects_in(db).aggregate(CPUStats.cpu_id, average=F.avg(CPUStats.cpu_percent)):
+    print('CPU {row.cpu_id}: {row.average:.2f}%'.format(row=row))
 ```
 
 To learn more please visit the [documentation](docs/toc.md).

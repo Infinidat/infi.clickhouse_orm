@@ -158,3 +158,7 @@ class SystemPart(Model):
             conditions += ' AND '
         conditions += 'active'
         return SystemPart.get(database, conditions=conditions)
+
+
+# Expose only relevant classes in import *
+__all__ = [c.__name__ for c in [SystemPart]]

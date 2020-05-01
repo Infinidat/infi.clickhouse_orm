@@ -7,7 +7,7 @@ from six import reraise
 import pytz
 
 from .fields import Field, StringField
-from .utils import parse_tsv, NO_VALUE
+from .utils import parse_tsv, NO_VALUE, get_subclass_names
 from .query import QuerySet
 from .funcs import F
 from .engines import Merge, Distributed
@@ -459,3 +459,5 @@ class DistributedModel(Model):
         return '\n'.join(parts)
 
 
+# Expose only relevant classes in import *
+__all__ = get_subclass_names(locals(), Model)

@@ -2,7 +2,7 @@ from __future__ import unicode_literals
 
 import logging
 
-from .utils import comma_join
+from .utils import comma_join, get_subclass_names
 
 logger = logging.getLogger('clickhouse_orm')
 
@@ -262,3 +262,7 @@ class Distributed(Engine):
         if self.sharding_key:
             params.append(self.sharding_key)
         return params
+
+
+# Expose only relevant classes in import *
+__all__ = get_subclass_names(locals(), Engine)

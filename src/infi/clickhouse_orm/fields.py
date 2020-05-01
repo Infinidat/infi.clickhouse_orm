@@ -6,7 +6,7 @@ from calendar import timegm
 from decimal import Decimal, localcontext
 from uuid import UUID
 from logging import getLogger
-from .utils import escape, parse_array, comma_join, string_or_func
+from .utils import escape, parse_array, comma_join, string_or_func, get_subclass_names
 from .funcs import F, FunctionOperatorsMixin
 from ipaddress import IPv4Address, IPv6Address
 
@@ -598,3 +598,8 @@ class LowCardinalityField(Field):
         if with_default_expression:
             sql += self._extra_params(db)
         return sql
+
+
+# Expose only relevant classes in import *
+__all__ = get_subclass_names(locals(), Field)
+

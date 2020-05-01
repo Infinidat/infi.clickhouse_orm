@@ -93,4 +93,4 @@ expr = F("someFunctionName", arg1, arg2, ...)
 Note that higher-order database functions (those that use lambda expressions) are not supported.
 ---
 
-[<< Models and Databases](models_and_databases.md) | [Table of Contents](toc.md) | [Querysets >>](querysets.md)
+[<< Models and Databases](models_and_databases.md) | [Table of Contents](toc.md) | [Importing ORM Classes >>](importing_orm_classes.md)

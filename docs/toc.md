@@ -48,6 +48,7 @@
       * [Simple Engines](table_engines.md#simple-engines)
       * [Engines in the MergeTree Family](table_engines.md#engines-in-the-mergetree-family)
          * [Custom partitioning](table_engines.md#custom-partitioning)
+         * [Primary key](table_engines.md#primary-key)
          * [Data Replication](table_engines.md#data-replication)
       * [Buffer Engine](table_engines.md#buffer-engine)
       * [Merge Engine](table_engines.md#merge-engine)
@@ -117,8 +118,7 @@
       * [infi.clickhouse_orm.query](class_reference.md#infi.clickhouse_orm.query)
          * [QuerySet](class_reference.md#queryset)
          * [AggregateQuerySet](class_reference.md#aggregatequeryset)
+         * [Q](class_reference.md#q)
       * [infi.clickhouse_orm.funcs](class_reference.md#infi.clickhouse_orm.funcs)
          * [F](class_reference.md#f)
-      * [infi.clickhouse_orm.system_models](class_reference.md#infi.clickhouse_orm.system_models)
-         * [SystemPart](class_reference.md#systempart)
 

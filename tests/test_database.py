@@ -7,6 +7,7 @@ from infi.clickhouse_orm.database import ServerError, DatabaseException
 from infi.clickhouse_orm.models import Model
 from infi.clickhouse_orm.engines import Memory
 from infi.clickhouse_orm.fields import *
+from infi.clickhouse_orm.funcs import F
 from .base_test_with_data import *
 
 

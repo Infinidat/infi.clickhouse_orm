@@ -646,3 +646,7 @@ class AggregateQuerySet(QuerySet):
         qs = copy(self)
         qs._grouping_with_totals = True
         return qs
+
+
+# Expose only relevant classes in import *
+__all__ = [c.__name__ for c in [Q, QuerySet, AggregateQuerySet]]

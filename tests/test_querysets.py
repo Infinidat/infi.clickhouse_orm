@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals, print_function
 import unittest
-
 from infi.clickhouse_orm.database import Database
 from infi.clickhouse_orm.query import Q
 from infi.clickhouse_orm.funcs import F
 from .base_test_with_data import *
 from datetime import date, datetime
 from enum import Enum
+from decimal import Decimal
 
 from logging import getLogger
 logger = getLogger('tests')

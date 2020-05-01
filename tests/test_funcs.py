@@ -2,9 +2,14 @@ import unittest
 from .base_test_with_data import *
 from .test_querysets import SampleModel
 from datetime import date, datetime, tzinfo, timedelta
+import pytz
 from ipaddress import IPv4Address, IPv6Address
+import logging
+from decimal import Decimal
+
 from infi.clickhouse_orm.database import ServerError
 from infi.clickhouse_orm.utils import NO_VALUE
+from infi.clickhouse_orm.funcs import F
 
 
 class FuncsTestCase(TestCaseWithData):
@@ -14,28 +19,28 @@ class FuncsTestCase(TestCaseWithData):
         self.database.insert(self._sample_data())
 
     def _test_qs(self, qs, expected_count):
-        logger.info(qs.as_sql())
+        logging.info(qs.as_sql())
         count = 0
         for instance in qs:
             count += 1
-            logger.info('\t[%d]\t%s' % (count, instance.to_dict()))
+            logging.info('\t[%d]\t%s' % (count, instance.to_dict()))
         self.assertEqual(count, expected_count)
         self.assertEqual(qs.count(), expected_count)
 
     def _test_func(self, func, expected_value=NO_VALUE):
         sql = 'SELECT %s AS value' % func.to_sql()
-        logger.info(sql)
+        logging.info(sql)
         result = list(self.database.select(sql))
-        logger.info('\t==> %s', result[0].value if result else '<empty>')
+        logging.info('\t==> %s', result[0].value if result else '<empty>')
         if expected_value != NO_VALUE:
             self.assertEqual(result[0].value, expected_value)
         return result[0].value if result else None
 
     def _test_aggr(self, func, expected_value=NO_VALUE):
         qs = Person.objects_in(self.database).aggregate(value=func)
-        logger.info(qs.as_sql())
+        logging.info(qs.as_sql())
         result = list(qs)
-        logger.info('\t==> %s', result[0].value if result else '<empty>')
+        logging.info('\t==> %s', result[0].value if result else '<empty>')
         if expected_value != NO_VALUE:
             self.assertEqual(result[0].value, expected_value)
         return result[0].value if result else None

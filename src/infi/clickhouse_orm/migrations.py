@@ -1,7 +1,7 @@
 from .models import Model, BufferModel
 from .fields import DateField, StringField
 from .engines import MergeTree
-from .utils import escape
+from .utils import escape, get_subclass_names
 
 import logging
 logger = logging.getLogger('migrations')
@@ -177,3 +177,7 @@ class MigrationHistory(Model):
     @classmethod
     def table_name(cls):
         return 'infi_clickhouse_orm_migrations'
+
+
+# Expose only relevant classes in import *
+__all__ = get_subclass_names(locals(), Operation)

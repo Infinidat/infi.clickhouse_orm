@@ -6,6 +6,7 @@ from infi.clickhouse_orm.database import Database
 from infi.clickhouse_orm.models import Model, NO_VALUE
 from infi.clickhouse_orm.fields import *
 from infi.clickhouse_orm.engines import *
+from infi.clickhouse_orm.funcs import F
 
 
 class AliasFieldsTest(unittest.TestCase):

@@ -1,5 +1,6 @@
 from __future__ import unicode_literals
 import unittest
+import datetime
 
 from infi.clickhouse_orm.system_models import SystemPart
 from infi.clickhouse_orm.database import Database, DatabaseException, ServerError

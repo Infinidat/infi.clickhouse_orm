@@ -114,6 +114,11 @@ def is_iterable(obj):
         return False
 
 
+def get_subclass_names(locals, base_class):
+    from inspect import isclass
+    return [c.__name__ for c in locals.values() if isclass(c) and issubclass(c, base_class)]
+
+
 class NoValue:
     '''
     A sentinel for fields with an expression for a default value,

@@ -411,3 +411,7 @@ class Database(object):
     def _is_connection_readonly(self):
         r = self._send("SELECT value FROM system.settings WHERE name = 'readonly'")
         return r.text.strip() != '0'
+
+
+# Expose only relevant classes in import *
+__all__ = [c.__name__ for c in [Page, DatabaseException, ServerError, Database]]
