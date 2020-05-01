@@ -45,6 +45,9 @@ class Field(FunctionOperatorsMixin):
     def __str__(self):
         return self.name
 
+    def __repr__(self):
+        return '<%s>' % self.__class__.__name__
+
     def to_python(self, value, timezone_in_use):
         '''
         Converts the input value into the expected Python data type, raising ValueError if the
