@@ -1,6 +1,10 @@
 Change Log
 ==========
 
+Unreleased
+----------
+- Added primary_key parameter to MergeTree engines (M1hacka)
+
 v1.3.0
 ------
 - Support LowCardinality columns in ad-hoc queries
