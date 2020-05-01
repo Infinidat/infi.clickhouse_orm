@@ -22,29 +22,35 @@ class EnumFieldsTest(unittest.TestCase):
     def test_insert_and_select(self):
         self.database.insert([
             ModelWithEnum(date_field='2016-08-30', enum_field=Fruit.apple),
-            ModelWithEnum(date_field='2016-08-31', enum_field=Fruit.orange)
+            ModelWithEnum(date_field='2016-08-31', enum_field=Fruit.orange),
+            ModelWithEnum(date_field='2016-08-31', enum_field=Fruit.cherry)
         ])
         query = 'SELECT * from $table ORDER BY date_field'
         results = list(self.database.select(query, ModelWithEnum))
-        self.assertEqual(len(results), 2)
+        self.assertEqual(len(results), 3)
         self.assertEqual(results[0].enum_field, Fruit.apple)
         self.assertEqual(results[1].enum_field, Fruit.orange)
+        self.assertEqual(results[2].enum_field, Fruit.cherry)
 
     def test_ad_hoc_model(self):
         self.database.insert([
             ModelWithEnum(date_field='2016-08-30', enum_field=Fruit.apple),
-            ModelWithEnum(date_field='2016-08-31', enum_field=Fruit.orange)
+            ModelWithEnum(date_field='2016-08-31', enum_field=Fruit.orange),
+            ModelWithEnum(date_field='2016-08-31', enum_field=Fruit.cherry)
         ])
         query = 'SELECT * from $db.modelwithenum ORDER BY date_field'
         results = list(self.database.select(query))
-        self.assertEqual(len(results), 2)
+        self.assertEqual(len(results), 3)
         self.assertEqual(results[0].enum_field.name, Fruit.apple.name)
         self.assertEqual(results[0].enum_field.value, Fruit.apple.value)
         self.assertEqual(results[1].enum_field.name, Fruit.orange.name)
         self.assertEqual(results[1].enum_field.value, Fruit.orange.value)
+        self.assertEqual(results[2].enum_field.name, Fruit.cherry.name)
+        self.assertEqual(results[2].enum_field.value, Fruit.cherry.value)
 
     def test_conversion(self):
         self.assertEqual(ModelWithEnum(enum_field=3).enum_field, Fruit.orange)
+        self.assertEqual(ModelWithEnum(enum_field=-7).enum_field, Fruit.cherry)
         self.assertEqual(ModelWithEnum(enum_field='apple').enum_field, Fruit.apple)
         self.assertEqual(ModelWithEnum(enum_field=Fruit.banana).enum_field, Fruit.banana)
 
@@ -66,7 +72,7 @@ class EnumFieldsTest(unittest.TestCase):
         self.assertEqual(results[0].enum_array, instance.enum_array)
 
 
-Fruit = Enum('Fruit', u'apple banana orange')
+Fruit = Enum('Fruit', [('apple', 1), ('banana', 2), ('orange', 3), ('cherry', -7)])
 
 
 class ModelWithEnum(Model):
@@ -83,3 +89,4 @@ class ModelWithEnumArray(Model):
     enum_array = ArrayField(Enum16Field(Fruit))
 
     engine = MergeTree('date_field', ('date_field',))
+

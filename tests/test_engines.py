@@ -165,6 +165,29 @@ class EnginesTestCase(_EnginesHelperTestCase):
         self.assertEqual('testmodel', parts[1].table)
         self.assertEqual('(201701, 13)'.replace(' ', ''), parts[1].partition.replace(' ', ''))
 
+    def test_custom_primary_key(self):
+        class TestModel(SampleModel):
+            engine = MergeTree(
+                order_by=('date', 'event_id', 'event_group'),
+                partition_key=('toYYYYMM(date)',),
+                primary_key=('date', 'event_id')
+            )
+
+        class TestCollapseModel(SampleModel):
+            sign = Int8Field()
+
+            engine = CollapsingMergeTree(
+                sign_col='sign',
+                order_by=('date', 'event_id', 'event_group'),
+                partition_key=('toYYYYMM(date)',),
+                primary_key=('date', 'event_id')
+            )
+
+        self._create_and_insert(TestModel)
+        self._create_and_insert(TestCollapseModel)
+
+        self.assertEqual(2, len(list(SystemPart.get(self.database))))
+
 
 class SampleModel(Model):
 

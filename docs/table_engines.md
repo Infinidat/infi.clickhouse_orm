@@ -73,6 +73,19 @@ Example:
                                         partition_key=('toYYYYMM(EventDate)', 'BannerID'))
 
 
+### Primary key
+ClickHouse supports [custom primary key](https://clickhouse.yandex/docs/en/operations/table_engines/mergetree/#primary-keys-and-indexes-in-queries/) expressions since version 1.1.54310
+
+You can use custom primary key with any `MergeTree` family engine.
+To set custom partitioning add `primary_key` parameter. It should be a tuple of expressions, by which partitions are built.
+
+By default primary key is equal to order_by expression
+
+Example:
+
+    engine = engines.ReplacingMergeTree(order_by=('OrderID', 'EventDate', 'BannerID'), ver_col='Version',
+                                        partition_key=('toYYYYMM(EventDate)', 'BannerID'), primary_key=('OrderID',))
+
 ### Data Replication
 
 Any of the above engines can be converted to a replicated engine (e.g. `ReplicatedMergeTree`) by adding two parameters, `replica_table_path` and `replica_name`:
