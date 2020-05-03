@@ -39,18 +39,18 @@ class Person(Model):
     birthday = DateField()
     height = Float32Field()
     passport = NullableField(UInt32Field())
+    addresses = ArrayField(StringField())
 
     engine = MergeTree('birthday', ('first_name', 'last_name', 'birthday'))
 
 
 data = [
     {"first_name": "Abdul", "last_name": "Hester", "birthday": "1970-12-02", "height": "1.63",
-     "passport": 35052255},
-
+     "passport": 35052255, "addresses": ["Elm Street", "Accacia Avenue"]},
     {"first_name": "Adam", "last_name": "Goodman", "birthday": "1986-01-07", "height": "1.74",
-     "passport": 36052255},
-
-    {"first_name": "Adena", "last_name": "Norman", "birthday": "1979-05-14", "height": "1.66"},
+     "passport": 36052255, "addresses": ["Elm Street"]},
+    {"first_name": "Adena", "last_name": "Norman", "birthday": "1979-05-14", "height": "1.66",
+     "addresses": ["My House"]},
     {"first_name": "Aline", "last_name": "Crane", "birthday": "1988-05-01", "height": "1.62"},
     {"first_name": "Althea", "last_name": "Barrett", "birthday": "2004-07-28", "height": "1.71"},
     {"first_name": "Amanda", "last_name": "Vang", "birthday": "1973-02-23", "height": "1.68"},

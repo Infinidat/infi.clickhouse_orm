@@ -7,11 +7,11 @@ from math import ceil
 
 from .engines import CollapsingMergeTree
 from .utils import comma_join
+from . import fields
 
 
 # TODO
 # - check that field names are valid
-# - operators for arrays: length, has, empty
 
 class Operator(object):
     """
@@ -131,6 +131,45 @@ class BetweenOperator(Operator):
         if value1 and not value0:
             return ' '.join([field_name, '<=', value1])
 
+
+class FuncOperator(Operator):
+    """
+    An operator that implements func(field, value). Use this to write
+    selects involving functions:
+    - 'SELECT * FROM table WHERE func(field, value)'
+    'value' must have either the same type as 'field', or be the 'inner' type
+    of the field (e.g. for arrays).
+    """
+    def __init__(self, funcname, inner=False):
+        self._funcname = funcname
+        self._inner = inner
+
+    def to_sql(self, model_cls, field_name, value):
+        field = getattr(model_cls, field_name)
+        if self._inner:
+            field = field.inner_field
+        value = field.to_db_string(field.to_python(value, pytz.utc))
+        return '%s(%s, %s)' % (self._funcname, field_name, value)
+
+
+class FuncEqOperator(Operator):
+    """
+    An operator that implements func(field) = value. Use this to write selects
+    of the form
+    - 'SELECT col_x FROM table WHERE func(col_y) = value'
+    """
+
+    def __init__(self, funcname, return_type):
+        self._funcname = funcname
+        self._return_type = return_type
+        assert isinstance(return_type, fields.Field)
+
+    def to_sql(self, model_cls, field_name, value):
+        type_ = self._return_type
+        value = type_.to_db_string(type_.to_python(value, pytz.utc))
+        return '%s(%s) = %s' % (self._funcname, field_name, value)
+
+
 # Define the set of builtin operators
 
 _operators = {}
@@ -154,6 +193,12 @@ register_operator('icontains',   LikeOperator('%{}%', False))
 register_operator('istartswith', LikeOperator('{}%', False))
 register_operator('iendswith',   LikeOperator('%{}', False))
 register_operator('iexact',      IExactOperator())
+register_operator('has',         FuncOperator('has', inner=True))
+register_operator('has_any',     FuncOperator('hasAny'))
+register_operator('has_all',     FuncOperator('hasAll'))
+register_operator('length',      FuncEqOperator('length', return_type=fields.UInt64Field()))
+register_operator('empty',       FuncEqOperator('empty', return_type=fields.UInt8Field()))
+register_operator('not_empty',   FuncEqOperator('notEmpty', return_type=fields.UInt8Field()))
 
 
 class FOV(object):

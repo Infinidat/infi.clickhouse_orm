@@ -70,6 +70,31 @@ class QuerySetTestCase(TestCaseWithData):
         self._test_qs(qs.filter(first_name__iendswith='ia'), 3) # case insensitive
         self._test_qs(qs.filter(first_name__iendswith=''), 100) # empty suffix
 
+    def test_filter_array(self):
+        qs = Person.objects_in(self.database)
+        self._test_qs(qs.filter(addresses__has="Elm Street"), 2)
+        self._test_qs(qs.filter(addresses__has="Neverland"), 0)
+        self._test_qs(qs.filter(addresses__has="My House"), 1)
+
+        self._test_qs(qs.filter(addresses__has_all=["Elm Street", "Accacia Avenue"]), 1)
+        self._test_qs(qs.filter(addresses__has_all=["Elm Street", "Neverland"]), 0)
+        self._test_qs(qs.filter(addresses__has_any=["Elm Street", "Neverland"]), 2)
+
+        total = qs.count()
+        self._test_qs(qs.filter(addresses__length=2), 1)
+        self._test_qs(qs.filter(addresses__length=1), 2)
+        self._test_qs(qs.filter(addresses__length=0), total - 3)
+
+        self._test_qs(qs.filter(addresses__empty=False), 3)
+        self._test_qs(qs.filter(addresses__empty=True), total - 3)
+        self._test_qs(qs.filter(addresses__empty=0), 3)
+        self._test_qs(qs.filter(addresses__empty=1), total - 3)
+
+        self._test_qs(qs.filter(addresses__not_empty=True), 3)
+        self._test_qs(qs.filter(addresses__not_empty=1), 3)
+        self._test_qs(qs.filter(addresses__not_empty=False), total - 3)
+        self._test_qs(qs.filter(addresses__not_empty=0), total - 3)
+
     def test_filter_with_q_objects(self):
         qs = Person.objects_in(self.database)
         self._test_qs(qs.filter(Q(first_name='Ciaran')), 2)

@@ -60,6 +60,12 @@ There are different operators that can be used, by passing `<fieldname>__<operat
 | `istartswith`  | `lowerUTF8(field) LIKE lowerUTF8('value%')`  | For string fields only             |
 | `iendswith`    | `lowerUTF8(field) LIKE lowerUTF8('%value')`  | For string fields only             |
 | `iexact`       | `lowerUTF8(field) = lowerUTF8(value)`        | For string fields only             |
+| `has`          | `has(field, value)`                          | For array fields only              |
+| `has_any`      | `hasAny(field, value)`                       | For array fields only              |
+| `has_all`      | `hasAll(field, value)`                       | For array fields only              |
+| `length`       | `length(field) = value`                      | For array fields only              |
+| `empty`        | `empty(field) = value`                       | For array fields only              |
+| `not_empty`    | `notEmpty(field) = value`                    | For array fields only              |
 
 ### Using the `in` Operator
 
