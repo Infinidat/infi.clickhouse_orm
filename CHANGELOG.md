@@ -1,8 +1,8 @@
 Change Log
 ==========
 
-Unreleased
-----------
+v1.4.0
+------
 - Added primary_key parameter to MergeTree engines (M1hacka)
 - Support negative enum values (Romamo)
 
