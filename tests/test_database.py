@@ -8,6 +8,7 @@ from infi.clickhouse_orm.models import Model
 from infi.clickhouse_orm.engines import Memory
 from infi.clickhouse_orm.fields import *
 from infi.clickhouse_orm.funcs import F
+from infi.clickhouse_orm.query import Q
 from .base_test_with_data import *
 
 
@@ -47,9 +48,14 @@ class DatabaseTestCase(TestCaseWithData):
     def test_count(self):
         self.database.insert(self._sample_data())
         self.assertEqual(self.database.count(Person), 100)
+        # Conditions as string
         self.assertEqual(self.database.count(Person, "first_name = 'Courtney'"), 2)
         self.assertEqual(self.database.count(Person, "birthday > '2000-01-01'"), 22)
         self.assertEqual(self.database.count(Person, "birthday < '1970-03-01'"), 0)
+        # Conditions as expression
+        self.assertEqual(self.database.count(Person, Person.birthday > datetime.date(2000, 1, 1)), 22)
+        # Conditions as Q object
+        self.assertEqual(self.database.count(Person, Q(birthday__gt=datetime.date(2000, 1, 1))), 22)
 
     def test_select(self):
         self._insert_and_check(self._sample_data(), len(data))
@@ -146,7 +152,14 @@ class DatabaseTestCase(TestCaseWithData):
 
     def test_pagination_with_conditions(self):
         self._insert_and_check(self._sample_data(), len(data))
+        # Conditions as string
         page = self.database.paginate(Person, 'first_name, last_name', 1, 100, conditions="first_name < 'Ava'")
+        self.assertEqual(page.number_of_objects, 10)
+        # Conditions as expression
+        page = self.database.paginate(Person, 'first_name, last_name', 1, 100, conditions=Person.first_name < 'Ava')
+        self.assertEqual(page.number_of_objects, 10)
+        # Conditions as Q object
+        page = self.database.paginate(Person, 'first_name, last_name', 1, 100, conditions=Q(first_name__lt='Ava'))
         self.assertEqual(page.number_of_objects, 10)
 
     def test_special_chars(self):
@@ -263,3 +276,4 @@ class DatabaseTestCase(TestCaseWithData):
             self.assertEqual(model.table_name(), row.name)
             # Read a few records
             list(model.objects_in(self.database)[:10])
+

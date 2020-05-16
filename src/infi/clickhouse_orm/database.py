@@ -249,9 +249,12 @@ class Database(object):
         - `model_class`: the model to count.
         - `conditions`: optional SQL conditions (contents of the WHERE clause).
         '''
+        from infi.clickhouse_orm.query import Q
         query = 'SELECT count() FROM $table'
         if conditions:
-            query += ' WHERE ' + conditions
+            if isinstance(conditions, Q):
+                conditions = conditions.to_sql(model_class)
+            query += ' WHERE ' + str(conditions)
         query = self._substitute(query, model_class)
         r = self._send(query)
         return int(r.text) if r.text else 0
@@ -303,6 +306,7 @@ class Database(object):
         The result is a namedtuple containing `objects` (list), `number_of_objects`,
         `pages_total`, `number` (of the current page), and `page_size`.
         '''
+        from infi.clickhouse_orm.query import Q
         count = self.count(model_class, conditions)
         pages_total = int(ceil(count / float(page_size)))
         if page_num == -1:
@@ -312,7 +316,9 @@ class Database(object):
         offset = (page_num - 1) * page_size
         query = 'SELECT * FROM $table'
         if conditions:
-            query += ' WHERE ' + conditions
+            if isinstance(conditions, Q):
+                conditions = conditions.to_sql(model_class)
+            query += ' WHERE ' + str(conditions)
         query += ' ORDER BY %s' % order_by
         query += ' LIMIT %d, %d' % (offset, page_size)
         query = self._substitute(query, model_class)
