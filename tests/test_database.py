@@ -149,8 +149,12 @@ class DatabaseTestCase(TestCaseWithData):
             Database(self.database.db_name, username='default', password='wrong')
 
         exc = cm.exception
-        self.assertEqual(exc.code, 193)
-        self.assertTrue(exc.message.startswith('Wrong password for user default'))
+        if exc.code == 193: # ClickHouse version < 20.3
+            self.assertTrue(exc.message.startswith('Wrong password for user default'))
+        elif exc.code == 516: # ClickHouse version >= 20.3
+            self.assertTrue(exc.message.startswith('default: Authentication failed'))
+        else:
+            raise Exception('Unexpected error code - %s' % exc.code)
 
     def test_nonexisting_db(self):
         db = Database('db_not_here', autocreate=False)
