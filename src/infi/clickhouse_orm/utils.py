@@ -96,11 +96,14 @@ def import_submodules(package_name):
     }
 
 
-def comma_join(items):
+def comma_join(items, stringify=False):
     """
     Joins an iterable of strings with commas.
     """
-    return ', '.join(items)
+    if stringify:
+        return ', '.join(str(item) for item in items)
+    else:
+        return ', '.join(items)
 
 
 def is_iterable(obj):

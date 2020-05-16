@@ -77,11 +77,12 @@ class MergeTree(Engine):
         # https://clickhouse.yandex/docs/en/table_engines/custom_partitioning_key/
         # Let's check version and use new syntax if available
         if db.server_version >= (1, 1, 54310):
-            partition_sql = "PARTITION BY %s ORDER BY %s" \
-                            % ('(%s)' % comma_join(self.partition_key), '(%s)' % comma_join(self.order_by))
+            partition_sql = "PARTITION BY (%s) ORDER BY (%s)" \
+                            % (comma_join(self.partition_key, stringify=True),
+                               comma_join(self.order_by, stringify=True))
 
             if self.primary_key:
-                partition_sql += " PRIMARY KEY (%s)" % comma_join(self.primary_key)
+                partition_sql += " PRIMARY KEY (%s)" % comma_join(self.primary_key, stringify=True)
 
             if self.sampling_expr:
                 partition_sql += " SAMPLE BY %s" % self.sampling_expr
@@ -113,7 +114,7 @@ class MergeTree(Engine):
             params.append(self.date_col)
             if self.sampling_expr:
                 params.append(self.sampling_expr)
-            params.append('(%s)' % comma_join(self.order_by))
+            params.append('(%s)' % comma_join(self.order_by, stringify=True))
             params.append(str(self.index_granularity))
 
         return params

@@ -68,7 +68,7 @@ def parametric(func):
         def inner(*args, **kwargs):
             f = func(*args, **kwargs)
             # Append the parameter to the function name
-            parameters_str = comma_join([str(p) for p in parameters])
+            parameters_str = comma_join(parameters, stringify=True)
             f.name = '%s(%s)' % (f.name, parameters_str)
             return f
         return inner
