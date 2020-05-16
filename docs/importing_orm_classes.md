@@ -41,7 +41,7 @@ Importing Everything into a Namespace
 To prevent potential name clashes and to make the code more readable, you can import the ORM's classes into a namespace of your choosing, e.g. `orm`. For brevity, it is recommended to import the `F` class explicitly:
 ```python
 import infi.clickhouse_orm as orm
-from infi.clickhouse_orm.funcs import F
+from infi.clickhouse_orm import F
 
 class Event(orm.Model):
 

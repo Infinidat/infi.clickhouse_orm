@@ -1,6 +1,17 @@
 Change Log
 ==========
 
+v2.0.0
+------
+- Dropped support for Python 2.x
+- New flexible syntax for database expressions and functions
+- Expressions as default values for model fields
+- Support for IPv4 and IPv6 fields
+- Automatic generation of models by inspecting existing tables
+- Convenient ways to import ORM classes
+
+See [What's new in version 2](docs/whats_new_in_version_2.md) for details.
+
 v1.4.0
 ------
 - Added primary_key parameter to MergeTree engines (M1hacka)

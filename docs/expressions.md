@@ -13,7 +13,7 @@ Using Expressions
 
 Expressions usually include ClickHouse database functions, which are made available by the `F` class. Here's a simple function:
 ```python
-from infi.clickhouse_orm.models import F
+from infi.clickhouse_orm import F
 expr = F.today()
 ```
 
@@ -22,9 +22,9 @@ Functions that accept arguments can be composed, just like when using SQL:
 expr = F.toDayOfWeek(F.today())
 ```
 
-You can see the SQL expression that is represented by an ORM expression by calling its `to_sql` or `repr` methods:
+You can see the SQL expression that is represented by an ORM expression by calling its `to_sql` method or converting it to a string:
 ```python
->>> print(expr.to_sql())
+>>> print(expr)
 toDayOfWeek(today())
 ```
 
@@ -41,6 +41,8 @@ There is also support for comparison operators (`<`, `<=`, `==`, `>=`, `>`, `!=`
 # Is it Friday the 13th?
 (F.toDayOfWeek(F.today()) == 6) & (F.toDayOfMonth(F.today()) == 13)
 ```
+
+Note that Python's bitwise operators (`&`, `|`, `~`, `^`) have higher precedence than comparison operators, so always use parentheses when combining these two types of operators in an expression. Otherwise the resulting SQL might be different than what you would expect.
 
 ### Referring to model fields
 
