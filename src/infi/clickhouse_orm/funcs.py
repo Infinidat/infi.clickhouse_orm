@@ -222,7 +222,8 @@ class FMeta(type):
         # Get default values for args
         argdefs = tuple(p.default for p in sig.parameters.values() if p.default != Parameter.empty)
         # Build the new function
-        new_code = compile(f'def {new_name}({new_sig}): return F("{new_name}", {args})', __file__, 'exec')
+        new_code = compile('def {new_name}({new_sig}): return F("{new_name}", {args})'.format(**locals()),
+                           __file__, 'exec')
         new_func = FunctionType(code=new_code.co_consts[0], globals=globals(), name=new_name, argdefs=argdefs)
         # If base_func was parametric, new_func should be too
         if getattr(base_func, 'f_parametric', False):
