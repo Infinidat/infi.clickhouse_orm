@@ -170,7 +170,7 @@ class Model(metaclass=ModelBase):
         This may raise a `ValueError`.
         '''
         field = self.get_field(name)
-        if field:
+        if field and (value != NO_VALUE):
             try:
                 value = field.to_python(value, pytz.utc)
                 field.validate(value)
