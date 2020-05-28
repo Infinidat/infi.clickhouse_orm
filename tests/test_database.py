@@ -33,6 +33,8 @@ class DatabaseTestCase(TestCaseWithData):
         self._insert_and_check(self._sample_data(), len(data), batch_size=100)
 
     def test_insert__funcs_as_default_values(self):
+        if self.database.server_version < (20, 1, 2, 4):
+            raise unittest.SkipTest('Buggy in server versions before 20.1.2.4')
         class TestModel(Model):
             a = DateTimeField(default=datetime.datetime(2020, 1, 1))
             b = DateField(default=F.toDate(a))

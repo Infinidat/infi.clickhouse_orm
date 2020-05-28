@@ -294,6 +294,8 @@ class F(Cond, FunctionOperatorsMixin, metaclass=FMeta):
             return 'NULL'
         if isinstance(arg, QuerySet):
             return "(%s)" % arg
+        if isinstance(arg, tuple):
+            return '(' + comma_join(F._arg_to_sql(x) for x in arg) + ')'
         if is_iterable(arg):
             return '[' + comma_join(F._arg_to_sql(x) for x in arg) + ']'
         return str(arg)
@@ -406,11 +408,15 @@ class F(Cond, FunctionOperatorsMixin, metaclass=FMeta):
     @staticmethod
     @binary_operator
     def _in(a, b):
+        if is_iterable(b) and not isinstance(b, (tuple, QuerySet)):
+            b = tuple(b)
         return F('IN', a, b)
 
     @staticmethod
     @binary_operator
     def _notIn(a, b):
+        if is_iterable(b) and not isinstance(b, (tuple, QuerySet)):
+            b = tuple(b)
         return F('NOT IN', a, b)
 
     # Functions for working with dates and times

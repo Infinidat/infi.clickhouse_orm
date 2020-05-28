@@ -75,9 +75,11 @@ class FuncsTestCase(TestCaseWithData):
         self.assertEqual(F('func', F('sqrt', 25)).to_sql(), 'func(sqrt(25))')
         # Iterables as args
         x = [1, 'z', F('foo', 17)]
-        for y in [x, tuple(x), iter(x)]:
+        for y in [x, iter(x)]:
             self.assertEqual(F('func', y, 5).to_sql(), "func([1, 'z', foo(17)], 5)")
-        self.assertEqual(F('func', [(1, 2), (3, 4)]).to_sql(), "func([[1, 2], [3, 4]])")
+        # Tuples as args
+        self.assertEqual(F('func', [(1, 2), (3, 4)]).to_sql(), "func([(1, 2), (3, 4)])")
+        self.assertEqual(F('func', tuple(x), 5).to_sql(), "func((1, 'z', foo(17)), 5)")
         # Binary operator functions
         self.assertEqual(F.plus(1, 2).to_sql(), "(1 + 2)")
         self.assertEqual(F.lessOrEquals(1, 2).to_sql(), "(1 <= 2)")
@@ -187,9 +189,9 @@ class FuncsTestCase(TestCaseWithData):
         self._test_func(one | 0, 1)
         self._test_func(0 | one, 1)
         # ^
-        self._test_func(one ^ one, 0)
-        self._test_func(one ^ 0, 1)
-        self._test_func(0 ^ one, 1)
+        self._test_func(one ^ one)
+        self._test_func(one ^ 0)
+        self._test_func(0 ^ one)
         # ~
         self._test_func(~one, 0)
         self._test_func(~~one, 1)
