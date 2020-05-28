@@ -30,11 +30,17 @@ class FuncsTestCase(TestCaseWithData):
     def _test_func(self, func, expected_value=NO_VALUE):
         sql = 'SELECT %s AS value' % func.to_sql()
         logging.info(sql)
-        result = list(self.database.select(sql))
-        logging.info('\t==> %s', result[0].value if result else '<empty>')
-        if expected_value != NO_VALUE:
-            self.assertEqual(result[0].value, expected_value)
-        return result[0].value if result else None
+        try:
+            result = list(self.database.select(sql))
+            logging.info('\t==> %s', result[0].value if result else '<empty>')
+            if expected_value != NO_VALUE:
+                self.assertEqual(result[0].value, expected_value)
+            return result[0].value if result else None
+        except ServerError as e:
+            if 'Unknown function' in e.message:
+                logging.warning(e.message)
+                return # ignore functions that don't exist in the used ClickHouse version
+            raise
 
     def _test_aggr(self, func, expected_value=NO_VALUE):
         qs = Person.objects_in(self.database).aggregate(value=func)
