@@ -275,5 +275,10 @@ class DatabaseTestCase(TestCaseWithData):
             self.assertTrue(model.is_read_only())
             self.assertEqual(model.table_name(), row.name)
             # Read a few records
-            list(model.objects_in(self.database)[:10])
-
+            try:
+                list(model.objects_in(self.database)[:10])
+            except ServerError as e:
+                if 'Not enough privileges' in e.message:
+                    pass
+                else:
+                    raise
