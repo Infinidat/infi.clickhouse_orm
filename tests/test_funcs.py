@@ -254,9 +254,6 @@ class FuncsTestCase(TestCaseWithData):
         self._test_func(F.toRelativeMinuteNum(dt, 'Europe/Athens'), 25770922)
         self._test_func(F.toRelativeSecondNum(dt), 1546255353)
         self._test_func(F.toRelativeSecondNum(dt, 'Europe/Athens'), 1546255353)
-        self._test_func(F.now(), datetime.utcnow().replace(tzinfo=pytz.utc, microsecond=0)) # FIXME this may fail if the timing is just right
-        self._test_func(F.today(), datetime.utcnow().date())
-        self._test_func(F.yesterday(), datetime.utcnow().date() - timedelta(days=1))
         self._test_func(F.timeSlot(dt), datetime(2018, 12, 31, 11, 0, 0, tzinfo=pytz.utc))
         self._test_func(F.timeSlots(dt, 300), [datetime(2018, 12, 31, 11, 0, 0, tzinfo=pytz.utc)])
         self._test_func(F.formatDateTime(dt, '%D %T', 'Europe/Athens'), '12/31/18 13:22:33')
@@ -305,6 +302,9 @@ class FuncsTestCase(TestCaseWithData):
         self._test_func(F.toTime(dt, 'Europe/Athens'), datetime(1970, 1, 2, 13, 22, 33, tzinfo=pytz.utc))
         self._test_func(F.toTime(dt, pytz.timezone('Europe/Athens')), datetime(1970, 1, 2, 13, 22, 33, tzinfo=pytz.utc))
         self._test_func(F.toTimeZone(dt, 'Europe/Athens'), datetime(2018, 12, 31, 13, 22, 33, tzinfo=pytz.utc))
+        self._test_func(F.now(), datetime.utcnow().replace(tzinfo=pytz.utc, microsecond=0)) # FIXME this may fail if the timing is just right
+        self._test_func(F.today(), datetime.utcnow().date())
+        self._test_func(F.yesterday(), datetime.utcnow().date() - timedelta(days=1))
         self._test_func(F.toYYYYMMDDhhmmss(dt), 20181231112233)
         self._test_func(F.formatDateTime(dt, '%D %T'), '12/31/18 11:22:33')
         self._test_func(F.addHours(d, 7), datetime(2018, 12, 31, 7, 0, 0, tzinfo=pytz.utc))
