@@ -322,6 +322,13 @@ class AggregateTestCase(TestCaseWithData):
         for row in qs:
             self.assertAlmostEqual(row.average_height, 1.6923, places=4)
             self.assertEqual(row.count, 100)
+        # With functions
+        qs = Person.objects_in(self.database).aggregate(average_height=F.avg(Person.height), count=F.count())
+        print(qs.as_sql())
+        self.assertEqual(qs.count(), 1)
+        for row in qs:
+            self.assertAlmostEqual(row.average_height, 1.6923, places=4)
+            self.assertEqual(row.count, 100)
 
     def test_aggregate_with_filter(self):
         # When filter comes before aggregate
@@ -482,138 +489,6 @@ class AggregateTestCase(TestCaseWithData):
         self.assertEquals([p.first_name for p in limited_qs[:3]], ['Elton', 'Josiah', 'Macaulay'])
         limited_qs = qs.limit_by((6, 3), 'height')
         self.assertEquals([p.first_name for p in limited_qs[:3]], ['Norman', 'Octavius', 'Oliver'])
-
-
-
-
-class FuncsTestCase(TestCaseWithData):
-
-    def setUp(self):
-        super(FuncsTestCase, self).setUp()
-        self.database.insert(self._sample_data())
-
-    def _test_qs(self, qs, expected_count):
-        logger.info(qs.as_sql())
-        count = 0
-        for instance in qs:
-            count += 1
-            logger.info('\t[%d]\t%s' % (count, instance.to_dict()))
-        self.assertEqual(count, expected_count)
-        self.assertEqual(qs.count(), expected_count)
-
-    def _test_func(self, func, expected_value=None):
-        sql = 'SELECT %s AS value' % func.to_sql()
-        logger.info(sql)
-        result = list(self.database.select(sql))
-        logger.info('\t==> %s', result[0].value)
-        if expected_value is not None:
-            self.assertEqual(result[0].value, expected_value)
-
-    def test_func_to_sql(self):
-        # No args
-        self.assertEqual(F('func').to_sql(), 'func()')
-        # String args
-        self.assertEqual(F('func', "Wendy's", u"Wendy's").to_sql(), "func('Wendy\\'s', 'Wendy\\'s')")
-        # Numeric args
-        self.assertEqual(F('func', 1, 1.1, Decimal('3.3')).to_sql(), "func(1, 1.1, 3.3)")
-        # Date args
-        self.assertEqual(F('func', date(2018, 12, 31)).to_sql(), "func(toDate('2018-12-31'))")
-        # Datetime args
-        self.assertEqual(F('func', datetime(2018, 12, 31)).to_sql(), "func(toDateTime('1546214400'))")
-        # Boolean args
-        self.assertEqual(F('func', True, False).to_sql(), "func(1, 0)")
-        # Null args
-        self.assertEqual(F('func', None).to_sql(), "func(NULL)")
-        # Fields as args
-        self.assertEqual(F('func', SampleModel.color).to_sql(), "func(`color`)")
-        # Funcs as args
-        self.assertEqual(F('func', F('sqrt', 25)).to_sql(), 'func(sqrt(25))')
-        # Iterables as args
-        x = [1, 'z', F('foo', 17)]
-        for y in [x, tuple(x), iter(x)]:
-            self.assertEqual(F('func', y, 5).to_sql(), "func([1, 'z', foo(17)], 5)")
-        self.assertEqual(F('func', [(1, 2), (3, 4)]).to_sql(), "func([[1, 2], [3, 4]])")
-
-    def test_filter_float_field(self):
-        qs = Person.objects_in(self.database)
-        # Height > 2
-        self._test_qs(qs.filter(F.greater(Person.height, 2)), 0)
-        self._test_qs(qs.filter(Person.height > 2), 0)
-        # Height > 1.61
-        self._test_qs(qs.filter(F.greater(Person.height, 1.61)), 96)
-        self._test_qs(qs.filter(Person.height > 1.61), 96)
-        # Height < 1.61
-        self._test_qs(qs.filter(F.less(Person.height, 1.61)), 4)
-        self._test_qs(qs.filter(Person.height < 1.61), 4)
-
-    def test_filter_date_field(self):
-        qs = Person.objects_in(self.database)
-        # People born on the 30th
-        self._test_qs(qs.filter(F('equals', F('toDayOfMonth', Person.birthday), 30)), 3)
-        self._test_qs(qs.filter(F('toDayOfMonth', Person.birthday) == 30), 3)
-        self._test_qs(qs.filter(F.toDayOfMonth(Person.birthday) == 30), 3)
-        # People born on Sunday
-        self._test_qs(qs.filter(F('equals', F('toDayOfWeek', Person.birthday), 7)), 18)
-        self._test_qs(qs.filter(F('toDayOfWeek', Person.birthday) == 7), 18)
-        self._test_qs(qs.filter(F.toDayOfWeek(Person.birthday) == 7), 18)
-        # People born on 1976-10-01
-        self._test_qs(qs.filter(F('equals', Person.birthday, '1976-10-01')), 1)
-        self._test_qs(qs.filter(F('equals', Person.birthday, date(1976, 10, 1))), 1)
-        self._test_qs(qs.filter(Person.birthday == date(1976, 10, 1)), 1)
-
-    def test_func_as_field_value(self):
-        qs = Person.objects_in(self.database)
-        self._test_qs(qs.filter(height__gt=F.plus(1, 0.61)), 96)
-        self._test_qs(qs.exclude(birthday=F.today()), 100)
-        self._test_qs(qs.filter(birthday__between=['1970-01-01', F.today()]), 100)
-
-    def test_comparison_operators(self):
-        one = F.plus(1, 0)
-        two = F.plus(1, 1)
-        self._test_func(one > one, 0)
-        self._test_func(two > one, 1)
-        self._test_func(one >= two, 0)
-        self._test_func(one >= one, 1)
-        self._test_func(one < one, 0)
-        self._test_func(one < two, 1)
-        self._test_func(two <= one, 0)
-        self._test_func(one <= one, 1)
-        self._test_func(one == two, 0)
-        self._test_func(one == one, 1)
-        self._test_func(one != one, 0)
-        self._test_func(one != two, 1)
-
-    def test_arithmetic_operators(self):
-        one = F.plus(1, 0)
-        two = F.plus(1, 1)
-        # +
-        self._test_func(one + two, 3)
-        self._test_func(one + 2, 3)
-        self._test_func(2 + one, 3)
-        # -
-        self._test_func(one - two, -1)
-        self._test_func(one - 2, -1)
-        self._test_func(1 - two, -1)
-        # *
-        self._test_func(one * two, 2)
-        self._test_func(one * 2, 2)
-        self._test_func(1 * two, 2)
-        # /
-        self._test_func(one / two, 0.5)
-        self._test_func(one / 2, 0.5)
-        self._test_func(1 / two, 0.5)
-        # %
-        self._test_func(one % two, 1)
-        self._test_func(one % 2, 1)
-        self._test_func(1 % two, 1)
-        # sign
-        self._test_func(-one, -1)
-        self._test_func(--one, 1)
-        self._test_func(+one, 1)
-
-
-
-
 
 
 Color = Enum('Color', u'red blue green yellow brown white black')
