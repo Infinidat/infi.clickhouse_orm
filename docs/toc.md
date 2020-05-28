@@ -20,7 +20,9 @@
 
    * [Querysets](querysets.md#querysets)
       * [Filtering](querysets.md#filtering)
-         * [Using the in Operator](querysets.md#using-the-in-operator)
+         * [Using IN and NOT IN](querysets.md#using-in-and-not-in)
+         * [Specifying PREWHERE conditions](querysets.md#specifying-prewhere-conditions)
+         * [Old-style filter conditions](querysets.md#old-style-filter-conditions)
       * [Counting and Checking Existence](querysets.md#counting-and-checking-existence)
       * [Ordering](querysets.md#ordering)
       * [Omitting Fields](querysets.md#omitting-fields)
@@ -29,6 +31,7 @@
       * [Slicing](querysets.md#slicing)
       * [Pagination](querysets.md#pagination)
       * [Aggregation](querysets.md#aggregation)
+         * [Adding totals](querysets.md#adding-totals)
 
    * [Field Options](field_options.md#field-options)
       * [default](field_options.md#default)

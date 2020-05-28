@@ -10,16 +10,16 @@ Defining Models
 
 Models are defined in a way reminiscent of Django's ORM, by subclassing `Model`:
 
-    from infi.clickhouse_orm import models, fields, engines
+    from infi.clickhouse_orm import Model, StringField, DateField, Float32Field, MergeTree
 
-    class Person(models.Model):
+    class Person(Model):
 
-        first_name = fields.StringField()
-        last_name = fields.StringField()
-        birthday = fields.DateField()
-        height = fields.Float32Field()
+        first_name = StringField()
+        last_name = StringField()
+        birthday = DateField()
+        height = Float32Field()
 
-        engine = engines.MergeTree('birthday', ('first_name', 'last_name', 'birthday'))
+        engine = MergeTree('birthday', ('first_name', 'last_name', 'birthday'))
 
 The columns in the database table are represented by model fields. Each field has a type, which matches the type of the corresponding database column. All the supported fields types are listed [here](field_types.md).
 
@@ -29,7 +29,7 @@ A model must have an `engine`, which determines how its table is stored on disk 
 
 Each field has a "natural" default value - empty string for string fields, zero for numeric fields etc. To specify a different value use the `default` parameter:
 
-        first_name = fields.StringField(default="anonymous")
+        first_name = StringField(default="anonymous")
 
 For additional details see [here](field_options.md).
 
@@ -37,7 +37,7 @@ For additional details see [here](field_options.md).
 
 To allow null values in a field, wrap it inside a `NullableField`:
 
-        birthday = fields.NullableField(fields.DateField())
+        birthday = NullableField(DateField())
 
 In this case, the default value for that field becomes `null` unless otherwise specified.
 
@@ -47,7 +47,7 @@ For more information about `NullableField` see [Field Types](field_types.md).
 
 The value of a materialized field is calculated from other fields in the model. For example:
 
-        year_born = fields.Int16Field(materialized=F.toYear(birthday))
+        year_born = Int16Field(materialized=F.toYear(birthday))
 
 Materialized fields are read-only, meaning that their values are not sent to the database when inserting records.
 
@@ -67,7 +67,7 @@ For additional details see [here](field_options.md).
 
 The table name used for the model is its class name, converted to lowercase. To override the default name, implement the `table_name` method:
 
-    class Person(models.Model):
+    class Person(Model):
 
         ...
 
@@ -100,7 +100,7 @@ Inserting to the Database
 
 To write your instances to ClickHouse, you need a `Database` instance:
 
-    from infi.clickhouse_orm.database import Database
+    from infi.clickhouse_orm import Database
 
     db = Database('my_test_db')
 
@@ -136,7 +136,7 @@ It is possible to select only a subset of the columns, and the rest will receive
 
 The ORM provides a way to build simple queries without writing SQL by hand. The previous snippet can be written like this:
 
-    for person in Person.objects_in(db).filter(last_name='Smith').only('first_name'):
+    for person in Person.objects_in(db).filter(Person.last_name == 'Smith').only('first_name'):
         print(person.first_name)
 
 See [Querysets](querysets.md) for more information.

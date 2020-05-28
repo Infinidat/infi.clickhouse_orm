@@ -362,7 +362,7 @@ class MergeModel(Model):
     '''
     Model for Merge engine
     Predefines virtual _table column an controls that rows can't be inserted to this table type
-    https://clickhouse.yandex/docs/en/single/index.html#document-table_engines/merge
+    https://clickhouse.tech/docs/en/single/index.html#document-table_engines/merge
     '''
     readonly = True
 

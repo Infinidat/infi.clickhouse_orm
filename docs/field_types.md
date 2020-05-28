@@ -1,7 +1,7 @@
 Field Types
 ===========
 
-See: [ClickHouse Documentation](https://clickhouse.yandex/docs/en/data_types/)
+See: [ClickHouse Documentation](https://clickhouse.tech/docs/en/sql-reference/data-types/)
 
 The following field types are supported:
 
@@ -58,14 +58,14 @@ Example of a model with an enum field:
 ```python
 Gender = Enum('Gender', 'male female unspecified')
 
-class Person(models.Model):
+class Person(Model):
 
-    first_name = fields.StringField()
-    last_name = fields.StringField()
-    birthday = fields.DateField()
-    gender = fields.Enum32Field(Gender)
+    first_name = StringField()
+    last_name = StringField()
+    birthday = DateField()
+    gender = Enum32Field(Gender)
 
-    engine = engines.MergeTree('birthday', ('first_name', 'last_name', 'birthday'))
+    engine = MergeTree('birthday', ('first_name', 'last_name', 'birthday'))
 
 suzy = Person(first_name='Suzy', last_name='Jones', gender=Gender.female)
 ```
@@ -76,13 +76,13 @@ Working with array fields
 You can create array fields containing any data type, for example:
 
 ```python
-class SensorData(models.Model):
+class SensorData(Model):
 
-    date = fields.DateField()
-    temperatures = fields.ArrayField(fields.Float32Field())
-    humidity_levels = fields.ArrayField(fields.UInt8Field())
+    date = DateField()
+    temperatures = ArrayField(Float32Field())
+    humidity_levels = ArrayField(UInt8Field())
 
-    engine = engines.MergeTree('date', ('date',))
+    engine = MergeTree('date', ('date',))
 
 data = SensorData(date=date.today(), temperatures=[25.5, 31.2, 28.7], humidity_levels=[41, 39, 66])
 ```
@@ -91,19 +91,19 @@ Note that multidimensional arrays are not supported yet by the ORM.
 
 Working with nullable fields
 ----------------------------
-[ClickHouse provides a NULL value support](https://clickhouse.yandex/docs/en/data_types/nullable).
+[ClickHouse provides a NULL value support](https://clickhouse.tech/docs/en/sql-reference/data-types/nullable/).
 
 Wrapping another field in a `NullableField` makes it possible to assign `None` to that field. For example:
 
 ```python
-class EventData(models.Model):
+class EventData(Model):
 
-    date = fields.DateField()
-    comment = fields.NullableField(fields.StringField(), extra_null_values={''})
-    score = fields.NullableField(fields.UInt8Field())
-    serie = fields.NullableField(fields.ArrayField(fields.UInt8Field()))
+    date = DateField()
+    comment = NullableField(StringField(), extra_null_values={''})
+    score = NullableField(UInt8Field())
+    serie = NullableField(ArrayField(UInt8Field()))
 
-    engine = engines.MergeTree('date', ('date',))
+    engine = MergeTree('date', ('date',))
 
 
 score_event = EventData(date=date.today(), comment=None, score=5, serie=None)
@@ -124,7 +124,7 @@ Working with LowCardinality fields
 Starting with version 19.0 ClickHouse offers a new type of field to improve the performance of queries
 and compaction of columns for low entropy data.
 
-[More specifically](https://github.com/yandex/ClickHouse/issues/4074) LowCardinality data type builds dictionaries automatically. It can use multiple different dictionaries if necessarily.
+[More specifically](https://github.com/tech/ClickHouse/issues/4074) LowCardinality data type builds dictionaries automatically. It can use multiple different dictionaries if necessarily.
 If the number of distinct values is pretty large, the dictionaries become local, several different dictionaries will be used for different ranges of data. For example, if you have too many distinct values in total, but only less than about a million values each day - then the queries by day will be processed efficiently, and queries for larger ranges will be processed rather efficiently.
 
 LowCardinality works independently of (generic) fields compression.
@@ -133,19 +133,16 @@ The compression ratios of LowCardinality fields for text data may be significant
 
 LowCardinality will give performance boost, in the form of processing speed, if the number of distinct values is less than a few millions. This is because data is processed in dictionary encoded form.
 
-You can find further information about LowCardinality in [this presentation](https://github.com/yandex/clickhouse-presentations/blob/master/meetup19/string_optimization.pdf).
+You can find further information [here](https://clickhouse.tech/docs/en/sql-reference/data-types/lowcardinality/).
 
 Usage example:
 ```python
-class LowCardinalityModel(models.Model):
-    date       = fields.DateField()
-    int32      = fields.LowCardinalityField(fields.Int32Field())
-    float32    = fields.LowCardinalityField(fields.Float32Field())
-    string     = fields.LowCardinalityField(fields.StringField())
-    nullable   = fields.LowCardinalityField(fields.NullableField(fields.StringField()))
-    array      = fields.ArrayField(fields.LowCardinalityField(fields.UInt64Field()))
-
-    engine = MergeTree('date', ('date',))
+class LowCardinalityModel(Model):
+    date       = DateField()
+    string     = LowCardinalityField(StringField())
+    nullable   = LowCardinalityField(NullableField(StringField()))
+    array      = ArrayField(LowCardinalityField(DateField()))
+    ...
 ```
 
 Note: `LowCardinality` field with an inner array field is not supported. Use an `ArrayField` with a `LowCardinality` inner field as seen in the example.
@@ -162,7 +159,7 @@ For example, we can create a BooleanField which will hold `True` and `False` val
 Here's the full implementation:
 
 ```python
-from infi.clickhouse_orm.fields import Field
+from infi.clickhouse_orm import Field
 
 class BooleanField(Field):
 

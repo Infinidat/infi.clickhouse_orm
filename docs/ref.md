@@ -448,7 +448,7 @@ Extends Engine
 Extends Engine
 
 Here we define Buffer engine
-Read more here https://clickhouse.yandex/reference_en.html#Buffer
+Read more here https://clickhouse.tech/reference_en.html#Buffer
 
 #### Buffer(main_model, num_layers=16, min_time=10, max_time=100, min_rows=10000, max_rows=1000000, min_bytes=10000000, max_bytes=100000000)
 

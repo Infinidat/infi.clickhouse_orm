@@ -55,14 +55,14 @@ Sensor.temperature * 1.8 + 32
 Inside model class definitions omit the class name:
 ```python
 class Person(Model):
-    height_cm = fields.Float32Field()
-    height_inch = fields.Float32Field(alias=height_cm/2.54)
+    height_cm = Float32Field()
+    height_inch = Float32Field(alias=height_cm/2.54)
     ...
 ```
 
 ### Parametric functions
 
-Some of ClickHouse's aggregate functions can accept not only argument columns, but a set of parameters - constants for initialization. The syntax is two pairs of brackets instead of one. The first is for parameters, and the second is for arguments. For example:
+Some of ClickHouse's aggregate functions can accept one or more parameters - constants for initialization that affect the way the function works. The syntax is two pairs of brackets instead of one. The first is for parameters, and the second is for arguments. For example:
 ```python
 # Most common last names
 F.topK(5)(Person.last_name)
@@ -81,8 +81,8 @@ def normalize_string(s):
 Then we can use this expression anywhere we need it:
 ```python
 class Event(Model):
-    code = fields.StringField()
-    normalized_code = fields.StringField(materialized=normalize_string(code))
+    code = StringField()
+    normalized_code = StringField(materialized=normalize_string(code))
 ```
 
 ### Which functions are available?
@@ -93,6 +93,7 @@ expr = F("someFunctionName", arg1, arg2, ...)
 ```
 
 Note that higher-order database functions (those that use lambda expressions) are not supported.
+
 ---
 
 [<< Models and Databases](models_and_databases.md) | [Table of Contents](toc.md) | [Importing ORM Classes >>](importing_orm_classes.md)

@@ -840,7 +840,7 @@ Extends Engine
 
 Buffers the data to write in RAM, periodically flushing it to another table.
 Must be used in conjuction with a `BufferModel`.
-Read more [here](https://clickhouse.yandex/docs/en/table_engines/buffer/).
+Read more [here](https://clickhouse.tech/docs/en/engines/table-engines/special/buffer/).
 
 #### Buffer(main_model, num_layers=16, min_time=10, max_time=100, min_rows=10000, max_rows=1000000, min_bytes=10000000, max_bytes=100000000)
 
@@ -853,7 +853,7 @@ Extends Engine
 The Merge engine (not to be confused with MergeTree) does not store data itself,
 but allows reading from any number of other tables simultaneously.
 Writing to a table is not supported
-https://clickhouse.yandex/docs/en/single/index.html#document-table_engines/merge
+https://clickhouse.tech/docs/en/engines/table-engines/special/merge/
 
 #### Merge(table_regex)
 
@@ -869,7 +869,7 @@ Reading is automatically parallelized.
 During a read, the table indexes on remote servers are used, if there are any.
 
 See full documentation here
-https://clickhouse.yandex/docs/en/table_engines/distributed.html
+https://clickhouse.tech/docs/en/engines/table-engines/special/distributed/
 
 #### Distributed(cluster, table=None, sharding_key=None)
 
@@ -1165,7 +1165,7 @@ Returns the selected fields or expressions as a SQL string.
 
 Adds WITH TOTALS modifier ot GROUP BY, making query return extra row
 with aggregate function calculated across all the rows. More information:
-https://clickhouse.yandex/docs/en/query_language/select/#with-totals-modifier
+https://clickhouse.tech/docs/en/query_language/select/#with-totals-modifier
 
 
 ### Q

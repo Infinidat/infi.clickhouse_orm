@@ -74,7 +74,7 @@ class MergeTree(Engine):
             name = 'Replicated' + name
 
         # In ClickHouse 1.1.54310 custom partitioning key was introduced
-        # https://clickhouse.yandex/docs/en/table_engines/custom_partitioning_key/
+        # https://clickhouse.tech/docs/en/table_engines/custom_partitioning_key/
         # Let's check version and use new syntax if available
         if db.server_version >= (1, 1, 54310):
             partition_sql = "PARTITION BY (%s) ORDER BY (%s)" \
@@ -94,7 +94,7 @@ class MergeTree(Engine):
             from infi.clickhouse_orm.database import DatabaseException
             raise DatabaseException("Custom partitioning is not supported before ClickHouse 1.1.54310. "
                                     "Please update your server or use date_col syntax."
-                                    "https://clickhouse.yandex/docs/en/table_engines/custom_partitioning_key/")
+                                    "https://clickhouse.tech/docs/en/table_engines/custom_partitioning_key/")
         else:
             partition_sql = ''
 
@@ -107,7 +107,7 @@ class MergeTree(Engine):
             params += ["'%s'" % self.replica_table_path, "'%s'" % self.replica_name]
 
         # In ClickHouse 1.1.54310 custom partitioning key was introduced
-        # https://clickhouse.yandex/docs/en/table_engines/custom_partitioning_key/
+        # https://clickhouse.tech/docs/en/table_engines/custom_partitioning_key/
         # These parameters are process in create_table_sql directly.
         # In previous ClickHouse versions this this syntax does not work.
         if db.server_version < (1, 1, 54310):
@@ -172,7 +172,7 @@ class Buffer(Engine):
     """
     Buffers the data to write in RAM, periodically flushing it to another table.
     Must be used in conjuction with a `BufferModel`.
-    Read more [here](https://clickhouse.yandex/docs/en/table_engines/buffer/).
+    Read more [here](https://clickhouse.tech/docs/en/engines/table-engines/special/buffer/).
     """
 
     #Buffer(database, table, num_layers, min_time, max_time, min_rows, max_rows, min_bytes, max_bytes)
@@ -203,7 +203,7 @@ class Merge(Engine):
     The Merge engine (not to be confused with MergeTree) does not store data itself,
     but allows reading from any number of other tables simultaneously.
     Writing to a table is not supported
-    https://clickhouse.yandex/docs/en/single/index.html#document-table_engines/merge
+    https://clickhouse.tech/docs/en/engines/table-engines/special/merge/
     """
 
     def __init__(self, table_regex):
@@ -222,7 +222,7 @@ class Distributed(Engine):
     During a read, the table indexes on remote servers are used, if there are any.
 
     See full documentation here
-    https://clickhouse.yandex/docs/en/table_engines/distributed.html
+    https://clickhouse.tech/docs/en/engines/table-engines/special/distributed/
     """
     def __init__(self, cluster, table=None, sharding_key=None):
         """

@@ -16,13 +16,13 @@ Note that `default`, `alias` and `materialized` are mutually exclusive - you can
 Specifies a default value to use for the field. If not given, the field will have a default value based on its type: empty string for string fields, zero for numeric fields, etc.
 The default value can be a Python value suitable for the field type, or an expression. For example:
 ```python
-class Event(models.Model):
+class Event(Model):
 
-    name = fields.StringField(default="EVENT")
-    repeated = fields.UInt32Field(default=1)
-    created = fields.DateTimeField(default=F.now())
+    name = StringField(default="EVENT")
+    repeated = UInt32Field(default=1)
+    created = DateTimeField(default=F.now())
 
-    engine = engines.Memory()
+    engine = Memory()
     ...
 ```
 When creating a model instance, any fields you do not specify get their default value. Fields that use a default expression are assigned a sentinel value of `infi.clickhouse_orm.utils.NO_VALUE` instead. For example:
@@ -38,18 +38,18 @@ When creating a model instance, any fields you do not specify get their default 
 The `alias` and `materialized` attributes expect an expression that gets calculated by the database. The difference is that `alias` fields are calculated on the fly, while `materialized` fields are calculated when the record is inserted, and are stored on disk.
 You can use any expression, and can refer to other model fields. For example:
 ```python
-class Event(models.Model):
+class Event(Model):
 
-    created = fields.DateTimeField()
-    created_date = fields.DateTimeField(materialized=F.toDate(created))
-    name = fields.StringField()
-    normalized_name = fields.StringField(alias=F.upper(F.trim(name)))
+    created = DateTimeField()
+    created_date = DateTimeField(materialized=F.toDate(created))
+    name = StringField()
+    normalized_name = StringField(alias=F.upper(F.trim(name)))
 
-    engine = engines.Memory()
+    engine = Memory()
 ```
 For backwards compatibility with older versions of the ORM, you can pass the expression as an SQL string:
 ```python
-    created_date = fields.DateTimeField(materialized="toDate(created)")
+    created_date = DateTimeField(materialized="toDate(created)")
 ```
 Both field types can't be inserted into the database directly, so they are ignored when using the `Database.insert()` method. ClickHouse does not return the field values if you use `"SELECT * FROM ..."` - you have to list these field names explicitly in the query.
 
@@ -89,15 +89,15 @@ Recommended usage for codecs:
 
 Example:
 ```python
-class Stats(models.Model):
+class Stats(Model):
 
-    id                  = fields.UInt64Field(codec='ZSTD(10)')
-    timestamp           = fields.DateTimeField(codec='Delta,ZSTD')
-    timestamp_date      = fields.DateField(codec='Delta(4),ZSTD(22)')
-    metadata_id         = fields.Int64Field(codec='LZ4')
-    status              = fields.StringField(codec='LZ4HC(10)')
-    calculation         = fields.NullableField(fields.Float32Field(), codec='ZSTD')
-    alerts              = fields.ArrayField(fields.FixedStringField(length=15), codec='Delta(2),LZ4HC')
+    id                  = UInt64Field(codec='ZSTD(10)')
+    timestamp           = DateTimeField(codec='Delta,ZSTD')
+    timestamp_date      = DateField(codec='Delta(4),ZSTD(22)')
+    metadata_id         = Int64Field(codec='LZ4')
+    status              = StringField(codec='LZ4HC(10)')
+    calculation         = NullableField(Float32Field(), codec='ZSTD')
+    alerts              = ArrayField(FixedStringField(length=15), codec='Delta(2),LZ4HC')
 
     engine = MergeTree('timestamp_date', ('id', 'timestamp'))
 ```

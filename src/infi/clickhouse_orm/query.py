@@ -641,7 +641,7 @@ class AggregateQuerySet(QuerySet):
         """
         Adds WITH TOTALS modifier ot GROUP BY, making query return extra row
         with aggregate function calculated across all the rows. More information:
-        https://clickhouse.yandex/docs/en/query_language/select/#with-totals-modifier
+        https://clickhouse.tech/docs/en/query_language/select/#with-totals-modifier
         """
         qs = copy(self)
         qs._grouping_with_totals = True
