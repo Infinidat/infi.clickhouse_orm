@@ -17,7 +17,7 @@ class HeadersToMarkdownParser(HTMLParser):
     def handle_endtag(self, tag):
         if tag.lower() in HEADER_TAGS:
             indent = '   ' * int(self.inside[1])
-            fragment = self.text.lower().replace(' ', '-')
+            fragment = self.text.lower().replace(' ', '-').replace('.', '')
             print('%s* [%s](%s#%s)' % (indent, self.text, sys.argv[1], fragment))
             self.inside = None
             self.text = ''

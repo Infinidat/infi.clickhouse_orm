@@ -57,9 +57,9 @@ qs.filter(Person.first_name.isIn(['Robert', 'Rob', 'Robbie']))
 
 The `isIn` and `isNotIn` functions expect either a list/tuple of values, or another queryset (a subquery). For example if we want to select only people with Irish last names:
 ```python
-# A list of values
+# Last name is in a list of values
 qs = Person.objects_in(database).filter(Person.last_name.isIn(["Murphy", "O'Sullivan"]))
-# A queryset
+# Last name is in a subquery
 subquery = IrishLastName.objects_in(database).only("name")
 qs = Person.objects_in(database).filter(Person.last_name.isIn(subquery))
 ```
@@ -76,7 +76,7 @@ For better aggregation performance you can add them to `PREWHERE` section by add
 
 ### Old-style filter conditions
 
-Prior to version 2 of the ORM, filtering conditions were limited to a predefined set of operators, and complex expressions were not supported. This old syntax is still supported, so you can use it alongside or even intermixed with new-style functions and expressions.
+Prior to version 2 of the ORM, filtering conditions were limited to a predefined set of operators, and complex expressions were not supported. This old syntax is still available, so you can use it alongside or even intermixed with new-style functions and expressions.
 
 The old syntax uses keyword arguments to the `filter` and `exclude` methods, that are built as `<fieldname>__<operator>=<value>` (two underscores separate the field name from the operator). In case no operator is given, `eq` is used by default. For example:
 ```python
