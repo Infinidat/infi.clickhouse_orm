@@ -429,7 +429,7 @@ class BaseEnumField(Field):
         import re
         from enum import Enum
         members = {}
-        for match in re.finditer("'([\w ]+)' = (-?\d+)", db_type):
+        for match in re.finditer(r"'([\w ]+)' = (-?\d+)", db_type):
             members[match.group(1)] = int(match.group(2))
         enum_cls = Enum('AdHocEnum', members)
         field_class = Enum8Field if db_type.startswith('Enum8') else Enum16Field
