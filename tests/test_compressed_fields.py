@@ -4,7 +4,7 @@ import datetime
 import pytz
 
 from infi.clickhouse_orm.database import Database
-from infi.clickhouse_orm.models import Model
+from infi.clickhouse_orm.models import Model, NO_VALUE
 from infi.clickhouse_orm.fields import *
 from infi.clickhouse_orm.engines import *
 from infi.clickhouse_orm.utils import parse_tsv
@@ -67,7 +67,7 @@ class CompressedFieldsTestCase(unittest.TestCase):
             "int64_field": 100,
             "float_field": 7.0,
             "datetime_field": datetime.datetime(1970, 1, 1, 0, 0, 0, tzinfo=pytz.utc),
-            "alias_field": 0.0,
+            "alias_field": NO_VALUE,
             'string_field': 'dozo',
             'nullable_field': None,
             'uint64_field': 0,
@@ -89,8 +89,9 @@ class CompressedFieldsTestCase(unittest.TestCase):
                 "datetime_field": datetime.datetime(1970, 1, 1, 0, 0, 0, tzinfo=pytz.utc)
             })
 
-    # This test will fail on clickhouse version < 19.1.16, use skip test
     def test_confirm_compression_codec(self):
+        if self.database.server_version < (19, 17):
+            raise unittest.SkipTest('ClickHouse version too old')
         instance = CompressedModel(date_field='1973-12-06', int64_field='100', float_field='7', array_field='[a,b,c]')
         self.database.insert([instance])
         r = self.database.raw("select name, compression_codec from system.columns where table = '{}' and database='{}' FORMAT TabSeparatedWithNamesAndTypes".format(instance.table_name(), self.database.db_name))

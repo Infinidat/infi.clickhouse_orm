@@ -1,11 +1,8 @@
 from __future__ import unicode_literals
 import unittest
+import datetime
 
-from infi.clickhouse_orm.system_models import SystemPart
-from infi.clickhouse_orm.database import Database, DatabaseException, ServerError
-from infi.clickhouse_orm.models import Model, MergeModel, DistributedModel
-from infi.clickhouse_orm.fields import *
-from infi.clickhouse_orm.engines import *
+from infi.clickhouse_orm import *
 
 import logging
 logging.getLogger("requests").setLevel(logging.WARNING)
@@ -35,6 +32,11 @@ class EnginesTestCase(_EnginesHelperTestCase):
     def test_merge_tree_with_sampling(self):
         class TestModel(SampleModel):
             engine = MergeTree('date', ('date', 'event_id', 'event_group', 'intHash32(event_id)'), sampling_expr='intHash32(event_id)')
+        self._create_and_insert(TestModel)
+
+    def test_merge_tree_with_sampling__funcs(self):
+        class TestModel(SampleModel):
+            engine = MergeTree('date', ('date', 'event_id', 'event_group', F.intHash32(SampleModel.event_id)), sampling_expr=F.intHash32(SampleModel.event_id))
         self._create_and_insert(TestModel)
 
     def test_merge_tree_with_granularity(self):
@@ -166,6 +168,9 @@ class EnginesTestCase(_EnginesHelperTestCase):
         self.assertEqual('(201701, 13)'.replace(' ', ''), parts[1].partition.replace(' ', ''))
 
     def test_custom_primary_key(self):
+        if self.database.server_version < (18, 1):
+            raise unittest.SkipTest('ClickHouse version too old')
+
         class TestModel(SampleModel):
             engine = MergeTree(
                 order_by=('date', 'event_id', 'event_group'),

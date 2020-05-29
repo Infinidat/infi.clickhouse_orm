@@ -1,7 +1,7 @@
 System Models
 =============
 
-[Clickhouse docs](https://clickhouse.yandex/docs/en/system_tables/).
+[Clickhouse docs](https://clickhouse.tech/docs/en/operations/system-tables/).
 
 System models are read only models for implementing part of the system's functionality, and for providing access to information about how the system is working.
 
@@ -14,7 +14,7 @@ Currently the following system models are supported:
 Partitions and Parts
 --------------------
 
-[ClickHouse docs](https://clickhouse.yandex/docs/en/query_language/queries/#manipulations-with-partitions-and-parts).
+[ClickHouse docs](https://clickhouse.tech/docs/en/sql-reference/statements/alter/#alter_manipulations-with-partitions).
 
 A partition in a table is data for a single calendar month. Table "system.parts" contains information about each part.
 
@@ -30,8 +30,7 @@ A partition in a table is data for a single calendar month. Table "system.parts"
 
 Usage example:
 
-    from infi.clickhouse_orm.database import Database
-    from infi.clickhouse_orm.system_models import SystemPart
+    from infi.clickhouse_orm import Database, SystemPart
     db = Database('my_test_db', db_url='http://192.168.1.1:8050', username='scott', password='tiger')
     partitions = SystemPart.get_active(db, conditions='')  # Getting all active partitions of the database
     if len(partitions) > 0:

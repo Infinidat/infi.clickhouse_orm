@@ -1,5 +1,7 @@
 from __future__ import unicode_literals
 import unittest
+import datetime
+import pytz
 
 from infi.clickhouse_orm.database import Database
 from infi.clickhouse_orm.models import Model

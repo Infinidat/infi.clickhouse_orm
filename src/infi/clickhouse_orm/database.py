@@ -8,7 +8,6 @@ from .utils import escape, parse_tsv, import_submodules
 from math import ceil
 import datetime
 from string import Template
-from six import PY3, string_types
 import pytz
 
 import logging
@@ -166,6 +165,24 @@ class Database(object):
         r = self._send(sql % (self.db_name, model_class.table_name()))
         return r.text.strip() == '1'
 
+    def get_model_for_table(self, table_name, system_table=False):
+        '''
+        Generates a model class from an existing table in the database.
+        This can be used for querying tables which don't have a corresponding model class,
+        for example system tables.
+
+        - `table_name`: the table to create a model for
+        - `system_table`: whether the table is a system table, or belongs to the current database
+        '''
+        db_name = 'system' if system_table else self.db_name
+        sql = "DESCRIBE `%s`.`%s` FORMAT TSV" % (db_name, table_name)
+        lines = self._send(sql).iter_lines()
+        fields = [parse_tsv(line)[:2] for line in lines]
+        model = ModelBase.create_ad_hoc_model(fields, table_name)
+        if system_table:
+            model._system = model._readonly = True
+        return model
+
     def add_setting(self, name, value):
         '''
         Adds a database setting that will be sent with every request.
@@ -174,7 +191,7 @@ class Database(object):
         The name must be string, and the value is converted to string in case
         it isn't. To remove a setting, pass `None` as the value.
         '''
-        assert isinstance(name, string_types), 'Setting name must be a string'
+        assert isinstance(name, str), 'Setting name must be a string'
         if value is None:
             self.settings.pop(name, None)
         else:
@@ -187,7 +204,6 @@ class Database(object):
         - `model_instances`: any iterable containing instances of a single model class.
         - `batch_size`: number of records to send per chunk (use a lower number if your records are very large).
         '''
-        from six import next
         from io import BytesIO
         i = iter(model_instances)
         try:
@@ -201,20 +217,19 @@ class Database(object):
 
         fields_list = ','.join(
             ['`%s`' % name for name in first_instance.fields(writable=True)])
+        fmt = 'TSKV' if model_class.has_funcs_as_defaults() else 'TabSeparated'
+        query = 'INSERT INTO $table (%s) FORMAT %s\n' % (fields_list, fmt)
 
         def gen():
             buf = BytesIO()
-            query = 'INSERT INTO $table (%s) FORMAT TabSeparated\n' % fields_list
             buf.write(self._substitute(query, model_class).encode('utf-8'))
             first_instance.set_database(self)
-            buf.write(first_instance.to_tsv(include_readonly=False).encode('utf-8'))
-            buf.write('\n'.encode('utf-8'))
+            buf.write(first_instance.to_db_string())
             # Collect lines in batches of batch_size
             lines = 2
             for instance in i:
                 instance.set_database(self)
-                buf.write(instance.to_tsv(include_readonly=False).encode('utf-8'))
-                buf.write('\n'.encode('utf-8'))
+                buf.write(instance.to_db_string())
                 lines += 1
                 if lines >= batch_size:
                     # Return the current batch of lines
@@ -234,9 +249,12 @@ class Database(object):
         - `model_class`: the model to count.
         - `conditions`: optional SQL conditions (contents of the WHERE clause).
         '''
+        from infi.clickhouse_orm.query import Q
         query = 'SELECT count() FROM $table'
         if conditions:
-            query += ' WHERE ' + conditions
+            if isinstance(conditions, Q):
+                conditions = conditions.to_sql(model_class)
+            query += ' WHERE ' + str(conditions)
         query = self._substitute(query, model_class)
         r = self._send(query)
         return int(r.text) if r.text else 0
@@ -288,6 +306,7 @@ class Database(object):
         The result is a namedtuple containing `objects` (list), `number_of_objects`,
         `pages_total`, `number` (of the current page), and `page_size`.
         '''
+        from infi.clickhouse_orm.query import Q
         count = self.count(model_class, conditions)
         pages_total = int(ceil(count / float(page_size)))
         if page_num == -1:
@@ -297,7 +316,9 @@ class Database(object):
         offset = (page_num - 1) * page_size
         query = 'SELECT * FROM $table'
         if conditions:
-            query += ' WHERE ' + conditions
+            if isinstance(conditions, Q):
+                conditions = conditions.to_sql(model_class)
+            query += ' WHERE ' + str(conditions)
         query += ' ORDER BY %s' % order_by
         query += ' LIMIT %d, %d' % (offset, page_size)
         query = self._substitute(query, model_class)
@@ -338,7 +359,7 @@ class Database(object):
         return set(obj.module_name for obj in self.select(query))
 
     def _send(self, data, settings=None, stream=False):
-        if isinstance(data, string_types):
+        if isinstance(data, str):
             data = data.encode('utf-8')
             if self.log_statements:
                 logger.info(data)
@@ -366,7 +387,7 @@ class Database(object):
             mapping = dict(db="`%s`" % self.db_name)
             if model_class:
                 if model_class.is_system_model():
-                    mapping['table'] = model_class.table_name()
+                    mapping['table'] = "`system`.`%s`" % model_class.table_name()
                 else:
                     mapping['table'] = "`%s`.`%s`" % (self.db_name, model_class.table_name())
             query = Template(query).safe_substitute(mapping)
@@ -396,3 +417,7 @@ class Database(object):
     def _is_connection_readonly(self):
         r = self._send("SELECT value FROM system.settings WHERE name = 'readonly'")
         return r.text.strip() != '0'
+
+
+# Expose only relevant classes in import *
+__all__ = [c.__name__ for c in [Page, DatabaseException, ServerError, Database]]

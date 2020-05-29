@@ -9,6 +9,7 @@ printf "# Table of Contents\n\n" > toc.md
 generate_one "index.md"
 generate_one "models_and_databases.md"
 generate_one "querysets.md"
+generate_one "field_options.md"
 generate_one "field_types.md"
 generate_one "table_engines.md"
 generate_one "schema_migrations.md"

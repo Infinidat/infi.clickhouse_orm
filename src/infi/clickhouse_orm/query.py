@@ -1,17 +1,15 @@
 from __future__ import unicode_literals
 
-import six
 import pytz
 from copy import copy, deepcopy
 from math import ceil
-
 from .engines import CollapsingMergeTree
-from .utils import comma_join
+from datetime import date, datetime
+from .utils import comma_join, string_or_func
 
 
 # TODO
 # - check that field names are valid
-# - operators for arrays: length, has, empty
 
 class Operator(object):
     """
@@ -25,6 +23,12 @@ class Operator(object):
         """
         raise NotImplementedError   # pragma: no cover
 
+    def _value_to_sql(self, field, value, quote=True):
+        from infi.clickhouse_orm.funcs import F
+        if isinstance(value, F):
+            return value.to_sql()
+        return field.to_db_string(field.to_python(value, pytz.utc), quote)
+
 
 class SimpleOperator(Operator):
     """
@@ -37,7 +41,7 @@ class SimpleOperator(Operator):
 
     def to_sql(self, model_cls, field_name, value):
         field = getattr(model_cls, field_name)
-        value = field.to_db_string(field.to_python(value, pytz.utc))
+        value = self._value_to_sql(field, value)
         if value == '\\N' and self._sql_for_null is not None:
             return ' '.join([field_name, self._sql_for_null])
         return ' '.join([field_name, self._sql_operator, value])
@@ -56,10 +60,10 @@ class InOperator(Operator):
         field = getattr(model_cls, field_name)
         if isinstance(value, QuerySet):
             value = value.as_sql()
-        elif isinstance(value, six.string_types):
+        elif isinstance(value, str):
             pass
         else:
-            value = comma_join([field.to_db_string(field.to_python(v, pytz.utc)) for v in value])
+            value = comma_join([self._value_to_sql(field, v) for v in value])
         return '%s IN (%s)' % (field_name, value)
 
 
@@ -75,7 +79,7 @@ class LikeOperator(Operator):
 
     def to_sql(self, model_cls, field_name, value):
         field = getattr(model_cls, field_name)
-        value = field.to_db_string(field.to_python(value, pytz.utc), quote=False)
+        value = self._value_to_sql(field, value, quote=False)
         value = value.replace('\\', '\\\\').replace('%', '\\\\%').replace('_', '\\\\_')
         pattern = self._pattern.format(value)
         if self._case_sensitive:
@@ -91,7 +95,7 @@ class IExactOperator(Operator):
 
     def to_sql(self, model_cls, field_name, value):
         field = getattr(model_cls, field_name)
-        value = field.to_db_string(field.to_python(value, pytz.utc))
+        value = self._value_to_sql(field, value)
         return 'lowerUTF8(%s) = lowerUTF8(%s)' % (field_name, value)
 
 
@@ -120,10 +124,8 @@ class BetweenOperator(Operator):
 
     def to_sql(self, model_cls, field_name, value):
         field = getattr(model_cls, field_name)
-        value0 = field.to_db_string(
-                field.to_python(value[0], pytz.utc)) if value[0] is not None or len(str(value[0])) > 0 else None
-        value1 = field.to_db_string(
-                field.to_python(value[1], pytz.utc)) if value[1] is not None or len(str(value[1])) > 0 else None
+        value0 = self._value_to_sql(field, value[0]) if value[0] is not None or len(str(value[0])) > 0 else None
+        value1 = self._value_to_sql(field, value[1]) if value[1] is not None or len(str(value[1])) > 0 else None
         if value0 and value1:
             return '%s BETWEEN %s AND %s' % (field_name, value0, value1)
         if value0 and not value1:
@@ -156,11 +158,19 @@ register_operator('iendswith',   LikeOperator('%{}', False))
 register_operator('iexact',      IExactOperator())
 
 
-class FOV(object):
+class Cond(object):
     """
-    An object for storing Field + Operator + Value.
+    An abstract object for storing a single query condition Field + Operator + Value.
     """
 
+    def to_sql(self, model_cls):
+        raise NotImplementedError
+
+
+class FieldCond(Cond):
+    """
+    A single query condition made up of Field + Operator + Value.
+    """
     def __init__(self, field_name, operator, value):
         self._field_name = field_name
         self._operator = _operators.get(operator)
@@ -184,8 +194,8 @@ class Q(object):
     AND_MODE = 'AND'
     OR_MODE = 'OR'
 
-    def __init__(self, **filter_fields):
-        self._fovs = [self._build_fov(k, v) for k, v in six.iteritems(filter_fields)]
+    def __init__(self, *filter_funcs, **filter_fields):
+        self._conds = list(filter_funcs) + [self._build_cond(k, v) for k, v in filter_fields.items()]
         self._children = []
         self._negate = False
         self._mode = self.AND_MODE
@@ -194,9 +204,9 @@ class Q(object):
     def is_empty(self):
         """
         Checks if there are any conditions in Q object
-        :return: Boolean
+        Returns: Boolean
         """
-        return not bool(self._fovs or self._children)
+        return not bool(self._conds or self._children)
 
     @classmethod
     def _construct_from(cls, l_child, r_child, mode):
@@ -214,18 +224,18 @@ class Q(object):
 
         return q
 
-    def _build_fov(self, key, value):
+    def _build_cond(self, key, value):
         if '__' in key:
             field_name, operator = key.rsplit('__', 1)
         else:
             field_name, operator = key, 'eq'
-        return FOV(field_name, operator, value)
+        return FieldCond(field_name, operator, value)
 
     def to_sql(self, model_cls):
         condition_sql = []
 
-        if self._fovs:
-            condition_sql.extend([fov.to_sql(model_cls) for fov in self._fovs])
+        if self._conds:
+            condition_sql.extend([cond.to_sql(model_cls) for cond in self._conds])
 
         if self._children:
             condition_sql.extend([child.to_sql(model_cls) for child in self._children if child])
@@ -261,7 +271,7 @@ class Q(object):
 
     def __deepcopy__(self, memodict={}):
         q = Q()
-        q._fovs = [deepcopy(fov) for fov in self._fovs]
+        q._conds = [deepcopy(cond) for cond in self._conds]
         q._negate = self._negate
         q._mode = self._mode
 
@@ -271,7 +281,6 @@ class Q(object):
         return q
 
 
-@six.python_2_unicode_compatible
 class QuerySet(object):
     """
     A queryset is an object that represents a database query using a specific `Model`.
@@ -317,12 +326,12 @@ class QuerySet(object):
         return self.as_sql()
 
     def __getitem__(self, s):
-        if isinstance(s, six.integer_types):
+        if isinstance(s, int):
             # Single index
             assert s >= 0, 'negative indexes are not supported'
             qs = copy(self)
             qs._limits = (s, 1)
-            return six.next(iter(qs))
+            return next(iter(qs))
         else:
             # Slice
             assert s.step in (None, 1), 'step is not supported in slices'
@@ -334,13 +343,13 @@ class QuerySet(object):
             qs._limits = (start, stop - start)
             return qs
 
-    def limit_by(self, offset_limit, *fields):
+    def limit_by(self, offset_limit, *fields_or_expr):
         """
         Adds a LIMIT BY clause to the query.
         - `offset_limit`: either an integer specifying the limit, or a tuple of integers (offset, limit).
-        - `fields`: the field names to use in the clause.
+        - `fields_or_expr`: the field names or expressions to use in the clause.
         """
-        if isinstance(offset_limit, six.integer_types):
+        if isinstance(offset_limit, int):
             # Single limit
             offset_limit = (0, offset_limit)
         offset = offset_limit[0]
@@ -348,14 +357,17 @@ class QuerySet(object):
         assert offset >= 0 and limit >= 0, 'negative limits are not supported'
         qs = copy(self)
         qs._limit_by = (offset, limit)
-        qs._limit_by_fields = fields
+        qs._limit_by_fields = fields_or_expr
         return qs
 
     def select_fields_as_sql(self):
         """
         Returns the selected fields or expressions as a SQL string.
         """
-        return comma_join('`%s`' % field for field in self._fields) if self._fields else '*'
+        fields = '*'
+        if self._fields:
+            fields = comma_join('`%s`' % field for field in self._fields)
+        return fields
 
     def as_sql(self):
         """
@@ -363,10 +375,9 @@ class QuerySet(object):
         """
         distinct = 'DISTINCT ' if self._distinct else ''
         final = ' FINAL' if self._final else ''
-        table_name = self._model_cls.table_name()
-        if not self._model_cls.is_system_model():
-            table_name = '`%s`' % table_name
-
+        table_name = '`%s`' % self._model_cls.table_name()
+        if self._model_cls.is_system_model():
+            table_name = '`system`.' + table_name
         params = (distinct, self.select_fields_as_sql(), table_name, final)
         sql = u'SELECT %s%s\nFROM %s%s' % params
 
@@ -387,7 +398,7 @@ class QuerySet(object):
 
         if self._limit_by:
             sql += '\nLIMIT %d, %d' % self._limit_by
-            sql += ' BY %s' % comma_join('`%s`' % field for field in self._limit_by_fields)
+            sql += ' BY %s' % comma_join(string_or_func(field) for field in self._limit_by_fields)
 
         if self._limits:
             sql += '\nLIMIT %d, %d' % self._limits
@@ -399,7 +410,7 @@ class QuerySet(object):
         Returns the contents of the query's `ORDER BY` clause as a string.
         """
         return comma_join([
-            '%s DESC' % field[1:] if field[0] == '-' else field
+            '%s DESC' % field[1:] if isinstance(field, str) and field[0] == '-' else str(field)
             for field in self._order_by
         ])
 
@@ -443,14 +454,21 @@ class QuerySet(object):
         return qs
 
     def _filter_or_exclude(self, *q, **kwargs):
+        from .funcs import F
+
         inverse = kwargs.pop('_inverse', False)
         prewhere = kwargs.pop('prewhere', False)
 
         qs = copy(self)
 
         condition = Q()
-        for q_obj in q:
-            condition &= q_obj
+        for arg in q:
+            if isinstance(arg, Q):
+                condition &= arg
+            elif isinstance(arg, F):
+                condition &= Q(arg)
+            else:
+                raise TypeError('Invalid argument "%r" to queryset filter' % arg)
 
         if kwargs:
             condition &= Q(**kwargs)
@@ -606,7 +624,7 @@ class AggregateQuerySet(QuerySet):
         """
         Returns the selected fields or expressions as a SQL string.
         """
-        return comma_join(list(self._fields) + ['%s AS %s' % (v, k) for k, v in self._calculated_fields.items()])
+        return comma_join([str(f) for f in self._fields] + ['%s AS %s' % (v, k) for k, v in self._calculated_fields.items()])
 
     def __iter__(self):
         return self._database.select(self.as_sql()) # using an ad-hoc model
@@ -623,8 +641,12 @@ class AggregateQuerySet(QuerySet):
         """
         Adds WITH TOTALS modifier ot GROUP BY, making query return extra row
         with aggregate function calculated across all the rows. More information:
-        https://clickhouse.yandex/docs/en/query_language/select/#with-totals-modifier
+        https://clickhouse.tech/docs/en/query_language/select/#with-totals-modifier
         """
         qs = copy(self)
         qs._grouping_with_totals = True
         return qs
+
+
+# Expose only relevant classes in import *
+__all__ = [c.__name__ for c in [Q, QuerySet, AggregateQuerySet]]

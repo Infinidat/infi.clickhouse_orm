@@ -1,13 +1,17 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals, print_function
 import unittest
-
 from infi.clickhouse_orm.database import Database
 from infi.clickhouse_orm.query import Q
+from infi.clickhouse_orm.funcs import F
 from .base_test_with_data import *
-import logging
 from datetime import date, datetime
 from enum import Enum
+from decimal import Decimal
+
+from logging import getLogger
+logger = getLogger('tests')
+
 
 
 class QuerySetTestCase(TestCaseWithData):
@@ -17,11 +21,11 @@ class QuerySetTestCase(TestCaseWithData):
         self.database.insert(self._sample_data())
 
     def _test_qs(self, qs, expected_count):
-        logging.info(qs.as_sql())
+        logger.info(qs.as_sql())
         count = 0
         for instance in qs:
             count += 1
-            logging.info('\t[%d]\t%s' % (count, instance.to_dict()))
+            logger.info('\t[%d]\t%s' % (count, instance.to_dict()))
         self.assertEqual(count, expected_count)
         self.assertEqual(qs.count(), expected_count)
 
@@ -293,6 +297,17 @@ class QuerySetTestCase(TestCaseWithData):
         for item, exp_color in zip(res, (Color.red, Color.green, Color.white, Color.blue)):
             self.assertEqual(exp_color, item.color)
 
+    def test_mixed_filter(self):
+        qs = Person.objects_in(self.database)
+        qs = qs.filter(Q(first_name='a'), F('greater', Person.height, 1.7), last_name='b')
+        self.assertEqual(qs.conditions_as_sql(),
+                         "(first_name = 'a') AND (greater(`height`, 1.7)) AND (last_name = 'b')")
+
+    def test_invalid_filter(self):
+        qs = Person.objects_in(self.database)
+        with self.assertRaises(TypeError):
+            qs.filter('foo')
+
 
 class AggregateTestCase(TestCaseWithData):
 
@@ -302,6 +317,13 @@ class AggregateTestCase(TestCaseWithData):
 
     def test_aggregate_no_grouping(self):
         qs = Person.objects_in(self.database).aggregate(average_height='avg(height)', count='count()')
+        print(qs.as_sql())
+        self.assertEqual(qs.count(), 1)
+        for row in qs:
+            self.assertAlmostEqual(row.average_height, 1.6923, places=4)
+            self.assertEqual(row.count, 100)
+        # With functions
+        qs = Person.objects_in(self.database).aggregate(average_height=F.avg(Person.height), count=F.count())
         print(qs.as_sql())
         self.assertEqual(qs.count(), 1)
         for row in qs:
@@ -318,6 +340,22 @@ class AggregateTestCase(TestCaseWithData):
             self.assertEqual(row.count, 2)
         # When filter comes after aggregate
         qs = Person.objects_in(self.database).aggregate(average_height='avg(height)', count='count()').filter(first_name='Warren')
+        print(qs.as_sql())
+        self.assertEqual(qs.count(), 1)
+        for row in qs:
+            self.assertAlmostEqual(row.average_height, 1.675, places=4)
+            self.assertEqual(row.count, 2)
+
+    def test_aggregate_with_filter__funcs(self):
+        # When filter comes before aggregate
+        qs = Person.objects_in(self.database).filter(Person.first_name=='Warren').aggregate(average_height=F.avg(Person.height), count=F.count())
+        print(qs.as_sql())
+        self.assertEqual(qs.count(), 1)
+        for row in qs:
+            self.assertAlmostEqual(row.average_height, 1.675, places=4)
+            self.assertEqual(row.count, 2)
+        # When filter comes after aggregate
+        qs = Person.objects_in(self.database).aggregate(average_height=F.avg(Person.height), count=F.count()).filter(Person.first_name=='Warren')
         print(qs.as_sql())
         self.assertEqual(qs.count(), 1)
         for row in qs:
@@ -433,21 +471,26 @@ class AggregateTestCase(TestCaseWithData):
         self.assertEqual(qs.conditions_as_sql(), 'the__next__number > 1')
 
     def test_limit_by(self):
+        if self.database.server_version < (19, 17):
+            raise unittest.SkipTest('ClickHouse version too old')
         # Test without offset
         qs = Person.objects_in(self.database).aggregate('first_name', 'last_name', 'height', n='count()').\
             order_by('first_name', '-height').limit_by(1, 'first_name')
         self.assertEqual(qs.count(), 94)
         self.assertEqual(list(qs)[89].last_name, 'Bowen')
+        # Test with funcs and fields
+        qs = Person.objects_in(self.database).aggregate(Person.first_name, Person.last_name, Person.height, n=F.count()).\
+            order_by(Person.first_name, '-height').limit_by(1, F.upper(Person.first_name))
+        self.assertEqual(qs.count(), 94)
+        self.assertEqual(list(qs)[89].last_name, 'Bowen')
         # Test with limit and offset, also mixing LIMIT with LIMIT BY
         qs = Person.objects_in(self.database).filter(height__gt=1.67).order_by('height', 'first_name')
         limited_qs = qs.limit_by((0, 3), 'height')
-        self.assertEquals([p.first_name for p in limited_qs[:3]], ['Amanda', 'Buffy', 'Dora'])
+        self.assertEqual([p.first_name for p in limited_qs[:3]], ['Amanda', 'Buffy', 'Dora'])
         limited_qs = qs.limit_by((3, 3), 'height')
-        self.assertEquals([p.first_name for p in limited_qs[:3]], ['Elton', 'Josiah', 'Macaulay'])
+        self.assertEqual([p.first_name for p in limited_qs[:3]], ['Elton', 'Josiah', 'Macaulay'])
         limited_qs = qs.limit_by((6, 3), 'height')
-        self.assertEquals([p.first_name for p in limited_qs[:3]], ['Norman', 'Octavius', 'Oliver'])
-
-
+        self.assertEqual([p.first_name for p in limited_qs[:3]], ['Norman', 'Octavius', 'Oliver'])
 
 
 Color = Enum('Color', u'red blue green yellow brown white black')

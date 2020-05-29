@@ -125,6 +125,8 @@ if __name__ == '__main__':
     from infi.clickhouse_orm import engines
     from infi.clickhouse_orm import models
     from infi.clickhouse_orm import query
+    from infi.clickhouse_orm import funcs
+    from infi.clickhouse_orm import system_models
 
     print('Class Reference')
     print('===============')
@@ -133,4 +135,6 @@ if __name__ == '__main__':
     module_doc([models.Model, models.BufferModel, models.DistributedModel])
     module_doc(sorted([fields.Field] + all_subclasses(fields.Field), key=lambda x: x.__name__), False)
     module_doc([engines.Engine] + all_subclasses(engines.Engine), False)
-    module_doc([query.QuerySet, query.AggregateQuerySet])
+    module_doc([query.QuerySet, query.AggregateQuerySet, query.Q])
+    module_doc([funcs.F])
+    module_doc([system_models.SystemPart])

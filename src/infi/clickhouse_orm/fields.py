@@ -1,5 +1,4 @@
 from __future__ import unicode_literals
-from six import string_types, text_type, binary_type, integer_types
 import datetime
 import iso8601
 import pytz
@@ -7,27 +6,32 @@ from calendar import timegm
 from decimal import Decimal, localcontext
 from uuid import UUID
 from logging import getLogger
-from .utils import escape, parse_array, comma_join
+from .utils import escape, parse_array, comma_join, string_or_func, get_subclass_names
+from .funcs import F, FunctionOperatorsMixin
+from ipaddress import IPv4Address, IPv6Address
 
 logger = getLogger('clickhouse_orm')
 
-class Field(object):
+
+class Field(FunctionOperatorsMixin):
     '''
     Abstract base class for all field types.
     '''
-    creation_counter = 0
-    class_default = 0
-    db_type = None
+    name             = None # this is set by the parent model
+    parent           = None # this is set by the parent model
+    creation_counter = 0    # used for keeping the model fields ordered
+    class_default    = 0    # should be overridden by concrete subclasses
+    db_type          = None # should be overridden by concrete subclasses
 
     def __init__(self, default=None, alias=None, materialized=None, readonly=None, codec=None):
-        assert (None, None) in {(default, alias), (alias, materialized), (default, materialized)}, \
+        assert [default, alias, materialized].count(None) >= 2, \
             "Only one of default, alias and materialized parameters can be given"
-        assert alias is None or isinstance(alias, string_types) and alias != "",\
-            "Alias field must be a string, if given"
-        assert materialized is None or isinstance(materialized, string_types) and materialized != "",\
-            "Materialized field must be string, if given"
+        assert alias is None or isinstance(alias, F) or isinstance(alias, str) and alias != "",\
+            "Alias parameter must be a string or function object, if given"
+        assert materialized is None or isinstance(materialized, F) or isinstance(materialized, str) and materialized != "",\
+            "Materialized parameter must be a string or function object, if given"
         assert readonly is None or type(readonly) is bool, "readonly parameter must be bool if given"
-        assert codec is None or isinstance(codec, string_types) and codec != "", \
+        assert codec is None or isinstance(codec, str) and codec != "", \
             "Codec field must be string, if given"
 
         self.creation_counter = Field.creation_counter
@@ -37,6 +41,12 @@ class Field(object):
         self.materialized = materialized
         self.readonly = bool(self.alias or self.materialized or readonly)
         self.codec = codec
+
+    def __str__(self):
+        return self.name
+
+    def __repr__(self):
+        return '<%s>' % self.__class__.__name__
 
     def to_python(self, value, timezone_in_use):
         '''
@@ -70,9 +80,10 @@ class Field(object):
     def get_sql(self, with_default_expression=True, db=None):
         '''
         Returns an SQL expression describing the field (e.g. for CREATE TABLE).
-        :param with_default_expression: If True, adds default value to sql.
+
+        - `with_default_expression`: If True, adds default value to sql.
             It doesn't affect fields with alias and materialized values.
-        :param db: Database, used for checking supported features.
+        - `db`: Database, used for checking supported features.
         '''
         sql = self.db_type
         if with_default_expression:
@@ -82,9 +93,11 @@ class Field(object):
     def _extra_params(self, db):
         sql = ''
         if self.alias:
-            sql += ' ALIAS %s' % self.alias
+            sql += ' ALIAS %s' % string_or_func(self.alias)
         elif self.materialized:
-            sql += ' MATERIALIZED %s' % self.materialized
+            sql += ' MATERIALIZED %s' % string_or_func(self.materialized)
+        elif isinstance(self.default, F):
+            sql += ' DEFAULT %s' % self.default.to_sql()
         elif self.default:
             default = self.to_db_string(self.default)
             sql += ' DEFAULT %s' % default
@@ -96,8 +109,10 @@ class Field(object):
         """
         Checks if the instance if one of the types provided or if any of the inner_field child is one of the types
         provided, returns True if field or any inner_field is one of ths provided, False otherwise
-        :param types: Iterable of types to check inclusion of instance
-        :return: Boolean
+
+        - `types`: Iterable of types to check inclusion of instance
+
+        Returns: Boolean
         """
         if isinstance(self, types):
             return True
@@ -115,9 +130,9 @@ class StringField(Field):
     db_type = 'String'
 
     def to_python(self, value, timezone_in_use):
-        if isinstance(value, text_type):
+        if isinstance(value, str):
             return value
-        if isinstance(value, binary_type):
+        if isinstance(value, bytes):
             return value.decode('UTF-8')
         raise ValueError('Invalid value for %s: %r' % (self.__class__.__name__, value))
 
@@ -134,7 +149,7 @@ class FixedStringField(StringField):
         return value.rstrip('\0')
 
     def validate(self, value):
-        if isinstance(value, text_type):
+        if isinstance(value, str):
             value = value.encode('UTF-8')
         if len(value) > self._length:
             raise ValueError('Value of %d bytes is too long for FixedStringField(%d)' % (len(value), self._length))
@@ -154,7 +169,7 @@ class DateField(Field):
             return value
         if isinstance(value, int):
             return DateField.class_default + datetime.timedelta(days=value)
-        if isinstance(value, string_types):
+        if isinstance(value, str):
             if value == '0000-00-00':
                 return DateField.min_value
             return datetime.datetime.strptime(value, '%Y-%m-%d').date()
@@ -179,7 +194,7 @@ class DateTimeField(Field):
             return datetime.datetime(value.year, value.month, value.day, tzinfo=pytz.utc)
         if isinstance(value, int):
             return datetime.datetime.utcfromtimestamp(value).replace(tzinfo=pytz.utc)
-        if isinstance(value, string_types):
+        if isinstance(value, str):
             if value == '0000-00-00 00:00:00':
                 return self.class_default
             if len(value) == 10:
@@ -192,7 +207,7 @@ class DateTimeField(Field):
                 # left the date naive in case of no tzinfo set
                 dt = iso8601.parse_date(value, default_timezone=None)
             except iso8601.ParseError as e:
-                raise ValueError(text_type(e))
+                raise ValueError(str(e))
 
             # convert naive to aware
             if dt.tzinfo is None or dt.tzinfo.utcoffset(dt) is None:
@@ -217,7 +232,7 @@ class BaseIntField(Field):
     def to_db_string(self, value, quote=True):
         # There's no need to call escape since numbers do not contain
         # special characters, and never need quoting
-        return text_type(value)
+        return str(value)
 
     def validate(self, value):
         self._range_check(value, self.min_value, self.max_value)
@@ -293,7 +308,7 @@ class BaseFloatField(Field):
     def to_db_string(self, value, quote=True):
         # There's no need to call escape since numbers do not contain
         # special characters, and never need quoting
-        return text_type(value)
+        return str(value)
 
 
 class Float32Field(BaseFloatField):
@@ -337,7 +352,7 @@ class DecimalField(Field):
     def to_db_string(self, value, quote=True):
         # There's no need to call escape since numbers do not contain
         # special characters, and never need quoting
-        return text_type(value)
+        return str(value)
 
     def _round(self, value):
         return value.quantize(self.exp)
@@ -382,9 +397,9 @@ class BaseEnumField(Field):
         if isinstance(value, self.enum_cls):
             return value
         try:
-            if isinstance(value, text_type):
+            if isinstance(value, str):
                 return self.enum_cls[value]
-            if isinstance(value, binary_type):
+            if isinstance(value, bytes):
                 return self.enum_cls[value.decode('UTF-8')]
             if isinstance(value, int):
                 return self.enum_cls(value)
@@ -414,7 +429,7 @@ class BaseEnumField(Field):
         import re
         from enum import Enum
         members = {}
-        for match in re.finditer("'(\w+)' = (-?\d+)", db_type):
+        for match in re.finditer(r"'([\w ]+)' = (-?\d+)", db_type):
             members[match.group(1)] = int(match.group(2))
         enum_cls = Enum('AdHocEnum', members)
         field_class = Enum8Field if db_type.startswith('Enum8') else Enum16Field
@@ -442,9 +457,9 @@ class ArrayField(Field):
         super(ArrayField, self).__init__(default, alias, materialized, readonly, codec)
 
     def to_python(self, value, timezone_in_use):
-        if isinstance(value, text_type):
+        if isinstance(value, str):
             value = parse_array(value)
-        elif isinstance(value, binary_type):
+        elif isinstance(value, bytes):
             value = parse_array(value.decode('UTF-8'))
         elif not isinstance(value, (list, tuple)):
             raise ValueError('ArrayField expects list or tuple, not %s' % type(value))
@@ -473,16 +488,50 @@ class UUIDField(Field):
     def to_python(self, value, timezone_in_use):
         if isinstance(value, UUID):
             return value
-        elif isinstance(value, binary_type):
+        elif isinstance(value, bytes):
             return UUID(bytes=value)
-        elif isinstance(value, string_types):
+        elif isinstance(value, str):
             return UUID(value)
-        elif isinstance(value, integer_types):
+        elif isinstance(value, int):
             return UUID(int=value)
         elif isinstance(value, tuple):
             return UUID(fields=value)
         else:
             raise ValueError('Invalid value for UUIDField: %r' % value)
+
+    def to_db_string(self, value, quote=True):
+        return escape(str(value), quote)
+
+
+class IPv4Field(Field):
+
+    class_default = 0
+    db_type = 'IPv4'
+
+    def to_python(self, value, timezone_in_use):
+        if isinstance(value, IPv4Address):
+            return value
+        elif isinstance(value, (bytes, str, int)):
+            return IPv4Address(value)
+        else:
+            raise ValueError('Invalid value for IPv4Address: %r' % value)
+
+    def to_db_string(self, value, quote=True):
+        return escape(str(value), quote)
+
+
+class IPv6Field(Field):
+
+    class_default = 0
+    db_type = 'IPv6'
+
+    def to_python(self, value, timezone_in_use):
+        if isinstance(value, IPv6Address):
+            return value
+        elif isinstance(value, (bytes, str, int)):
+            return IPv6Address(value)
+        else:
+            raise ValueError('Invalid value for IPv6Address: %r' % value)
 
     def to_db_string(self, value, quote=True):
         return escape(str(value), quote)
@@ -494,6 +543,7 @@ class NullableField(Field):
 
     def __init__(self, inner_field, default=None, alias=None, materialized=None,
                  extra_null_values=None, codec=None):
+        assert isinstance(inner_field, Field), "The first argument of NullableField must be a Field instance. Not: {}".format(inner_field)
         self.inner_field = inner_field
         self._null_values = [None]
         if extra_null_values:
@@ -548,3 +598,8 @@ class LowCardinalityField(Field):
         if with_default_expression:
             sql += self._extra_params(db)
         return sql
+
+
+# Expose only relevant classes in import *
+__all__ = get_subclass_names(locals(), Field)
+

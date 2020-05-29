@@ -1,12 +1,7 @@
-import six
-
 from .models import Model, BufferModel
 from .fields import DateField, StringField
 from .engines import MergeTree
-from .utils import escape
-
-from six.moves import zip
-from six import iteritems
+from .utils import escape, get_subclass_names
 
 import logging
 logger = logging.getLogger('migrations')
@@ -74,7 +69,7 @@ class AlterTable(Operation):
 
         # Identify fields that were added to the model
         prev_name = None
-        for name, field in iteritems(self.model_class.fields()):
+        for name, field in self.model_class.fields().items():
             is_regular_field = not (field.materialized or field.alias)
             if name not in table_fields:
                 logger.info('        Add column %s', name)
@@ -94,7 +89,7 @@ class AlterTable(Operation):
         # Secondly, MATERIALIZED and ALIAS fields are always at the end of the DESC, so we can't expect them to save
         # attribute position. Watch https://github.com/Infinidat/infi.clickhouse_orm/issues/47
         model_fields = {name: field.get_sql(with_default_expression=False, db=database)
-                        for name, field in iteritems(self.model_class.fields())}
+                        for name, field in self.model_class.fields().items()}
         for field_name, field_sql in self._get_table_fields(database):
             # All fields must have been created and dropped by this moment
             assert field_name in model_fields, 'Model fields and table columns in disagreement'
@@ -156,7 +151,7 @@ class RunSQL(Operation):
     '''
 
     def __init__(self, sql):
-        if isinstance(sql, six.string_types):
+        if isinstance(sql, str):
             sql = [sql]
 
         assert isinstance(sql, list), "'sql' parameter must be string or list of strings"
@@ -182,3 +177,7 @@ class MigrationHistory(Model):
     @classmethod
     def table_name(cls):
         return 'infi_clickhouse_orm_migrations'
+
+
+# Expose only relevant classes in import *
+__all__ = get_subclass_names(locals(), Operation)

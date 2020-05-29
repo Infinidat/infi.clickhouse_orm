@@ -77,6 +77,17 @@ Deletes the database on the ClickHouse server.
 Drops the database table of the given model class, if it exists.
 
 
+#### get_model_for_table(table_name, system_table=False)
+
+
+Generates a model class from an existing table in the database.
+This can be used for querying tables which don't have a corresponding model class,
+for example system tables.
+
+- `table_name`: the table to create a model for
+- `system_table`: whether the table is a system table, or belongs to the current database
+
+
 #### insert(model_instances, batch_size=1000)
 
 
@@ -209,6 +220,13 @@ Returns `None` unless the instance was read from the database or written to it.
 Gets a `Field` instance given its name, or `None` if not found.
 
 
+#### Model.has_funcs_as_defaults()
+
+
+Return True if some of the model's fields use a function expression
+as a default value. This requires special handling when inserting instances.
+
+
 #### Model.is_read_only()
 
 
@@ -242,6 +260,12 @@ class name converted to lowercase. Override this if you want to use
 a different table name.
 
 
+#### to_db_string()
+
+
+Returns the instance as a bytestring ready to be inserted into the database.
+
+
 #### to_dict(include_readonly=True, field_names=None)
 
 
@@ -249,6 +273,15 @@ Returns the instance's column values as a dict.
 
 - `include_readonly`: if false, returns only fields that can be inserted into database.
 - `field_names`: an iterable of field names to return (optional)
+
+
+#### to_tskv(include_readonly=True)
+
+
+Returns the instance's column keys and values as a tab-separated line. A newline is not included.
+Fields that were not assigned a value are omitted.
+
+- `include_readonly`: if false, returns only fields that can be inserted into database.
 
 
 #### to_tsv(include_readonly=True)
@@ -317,6 +350,13 @@ Returns `None` unless the instance was read from the database or written to it.
 Gets a `Field` instance given its name, or `None` if not found.
 
 
+#### BufferModel.has_funcs_as_defaults()
+
+
+Return True if some of the model's fields use a function expression
+as a default value. This requires special handling when inserting instances.
+
+
 #### BufferModel.is_read_only()
 
 
@@ -350,6 +390,12 @@ class name converted to lowercase. Override this if you want to use
 a different table name.
 
 
+#### to_db_string()
+
+
+Returns the instance as a bytestring ready to be inserted into the database.
+
+
 #### to_dict(include_readonly=True, field_names=None)
 
 
@@ -357,6 +403,15 @@ Returns the instance's column values as a dict.
 
 - `include_readonly`: if false, returns only fields that can be inserted into database.
 - `field_names`: an iterable of field names to return (optional)
+
+
+#### to_tskv(include_readonly=True)
+
+
+Returns the instance's column keys and values as a tab-separated line. A newline is not included.
+Fields that were not assigned a value are omitted.
+
+- `include_readonly`: if false, returns only fields that can be inserted into database.
 
 
 #### to_tsv(include_readonly=True)
@@ -458,6 +513,13 @@ Returns `None` unless the instance was read from the database or written to it.
 Gets a `Field` instance given its name, or `None` if not found.
 
 
+#### DistributedModel.has_funcs_as_defaults()
+
+
+Return True if some of the model's fields use a function expression
+as a default value. This requires special handling when inserting instances.
+
+
 #### DistributedModel.is_read_only()
 
 
@@ -487,6 +549,12 @@ class name converted to lowercase. Override this if you want to use
 a different table name.
 
 
+#### to_db_string()
+
+
+Returns the instance as a bytestring ready to be inserted into the database.
+
+
 #### to_dict(include_readonly=True, field_names=None)
 
 
@@ -494,6 +562,15 @@ Returns the instance's column values as a dict.
 
 - `include_readonly`: if false, returns only fields that can be inserted into database.
 - `field_names`: an iterable of field names to return (optional)
+
+
+#### to_tskv(include_readonly=True)
+
+
+Returns the instance's column keys and values as a tab-separated line. A newline is not included.
+Fields that were not assigned a value are omitted.
+
+- `include_readonly`: if false, returns only fields that can be inserted into database.
 
 
 #### to_tsv(include_readonly=True)
@@ -605,6 +682,8 @@ Extends BaseEnumField
 
 ### Field
 
+Extends FunctionOperatorsMixin
+
 
 Abstract base class for all field types.
 
@@ -630,6 +709,20 @@ Extends BaseFloatField
 Extends BaseFloatField
 
 #### Float64Field(default=None, alias=None, materialized=None, readonly=None, codec=None)
+
+
+### IPv4Field
+
+Extends Field
+
+#### IPv4Field(default=None, alias=None, materialized=None, readonly=None, codec=None)
+
+
+### IPv6Field
+
+Extends Field
+
+#### IPv6Field(default=None, alias=None, materialized=None, readonly=None, codec=None)
 
 
 ### Int16Field
@@ -747,7 +840,7 @@ Extends Engine
 
 Buffers the data to write in RAM, periodically flushing it to another table.
 Must be used in conjuction with a `BufferModel`.
-Read more [here](https://clickhouse.yandex/docs/en/table_engines/buffer/).
+Read more [here](https://clickhouse.tech/docs/en/engines/table-engines/special/buffer/).
 
 #### Buffer(main_model, num_layers=16, min_time=10, max_time=100, min_rows=10000, max_rows=1000000, min_bytes=10000000, max_bytes=100000000)
 
@@ -760,7 +853,7 @@ Extends Engine
 The Merge engine (not to be confused with MergeTree) does not store data itself,
 but allows reading from any number of other tables simultaneously.
 Writing to a table is not supported
-https://clickhouse.yandex/docs/en/single/index.html#document-table_engines/merge
+https://clickhouse.tech/docs/en/engines/table-engines/special/merge/
 
 #### Merge(table_regex)
 
@@ -776,16 +869,16 @@ Reading is automatically parallelized.
 During a read, the table indexes on remote servers are used, if there are any.
 
 See full documentation here
-https://clickhouse.yandex/docs/en/table_engines/distributed.html
+https://clickhouse.tech/docs/en/engines/table-engines/special/distributed/
 
 #### Distributed(cluster, table=None, sharding_key=None)
 
 
-:param cluster: what cluster to access data from
-:param table: underlying table that actually stores data.
+- `cluster`: what cluster to access data from
+- `table`: underlying table that actually stores data.
 If you are not specifying any table here, ensure that it can be inferred
 from your model's superclass (see models.DistributedModel.fix_engine_table)
-:param sharding_key: how to distribute data among shards when inserting
+- `sharding_key`: how to distribute data among shards when inserting
 straightly into Distributed table, optional
 
 
@@ -890,12 +983,12 @@ Adds a FINAL modifier to table, meaning data will be collapsed to final version.
 Can be used with `CollapsingMergeTree` engine only.
 
 
-#### limit_by(offset_limit, *fields)
+#### limit_by(offset_limit, *fields_or_expr)
 
 
 Adds a LIMIT BY clause to the query.
 - `offset_limit`: either an integer specifying the limit, or a tuple of integers (offset, limit).
-- `fields`: the field names to use in the clause.
+- `fields_or_expr`: the field names or expressions to use in the clause.
 
 
 #### only(*field_names)
@@ -1021,12 +1114,12 @@ be names of grouping fields or calculated fields that this queryset was
 created with.
 
 
-#### limit_by(offset_limit, *fields)
+#### limit_by(offset_limit, *fields_or_expr)
 
 
 Adds a LIMIT BY clause to the query.
 - `offset_limit`: either an integer specifying the limit, or a tuple of integers (offset, limit).
-- `fields`: the field names to use in the clause.
+- `fields_or_expr`: the field names or expressions to use in the clause.
 
 
 #### only(*field_names)
@@ -1072,6 +1165,1691 @@ Returns the selected fields or expressions as a SQL string.
 
 Adds WITH TOTALS modifier ot GROUP BY, making query return extra row
 with aggregate function calculated across all the rows. More information:
-https://clickhouse.yandex/docs/en/query_language/select/#with-totals-modifier
+https://clickhouse.tech/docs/en/query_language/select/#with-totals-modifier
+
+
+### Q
+
+#### Q(*filter_funcs, **filter_fields)
+
+
+#### to_sql(model_cls)
+
+
+infi.clickhouse_orm.funcs
+-------------------------
+
+### F
+
+Extends Cond, FunctionOperatorsMixin
+
+
+Represents a database function call and its arguments.
+It doubles as a query condition when the function returns a boolean result.
+
+#### CAST(type)
+
+
+#### CRC32()
+
+
+#### IPv4CIDRToRange(cidr)
+
+
+#### IPv4NumToString()
+
+
+#### IPv4NumToStringClassC()
+
+
+#### IPv4StringToNum()
+
+
+#### IPv4ToIPv6()
+
+
+#### IPv6CIDRToRange(cidr)
+
+
+#### IPv6NumToString()
+
+
+#### IPv6StringToNum()
+
+
+#### MD5()
+
+
+#### SHA1()
+
+
+#### SHA224()
+
+
+#### SHA256()
+
+
+#### URLHash(n=None)
+
+
+#### UUIDNumToString()
+
+
+#### UUIDStringToNum()
+
+
+#### F(name, *args)
+
+
+Initializer.
+
+
+#### abs()
+
+
+#### acos()
+
+
+#### addDays(n, timezone=NO_VALUE)
+
+
+#### addHours(n, timezone=NO_VALUE)
+
+
+#### addMinutes(n, timezone=NO_VALUE)
+
+
+#### addMonths(n, timezone=NO_VALUE)
+
+
+#### addQuarters(n, timezone=NO_VALUE)
+
+
+#### addSeconds(n, timezone=NO_VALUE)
+
+
+#### addWeeks(n, timezone=NO_VALUE)
+
+
+#### addYears(n, timezone=NO_VALUE)
+
+
+#### alphaTokens()
+
+
+#### any(**kwargs)
+
+
+#### anyHeavy(**kwargs)
+
+
+#### anyHeavyIf(cond)
+
+
+#### anyHeavyOrDefault()
+
+
+#### anyHeavyOrDefaultIf(cond)
+
+
+#### anyHeavyOrNull()
+
+
+#### anyHeavyOrNullIf(cond)
+
+
+#### anyIf(cond)
+
+
+#### anyLast(**kwargs)
+
+
+#### anyLastIf(cond)
+
+
+#### anyLastOrDefault()
+
+
+#### anyLastOrDefaultIf(cond)
+
+
+#### anyLastOrNull()
+
+
+#### anyLastOrNullIf(cond)
+
+
+#### anyOrDefault()
+
+
+#### anyOrDefaultIf(cond)
+
+
+#### anyOrNull()
+
+
+#### anyOrNullIf(cond)
+
+
+#### appendTrailingCharIfAbsent(c)
+
+
+#### argMax(**kwargs)
+
+
+#### argMaxIf(y, cond)
+
+
+#### argMaxOrDefault(y)
+
+
+#### argMaxOrDefaultIf(y, cond)
+
+
+#### argMaxOrNull(y)
+
+
+#### argMaxOrNullIf(y, cond)
+
+
+#### argMin(**kwargs)
+
+
+#### argMinIf(y, cond)
+
+
+#### argMinOrDefault(y)
+
+
+#### argMinOrDefaultIf(y, cond)
+
+
+#### argMinOrNull(y)
+
+
+#### argMinOrNullIf(y, cond)
+
+
+#### array()
+
+
+#### arrayConcat()
+
+
+#### arrayDifference()
+
+
+#### arrayDistinct()
+
+
+#### arrayElement(n)
+
+
+#### arrayEnumerate()
+
+
+#### arrayEnumerateDense()
+
+
+#### arrayEnumerateDenseRanked()
+
+
+#### arrayEnumerateUniq()
+
+
+#### arrayEnumerateUniqRanked()
+
+
+#### arrayIntersect()
+
+
+#### arrayJoin()
+
+
+#### arrayPopBack()
+
+
+#### arrayPopFront()
+
+
+#### arrayPushBack(x)
+
+
+#### arrayPushFront(x)
+
+
+#### arrayReduce(*args)
+
+
+#### arrayResize(size, extender=None)
+
+
+#### arrayReverse()
+
+
+#### arraySlice(offset, length=None)
+
+
+#### arrayStringConcat(sep=None)
+
+
+#### arrayUniq()
+
+
+#### asin()
+
+
+#### atan()
+
+
+#### avg(**kwargs)
+
+
+#### avgIf(cond)
+
+
+#### avgOrDefault()
+
+
+#### avgOrDefaultIf(cond)
+
+
+#### avgOrNull()
+
+
+#### avgOrNullIf(cond)
+
+
+#### base64Decode()
+
+
+#### base64Encode()
+
+
+#### bitAnd(y)
+
+
+#### bitNot()
+
+
+#### bitOr(y)
+
+
+#### bitRotateLeft(y)
+
+
+#### bitRotateRight(y)
+
+
+#### bitShiftLeft(y)
+
+
+#### bitShiftRight(y)
+
+
+#### bitTest(y)
+
+
+#### bitTestAll(*args)
+
+
+#### bitTestAny(*args)
+
+
+#### bitXor(y)
+
+
+#### bitmapAnd(y)
+
+
+#### bitmapAndCardinality(y)
+
+
+#### bitmapAndnot(y)
+
+
+#### bitmapAndnotCardinality(y)
+
+
+#### bitmapBuild()
+
+
+#### bitmapCardinality()
+
+
+#### bitmapContains(needle)
+
+
+#### bitmapHasAll(y)
+
+
+#### bitmapHasAny(y)
+
+
+#### bitmapOr(y)
+
+
+#### bitmapOrCardinality(y)
+
+
+#### bitmapToArray()
+
+
+#### bitmapXor(y)
+
+
+#### bitmapXorCardinality(y)
+
+
+#### bitmaskToArray()
+
+
+#### bitmaskToList()
+
+
+#### cbrt()
+
+
+#### ceiling(n=None)
+
+
+#### ceiling(n=None)
+
+
+#### cityHash64()
+
+
+#### coalesce()
+
+
+#### concat()
+
+
+#### convertCharset(from_charset, to_charset)
+
+
+#### corr(**kwargs)
+
+
+#### corrIf(y, cond)
+
+
+#### corrOrDefault(y)
+
+
+#### corrOrDefaultIf(y, cond)
+
+
+#### corrOrNull(y)
+
+
+#### corrOrNullIf(y, cond)
+
+
+#### cos()
+
+
+#### count(**kwargs)
+
+
+#### countEqual(x)
+
+
+#### countIf()
+
+
+#### countOrDefault()
+
+
+#### countOrDefaultIf()
+
+
+#### countOrNull()
+
+
+#### countOrNullIf()
+
+
+#### covarPop(**kwargs)
+
+
+#### covarPopIf(y, cond)
+
+
+#### covarPopOrDefault(y)
+
+
+#### covarPopOrDefaultIf(y, cond)
+
+
+#### covarPopOrNull(y)
+
+
+#### covarPopOrNullIf(y, cond)
+
+
+#### covarSamp(**kwargs)
+
+
+#### covarSampIf(y, cond)
+
+
+#### covarSampOrDefault(y)
+
+
+#### covarSampOrDefaultIf(y, cond)
+
+
+#### covarSampOrNull(y)
+
+
+#### covarSampOrNullIf(y, cond)
+
+
+#### divide(**kwargs)
+
+
+#### e()
+
+
+#### empty()
+
+
+#### emptyArrayDate()
+
+
+#### emptyArrayDateTime()
+
+
+#### emptyArrayFloat32()
+
+
+#### emptyArrayFloat64()
+
+
+#### emptyArrayInt16()
+
+
+#### emptyArrayInt32()
+
+
+#### emptyArrayInt64()
+
+
+#### emptyArrayInt8()
+
+
+#### emptyArrayString()
+
+
+#### emptyArrayToSingle()
+
+
+#### emptyArrayUInt16()
+
+
+#### emptyArrayUInt32()
+
+
+#### emptyArrayUInt64()
+
+
+#### emptyArrayUInt8()
+
+
+#### endsWith(suffix)
+
+
+#### equals(**kwargs)
+
+
+#### erf()
+
+
+#### erfc()
+
+
+#### exp()
+
+
+#### exp10()
+
+
+#### exp2()
+
+
+#### extract(pattern)
+
+
+#### extractAll(pattern)
+
+
+#### farmHash64()
+
+
+#### floor(n=None)
+
+
+#### formatDateTime(format, timezone="")
+
+
+#### gcd(b)
+
+
+#### generateUUIDv4()
+
+
+#### greater(**kwargs)
+
+
+#### greaterOrEquals(**kwargs)
+
+
+#### greatest(y)
+
+
+#### halfMD5()
+
+
+#### has(x)
+
+
+#### hasAll(x)
+
+
+#### hasAny(x)
+
+
+#### hex()
+
+
+#### hiveHash()
+
+
+#### ifNotFinite(y)
+
+
+#### ifNull(y)
+
+
+#### indexOf(x)
+
+
+#### intDiv(b)
+
+
+#### intDivOrZero(b)
+
+
+#### intExp10()
+
+
+#### intExp2()
+
+
+#### intHash32()
+
+
+#### intHash64()
+
+
+#### isFinite()
+
+
+#### isIn(others)
+
+
+#### isInfinite()
+
+
+#### isNaN()
+
+
+#### isNotIn(others)
+
+
+#### isNotNull()
+
+
+#### isNull()
+
+
+#### javaHash()
+
+
+#### jumpConsistentHash(buckets)
+
+
+#### kurtPop(**kwargs)
+
+
+#### kurtPopIf(cond)
+
+
+#### kurtPopOrDefault()
+
+
+#### kurtPopOrDefaultIf(cond)
+
+
+#### kurtPopOrNull()
+
+
+#### kurtPopOrNullIf(cond)
+
+
+#### kurtSamp(**kwargs)
+
+
+#### kurtSampIf(cond)
+
+
+#### kurtSampOrDefault()
+
+
+#### kurtSampOrDefaultIf(cond)
+
+
+#### kurtSampOrNull()
+
+
+#### kurtSampOrNullIf(cond)
+
+
+#### lcm(b)
+
+
+#### least(y)
+
+
+#### length(**kwargs)
+
+
+#### lengthUTF8()
+
+
+#### less(**kwargs)
+
+
+#### lessOrEquals(**kwargs)
+
+
+#### lgamma()
+
+
+#### like(pattern)
+
+
+#### log()
+
+
+#### log()
+
+
+#### log10()
+
+
+#### log2()
+
+
+#### lower(**kwargs)
+
+
+#### lowerUTF8()
+
+
+#### match(pattern)
+
+
+#### max(**kwargs)
+
+
+#### maxIf(cond)
+
+
+#### maxOrDefault()
+
+
+#### maxOrDefaultIf(cond)
+
+
+#### maxOrNull()
+
+
+#### maxOrNullIf(cond)
+
+
+#### metroHash64()
+
+
+#### min(**kwargs)
+
+
+#### minIf(cond)
+
+
+#### minOrDefault()
+
+
+#### minOrDefaultIf(cond)
+
+
+#### minOrNull()
+
+
+#### minOrNullIf(cond)
+
+
+#### minus(**kwargs)
+
+
+#### modulo(**kwargs)
+
+
+#### multiply(**kwargs)
+
+
+#### murmurHash2_32()
+
+
+#### murmurHash2_64()
+
+
+#### murmurHash3_128()
+
+
+#### murmurHash3_32()
+
+
+#### murmurHash3_64()
+
+
+#### negate()
+
+
+#### ngramDistance(**kwargs)
+
+
+#### ngramDistanceCaseInsensitive(**kwargs)
+
+
+#### ngramDistanceCaseInsensitiveUTF8(needle)
+
+
+#### ngramDistanceUTF8(needle)
+
+
+#### ngramSearch(**kwargs)
+
+
+#### ngramSearchCaseInsensitive(**kwargs)
+
+
+#### ngramSearchCaseInsensitiveUTF8(needle)
+
+
+#### ngramSearchUTF8(needle)
+
+
+#### notEmpty()
+
+
+#### notEquals(**kwargs)
+
+
+#### notLike(pattern)
+
+
+#### now()
+
+
+#### nullIf(y)
+
+
+#### parseDateTimeBestEffort(**kwargs)
+
+
+#### parseDateTimeBestEffortOrNull(timezone=NO_VALUE)
+
+
+#### parseDateTimeBestEffortOrZero(timezone=NO_VALUE)
+
+
+#### pi()
+
+
+#### plus(**kwargs)
+
+
+#### position(**kwargs)
+
+
+#### positionCaseInsensitive(**kwargs)
+
+
+#### positionCaseInsensitiveUTF8(needle)
+
+
+#### positionUTF8(needle)
+
+
+#### power(y)
+
+
+#### power(y)
+
+
+#### quantile(**kwargs)
+
+
+#### quantileDeterministic(**kwargs)
+
+
+#### quantileDeterministicIf()
+
+
+#### quantileDeterministicOrDefault()
+
+
+#### quantileDeterministicOrDefaultIf()
+
+
+#### quantileDeterministicOrNull()
+
+
+#### quantileDeterministicOrNullIf()
+
+
+#### quantileExact(**kwargs)
+
+
+#### quantileExactIf()
+
+
+#### quantileExactOrDefault()
+
+
+#### quantileExactOrDefaultIf()
+
+
+#### quantileExactOrNull()
+
+
+#### quantileExactOrNullIf()
+
+
+#### quantileExactWeighted(**kwargs)
+
+
+#### quantileExactWeightedIf()
+
+
+#### quantileExactWeightedOrDefault()
+
+
+#### quantileExactWeightedOrDefaultIf()
+
+
+#### quantileExactWeightedOrNull()
+
+
+#### quantileExactWeightedOrNullIf()
+
+
+#### quantileIf()
+
+
+#### quantileOrDefault()
+
+
+#### quantileOrDefaultIf()
+
+
+#### quantileOrNull()
+
+
+#### quantileOrNullIf()
+
+
+#### quantileTDigest(**kwargs)
+
+
+#### quantileTDigestIf()
+
+
+#### quantileTDigestOrDefault()
+
+
+#### quantileTDigestOrDefaultIf()
+
+
+#### quantileTDigestOrNull()
+
+
+#### quantileTDigestOrNullIf()
+
+
+#### quantileTDigestWeighted(**kwargs)
+
+
+#### quantileTDigestWeightedIf()
+
+
+#### quantileTDigestWeightedOrDefault()
+
+
+#### quantileTDigestWeightedOrDefaultIf()
+
+
+#### quantileTDigestWeightedOrNull()
+
+
+#### quantileTDigestWeightedOrNullIf()
+
+
+#### quantileTiming(**kwargs)
+
+
+#### quantileTimingIf()
+
+
+#### quantileTimingOrDefault()
+
+
+#### quantileTimingOrDefaultIf()
+
+
+#### quantileTimingOrNull()
+
+
+#### quantileTimingOrNullIf()
+
+
+#### quantileTimingWeighted(**kwargs)
+
+
+#### quantileTimingWeightedIf()
+
+
+#### quantileTimingWeightedOrDefault()
+
+
+#### quantileTimingWeightedOrDefaultIf()
+
+
+#### quantileTimingWeightedOrNull()
+
+
+#### quantileTimingWeightedOrNullIf()
+
+
+#### quantiles(**kwargs)
+
+
+#### quantilesDeterministic(**kwargs)
+
+
+#### quantilesDeterministicIf()
+
+
+#### quantilesDeterministicOrDefault()
+
+
+#### quantilesDeterministicOrDefaultIf()
+
+
+#### quantilesDeterministicOrNull()
+
+
+#### quantilesDeterministicOrNullIf()
+
+
+#### quantilesExact(**kwargs)
+
+
+#### quantilesExactIf()
+
+
+#### quantilesExactOrDefault()
+
+
+#### quantilesExactOrDefaultIf()
+
+
+#### quantilesExactOrNull()
+
+
+#### quantilesExactOrNullIf()
+
+
+#### quantilesExactWeighted(**kwargs)
+
+
+#### quantilesExactWeightedIf()
+
+
+#### quantilesExactWeightedOrDefault()
+
+
+#### quantilesExactWeightedOrDefaultIf()
+
+
+#### quantilesExactWeightedOrNull()
+
+
+#### quantilesExactWeightedOrNullIf()
+
+
+#### quantilesIf()
+
+
+#### quantilesOrDefault()
+
+
+#### quantilesOrDefaultIf()
+
+
+#### quantilesOrNull()
+
+
+#### quantilesOrNullIf()
+
+
+#### quantilesTDigest(**kwargs)
+
+
+#### quantilesTDigestIf()
+
+
+#### quantilesTDigestOrDefault()
+
+
+#### quantilesTDigestOrDefaultIf()
+
+
+#### quantilesTDigestOrNull()
+
+
+#### quantilesTDigestOrNullIf()
+
+
+#### quantilesTDigestWeighted(**kwargs)
+
+
+#### quantilesTDigestWeightedIf()
+
+
+#### quantilesTDigestWeightedOrDefault()
+
+
+#### quantilesTDigestWeightedOrDefaultIf()
+
+
+#### quantilesTDigestWeightedOrNull()
+
+
+#### quantilesTDigestWeightedOrNullIf()
+
+
+#### quantilesTiming(**kwargs)
+
+
+#### quantilesTimingIf()
+
+
+#### quantilesTimingOrDefault()
+
+
+#### quantilesTimingOrDefaultIf()
+
+
+#### quantilesTimingOrNull()
+
+
+#### quantilesTimingOrNullIf()
+
+
+#### quantilesTimingWeighted(**kwargs)
+
+
+#### quantilesTimingWeightedIf()
+
+
+#### quantilesTimingWeightedOrDefault()
+
+
+#### quantilesTimingWeightedOrDefaultIf()
+
+
+#### quantilesTimingWeightedOrNull()
+
+
+#### quantilesTimingWeightedOrNullIf()
+
+
+#### rand()
+
+
+#### rand64()
+
+
+#### randConstant()
+
+
+#### range()
+
+
+#### regexpQuoteMeta()
+
+
+#### replace(pattern, replacement)
+
+
+#### replaceAll(pattern, replacement)
+
+
+#### replaceOne(pattern, replacement)
+
+
+#### replaceRegexpAll(pattern, replacement)
+
+
+#### replaceRegexpOne(pattern, replacement)
+
+
+#### reverse(**kwargs)
+
+
+#### reverseUTF8()
+
+
+#### round(n=None)
+
+
+#### roundAge()
+
+
+#### roundDown(y)
+
+
+#### roundDuration()
+
+
+#### roundToExp2()
+
+
+#### sin()
+
+
+#### sipHash128()
+
+
+#### sipHash64()
+
+
+#### skewPop(**kwargs)
+
+
+#### skewPopIf(cond)
+
+
+#### skewPopOrDefault()
+
+
+#### skewPopOrDefaultIf(cond)
+
+
+#### skewPopOrNull()
+
+
+#### skewPopOrNullIf(cond)
+
+
+#### skewSamp(**kwargs)
+
+
+#### skewSampIf(cond)
+
+
+#### skewSampOrDefault()
+
+
+#### skewSampOrDefaultIf(cond)
+
+
+#### skewSampOrNull()
+
+
+#### skewSampOrNullIf(cond)
+
+
+#### splitByChar(s)
+
+
+#### splitByString(s)
+
+
+#### sqrt()
+
+
+#### startsWith(prefix)
+
+
+#### substring(**kwargs)
+
+
+#### substringUTF8(offset, length)
+
+
+#### subtractDays(n, timezone=NO_VALUE)
+
+
+#### subtractHours(n, timezone=NO_VALUE)
+
+
+#### subtractMinutes(n, timezone=NO_VALUE)
+
+
+#### subtractMonths(n, timezone=NO_VALUE)
+
+
+#### subtractQuarters(n, timezone=NO_VALUE)
+
+
+#### subtractSeconds(n, timezone=NO_VALUE)
+
+
+#### subtractWeeks(n, timezone=NO_VALUE)
+
+
+#### subtractYears(n, timezone=NO_VALUE)
+
+
+#### sum(**kwargs)
+
+
+#### sumIf(cond)
+
+
+#### sumOrDefault()
+
+
+#### sumOrDefaultIf(cond)
+
+
+#### sumOrNull()
+
+
+#### sumOrNullIf(cond)
+
+
+#### tan()
+
+
+#### tgamma()
+
+
+#### timeSlot()
+
+
+#### timeSlots(duration)
+
+
+#### toDate(**kwargs)
+
+
+#### toDateOrNull()
+
+
+#### toDateOrZero()
+
+
+#### toDateTime(**kwargs)
+
+
+#### toDateTimeOrNull()
+
+
+#### toDateTimeOrZero()
+
+
+#### toDayOfMonth()
+
+
+#### toDayOfWeek()
+
+
+#### toDayOfYear()
+
+
+#### toDecimal128(**kwargs)
+
+
+#### toDecimal128OrNull(scale)
+
+
+#### toDecimal128OrZero(scale)
+
+
+#### toDecimal32(**kwargs)
+
+
+#### toDecimal32OrNull(scale)
+
+
+#### toDecimal32OrZero(scale)
+
+
+#### toDecimal64(**kwargs)
+
+
+#### toDecimal64OrNull(scale)
+
+
+#### toDecimal64OrZero(scale)
+
+
+#### toFixedString(length)
+
+
+#### toFloat32(**kwargs)
+
+
+#### toFloat32OrNull()
+
+
+#### toFloat32OrZero()
+
+
+#### toFloat64(**kwargs)
+
+
+#### toFloat64OrNull()
+
+
+#### toFloat64OrZero()
+
+
+#### toHour()
+
+
+#### toIPv4()
+
+
+#### toIPv6()
+
+
+#### toISOWeek(timezone="")
+
+
+#### toISOYear(timezone="")
+
+
+#### toInt16(**kwargs)
+
+
+#### toInt16OrNull()
+
+
+#### toInt16OrZero()
+
+
+#### toInt32(**kwargs)
+
+
+#### toInt32OrNull()
+
+
+#### toInt32OrZero()
+
+
+#### toInt64(**kwargs)
+
+
+#### toInt64OrNull()
+
+
+#### toInt64OrZero()
+
+
+#### toInt8(**kwargs)
+
+
+#### toInt8OrNull()
+
+
+#### toInt8OrZero()
+
+
+#### toIntervalDay()
+
+
+#### toIntervalHour()
+
+
+#### toIntervalMinute()
+
+
+#### toIntervalMonth()
+
+
+#### toIntervalQuarter()
+
+
+#### toIntervalSecond()
+
+
+#### toIntervalWeek()
+
+
+#### toIntervalYear()
+
+
+#### toMinute()
+
+
+#### toMonday()
+
+
+#### toMonth()
+
+
+#### toQuarter(timezone="")
+
+
+#### toRelativeDayNum(timezone="")
+
+
+#### toRelativeHourNum(timezone="")
+
+
+#### toRelativeMinuteNum(timezone="")
+
+
+#### toRelativeMonthNum(timezone="")
+
+
+#### toRelativeSecondNum(timezone="")
+
+
+#### toRelativeWeekNum(timezone="")
+
+
+#### toRelativeYearNum(timezone="")
+
+
+#### toSecond()
+
+
+#### toStartOfDay()
+
+
+#### toStartOfFifteenMinutes()
+
+
+#### toStartOfFiveMinute()
+
+
+#### toStartOfHour()
+
+
+#### toStartOfISOYear()
+
+
+#### toStartOfMinute()
+
+
+#### toStartOfMonth()
+
+
+#### toStartOfQuarter()
+
+
+#### toStartOfTenMinutes()
+
+
+#### toStartOfWeek(mode=0)
+
+
+#### toStartOfYear()
+
+
+#### toString()
+
+
+#### toStringCutToZero()
+
+
+#### toTime(timezone="")
+
+
+#### toTimeZone(timezone)
+
+
+#### toUInt16(**kwargs)
+
+
+#### toUInt16OrNull()
+
+
+#### toUInt16OrZero()
+
+
+#### toUInt32(**kwargs)
+
+
+#### toUInt32OrNull()
+
+
+#### toUInt32OrZero()
+
+
+#### toUInt64(**kwargs)
+
+
+#### toUInt64OrNull()
+
+
+#### toUInt64OrZero()
+
+
+#### toUInt8(**kwargs)
+
+
+#### toUInt8OrNull()
+
+
+#### toUInt8OrZero()
+
+
+#### toUUID()
+
+
+#### toUnixTimestamp(timezone="")
+
+
+#### toWeek(mode=0, timezone="")
+
+
+#### toYYYYMM(timezone="")
+
+
+#### toYYYYMMDD(timezone="")
+
+
+#### toYYYYMMDDhhmmss(timezone="")
+
+
+#### toYear()
+
+
+#### to_sql(*args)
+
+
+Generates an SQL string for this function and its arguments.
+For example if the function name is a symbol of a binary operator:
+    (2.54 * `height`)
+For other functions:
+    gcd(12, 300)
+
+
+#### today()
+
+
+#### topK(**kwargs)
+
+
+#### topKIf()
+
+
+#### topKOrDefault()
+
+
+#### topKOrDefaultIf()
+
+
+#### topKOrNull()
+
+
+#### topKOrNullIf()
+
+
+#### topKWeighted(**kwargs)
+
+
+#### topKWeightedIf()
+
+
+#### topKWeightedOrDefault()
+
+
+#### topKWeightedOrDefaultIf()
+
+
+#### topKWeightedOrNull()
+
+
+#### topKWeightedOrNullIf()
+
+
+#### trimBoth()
+
+
+#### trimLeft()
+
+
+#### trimRight()
+
+
+#### tryBase64Decode()
+
+
+#### unhex()
+
+
+#### uniq(**kwargs)
+
+
+#### uniqExact(**kwargs)
 
 

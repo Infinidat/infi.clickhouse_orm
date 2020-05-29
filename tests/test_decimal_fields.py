@@ -13,15 +13,11 @@ class DecimalFieldsTest(unittest.TestCase):
 
     def setUp(self):
         self.database = Database('test-db', log_statements=True)
-        self.database.add_setting('allow_experimental_decimal_type', 1)
         try:
             self.database.create_table(DecimalModel)
         except ServerError as e:
-            if 'Unknown setting' in e.message:
-                # This ClickHouse version does not support decimals yet
-                raise unittest.SkipTest(e.message)
-            else:
-                raise
+            # This ClickHouse version does not support decimals yet
+            raise unittest.SkipTest(e.message)
 
     def tearDown(self):
         self.database.drop_database()

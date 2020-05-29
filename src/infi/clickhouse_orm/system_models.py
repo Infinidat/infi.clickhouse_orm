@@ -1,9 +1,8 @@
 """
 This file contains system readonly models that can be got from the database
-https://clickhouse.yandex/docs/en/system_tables/
+https://clickhouse.tech/docs/en/system_tables/
 """
 from __future__ import unicode_literals
-from six import string_types
 
 from .database import Database
 from .fields import *
@@ -15,7 +14,7 @@ class SystemPart(Model):
     """
     Contains information about parts of a table in the MergeTree family.
     This model operates only fields, described in the reference. Other fields are ignored.
-    https://clickhouse.yandex/docs/en/system_tables/system.parts/
+    https://clickhouse.tech/docs/en/system_tables/system.parts/
     """
     OPERATIONS = frozenset({'DETACH', 'DROP', 'ATTACH', 'FREEZE', 'FETCH'})
 
@@ -28,7 +27,7 @@ class SystemPart(Model):
     partition = StringField()  # Name of the partition, in the format YYYYMM.
     name = StringField()  # Name of the part.
 
-    # This field is present in the docs (https://clickhouse.yandex/docs/en/single/index.html#system-parts),
+    # This field is present in the docs (https://clickhouse.tech/docs/en/single/index.html#system-parts),
     # but is absent in ClickHouse (in version 1.1.54245)
     # replicated = UInt8Field()  # Whether the part belongs to replicated data.
 
@@ -52,19 +51,21 @@ class SystemPart(Model):
 
     @classmethod
     def table_name(cls):
-        return 'system.parts'
+        return 'parts'
 
     """
     Next methods return SQL for some operations, which can be done with partitions
-    https://clickhouse.yandex/docs/en/query_language/queries/#manipulations-with-partitions-and-parts
+    https://clickhouse.tech/docs/en/query_language/queries/#manipulations-with-partitions-and-parts
     """
     def _partition_operation_sql(self, operation, settings=None, from_part=None):
         """
         Performs some operation over partition
-        :param db: Database object to execute operation on
-        :param operation: Operation to execute from SystemPart.OPERATIONS set
-        :param settings: Settings for executing request to ClickHouse over db.raw() method
-        :return: Operation execution result
+
+        - `db`: Database object to execute operation on
+        - `operation`: Operation to execute from SystemPart.OPERATIONS set
+        - `settings`: Settings for executing request to ClickHouse over db.raw() method
+
+        Returns: Operation execution result
         """
         operation = operation.upper()
         assert operation in self.OPERATIONS, "operation must be in [%s]" % comma_join(self.OPERATIONS)
@@ -77,41 +78,51 @@ class SystemPart(Model):
     def detach(self, settings=None):
         """
         Move a partition to the 'detached' directory and forget it.
-        :param settings: Settings for executing request to ClickHouse over db.raw() method
-        :return: SQL Query
+
+        - `settings`: Settings for executing request to ClickHouse over db.raw() method
+
+        Returns: SQL Query
         """
         return self._partition_operation_sql('DETACH', settings=settings)
 
     def drop(self, settings=None):
         """
         Delete a partition
-        :param settings: Settings for executing request to ClickHouse over db.raw() method
-        :return: SQL Query
+
+        - `settings`: Settings for executing request to ClickHouse over db.raw() method
+
+        Returns: SQL Query
         """
         return self._partition_operation_sql('DROP', settings=settings)
 
     def attach(self, settings=None):
         """
          Add a new part or partition from the 'detached' directory to the table.
-        :param settings: Settings for executing request to ClickHouse over db.raw() method
-        :return: SQL Query
+
+        - `settings`: Settings for executing request to ClickHouse over db.raw() method
+
+        Returns: SQL Query
         """
         return self._partition_operation_sql('ATTACH', settings=settings)
 
     def freeze(self, settings=None):
         """
         Create a backup of a partition.
-        :param settings: Settings for executing request to ClickHouse over db.raw() method
-        :return: SQL Query
+
+        - `settings`: Settings for executing request to ClickHouse over db.raw() method
+
+        Returns: SQL Query
         """
         return self._partition_operation_sql('FREEZE', settings=settings)
 
     def fetch(self, zookeeper_path, settings=None):
         """
         Download a partition from another server.
-        :param zookeeper_path: Path in zookeeper to fetch from
-        :param settings: Settings for executing request to ClickHouse over db.raw() method
-        :return: SQL Query
+
+        - `zookeeper_path`: Path in zookeeper to fetch from
+        - `settings`: Settings for executing request to ClickHouse over db.raw() method
+
+        Returns: SQL Query
         """
         return self._partition_operation_sql('FETCH', settings=settings, from_part=zookeeper_path)
 
@@ -119,27 +130,35 @@ class SystemPart(Model):
     def get(cls, database, conditions=""):
         """
         Get all data from system.parts table
-        :param database: A database object to fetch data from.
-        :param conditions: WHERE clause conditions. Database condition is added automatically
-        :return: A list of SystemPart objects
+
+        - `database`: A database object to fetch data from.
+        - `conditions`: WHERE clause conditions. Database condition is added automatically
+
+        Returns: A list of SystemPart objects
         """
         assert isinstance(database, Database), "database must be database.Database class instance"
-        assert isinstance(conditions, string_types), "conditions must be a string"
+        assert isinstance(conditions, str), "conditions must be a string"
         if conditions:
             conditions += " AND"
         field_names = ','.join(cls.fields())
-        return database.select("SELECT %s FROM %s WHERE %s database='%s'" %
-                               (field_names,  cls.table_name(), conditions, database.db_name), model_class=cls)
+        return database.select("SELECT %s FROM `system`.%s WHERE %s database='%s'" %
+                               (field_names, cls.table_name(), conditions, database.db_name), model_class=cls)
 
     @classmethod
     def get_active(cls, database, conditions=""):
         """
         Gets active data from system.parts table
-        :param database: A database object to fetch data from.
-        :param conditions: WHERE clause conditions. Database and active conditions are added automatically
-        :return: A list of SystemPart objects
+
+        - `database`: A database object to fetch data from.
+        - `conditions`: WHERE clause conditions. Database and active conditions are added automatically
+
+        Returns: A list of SystemPart objects
         """
         if conditions:
             conditions += ' AND '
         conditions += 'active'
         return SystemPart.get(database, conditions=conditions)
+
+
+# Expose only relevant classes in import *
+__all__ = [c.__name__ for c in [SystemPart]]

@@ -1,7 +1,7 @@
 Table Engines
 =============
 
-See: [ClickHouse Documentation](https://clickhouse.yandex/docs/en/table_engines/)
+See: [ClickHouse Documentation](https://clickhouse.tech/docs/en/engines/table-engines/)
 
 Each model must have an engine instance, used when creating the table in ClickHouse.
 
@@ -24,11 +24,11 @@ Simple Engines
 
 `TinyLog`, `Log` and `Memory` engines do not require any parameters:
 
-    engine = engines.TinyLog()
+    engine = TinyLog()
 
-    engine = engines.Log()
+    engine = Log()
 
-    engine = engines.Memory()
+    engine = Memory()
 
 
 Engines in the MergeTree Family
@@ -36,28 +36,28 @@ Engines in the MergeTree Family
 
 To define a `MergeTree` engine, supply the date column name and the names (or expressions) for the key columns:
 
-    engine = engines.MergeTree('EventDate', ('CounterID', 'EventDate'))
+    engine = MergeTree('EventDate', ('CounterID', 'EventDate'))
 
 You may also provide a sampling expression:
 
-    engine = engines.MergeTree('EventDate', ('CounterID', 'EventDate'), sampling_expr='intHash32(UserID)')
+    engine = MergeTree('EventDate', ('CounterID', 'EventDate'), sampling_expr=F.intHash32(UserID))
 
 A `CollapsingMergeTree` engine is defined in a similar manner, but requires also a sign column:
 
-    engine = engines.CollapsingMergeTree('EventDate', ('CounterID', 'EventDate'), 'Sign')
+    engine = CollapsingMergeTree('EventDate', ('CounterID', 'EventDate'), 'Sign')
 
 For a `SummingMergeTree` you can optionally specify the summing columns:
 
-    engine = engines.SummingMergeTree('EventDate', ('OrderID', 'EventDate', 'BannerID'),
-                                      summing_cols=('Shows', 'Clicks', 'Cost'))
+    engine = SummingMergeTree('EventDate', ('OrderID', 'EventDate', 'BannerID'),
+                              summing_cols=('Shows', 'Clicks', 'Cost'))
 
 For a `ReplacingMergeTree` you can optionally specify the version column:
 
-    engine = engines.ReplacingMergeTree('EventDate', ('OrderID', 'EventDate', 'BannerID'), ver_col='Version')
+    engine = ReplacingMergeTree('EventDate', ('OrderID', 'EventDate', 'BannerID'), ver_col='Version')
 
 ### Custom partitioning
 
-ClickHouse supports [custom partitioning](https://clickhouse.yandex/docs/en/table_engines/custom_partitioning_key/) expressions since version 1.1.54310
+ClickHouse supports [custom partitioning](https://clickhouse.tech/docs/en/engines/table-engines/mergetree-family/custom-partitioning-key/) expressions since version 1.1.54310
 
 You can use custom partitioning with any `MergeTree` family engine.
 To set custom partitioning:
@@ -69,12 +69,12 @@ Standard monthly partitioning by date column can be specified using the `toYYYYM
 
 Example:
 
-    engine = engines.ReplacingMergeTree(order_by=('OrderID', 'EventDate', 'BannerID'), ver_col='Version',
-                                        partition_key=('toYYYYMM(EventDate)', 'BannerID'))
+    engine = ReplacingMergeTree(order_by=('OrderID', 'EventDate', 'BannerID'), ver_col='Version',
+                                partition_key=(F.toYYYYMM(EventDate), 'BannerID'))
 
 
 ### Primary key
-ClickHouse supports [custom primary key](https://clickhouse.yandex/docs/en/operations/table_engines/mergetree/#primary-keys-and-indexes-in-queries/) expressions since version 1.1.54310
+ClickHouse supports [custom primary key](https://clickhouse.tech/docs/en/engines/table-engines/mergetree-family/mergetree/#primary-keys-and-indexes-in-queries) expressions since version 1.1.54310
 
 You can use custom primary key with any `MergeTree` family engine.
 To set custom partitioning add `primary_key` parameter. It should be a tuple of expressions, by which partitions are built.
@@ -83,34 +83,34 @@ By default primary key is equal to order_by expression
 
 Example:
 
-    engine = engines.ReplacingMergeTree(order_by=('OrderID', 'EventDate', 'BannerID'), ver_col='Version',
-                                        partition_key=('toYYYYMM(EventDate)', 'BannerID'), primary_key=('OrderID',))
+    engine = ReplacingMergeTree(order_by=('OrderID', 'EventDate', 'BannerID'), ver_col='Version',
+                                partition_key=(F.toYYYYMM(EventDate), 'BannerID'), primary_key=('OrderID',))
 
 ### Data Replication
 
 Any of the above engines can be converted to a replicated engine (e.g. `ReplicatedMergeTree`) by adding two parameters, `replica_table_path` and `replica_name`:
 
-    engine = engines.MergeTree('EventDate', ('CounterID', 'EventDate'),
-                               replica_table_path='/clickhouse/tables/{layer}-{shard}/hits',
-                               replica_name='{replica}')
+    engine = MergeTree('EventDate', ('CounterID', 'EventDate'),
+                       replica_table_path='/clickhouse/tables/{layer}-{shard}/hits',
+                       replica_name='{replica}')
 
 
 Buffer Engine
 -------------
 
 A `Buffer` engine is only used in conjunction with a `BufferModel`.
-The model should be a subclass of both `models.BufferModel` and the main model.
+The model should be a subclass of both `BufferModel` and the main model.
 The main model is also passed to the engine:
 
-    class PersonBuffer(models.BufferModel, Person):
+    class PersonBuffer(BufferModel, Person):
 
-        engine = engines.Buffer(Person)
+        engine = Buffer(Person)
 
 Additional buffer parameters can optionally be specified:
 
-        engine = engines.Buffer(Person, num_layers=16, min_time=10,
-                                max_time=100, min_rows=10000, max_rows=1000000,
-                                min_bytes=10000000, max_bytes=100000000)
+        engine = Buffer(Person, num_layers=16, min_time=10,
+                        max_time=100, min_rows=10000, max_rows=1000000,
+                        min_bytes=10000000, max_bytes=100000000)
 
 Then you can insert objects into Buffer model and they will be handled by ClickHouse properly:
 
@@ -123,14 +123,14 @@ Then you can insert objects into Buffer model and they will be handled by ClickH
 Merge Engine
 -------------
 
-[ClickHouse docs](https://clickhouse.yandex/docs/en/table_engines/merge/)
+[ClickHouse docs](https://clickhouse.tech/docs/en/operations/table_engines/merge/)
 
 A `Merge` engine is only used in conjunction with a `MergeModel`.
 This table does not store data itself, but allows reading from any number of other tables simultaneously. So you can't insert in it.
 Engine parameter specifies re2 (similar to PCRE) regular expression, from which data is selected.
 
-    class MergeTable(models.MergeModel):
-        engine = engines.Merge('^table_prefix')
+    class MergeTable(MergeModel):
+        engine = Merge('^table_prefix')
 
 
 ---

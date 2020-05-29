@@ -3,12 +3,13 @@ import sys
 from collections import OrderedDict
 from logging import getLogger
 
-from six import with_metaclass, reraise, iteritems
+from six import reraise
 import pytz
 
 from .fields import Field, StringField
-from .utils import parse_tsv
+from .utils import parse_tsv, NO_VALUE, get_subclass_names
 from .query import QuerySet
+from .funcs import F
 from .engines import Merge, Distributed
 
 logger = getLogger('clickhouse_orm')
@@ -31,26 +32,43 @@ class ModelBase(type):
         fields = base_fields
 
         # Build a list of fields, in the order they were listed in the class
-        fields.update({n: f for n, f in iteritems(attrs) if isinstance(f, Field)})
-        fields = sorted(iteritems(fields), key=lambda item: item[1].creation_counter)
+        fields.update({n: f for n, f in attrs.items() if isinstance(f, Field)})
+        fields = sorted(fields.items(), key=lambda item: item[1].creation_counter)
 
         # Build a dictionary of default values
-        defaults = {n: f.to_python(f.default, pytz.UTC) for n, f in fields}
+        defaults = {}
+        has_funcs_as_defaults = False
+        for n, f in fields:
+            if f.alias or f.materialized:
+                defaults[n] = NO_VALUE
+            elif isinstance(f.default, F):
+                defaults[n] = NO_VALUE
+                has_funcs_as_defaults = True
+            else:
+                defaults[n] = f.to_python(f.default, pytz.UTC)
 
         attrs = dict(
             attrs,
             _fields=OrderedDict(fields),
             _writable_fields=OrderedDict([f for f in fields if not f[1].readonly]),
-            _defaults=defaults
+            _defaults=defaults,
+            _has_funcs_as_defaults=has_funcs_as_defaults
         )
-        return super(ModelBase, cls).__new__(cls, str(name), bases, attrs)
+        model = super(ModelBase, cls).__new__(cls, str(name), bases, attrs)
+
+        # Let each field know its parent and its own name
+        for n, f in fields:
+            setattr(f, 'parent', model)
+            setattr(f, 'name', n)
+
+        return model
 
     @classmethod
     def create_ad_hoc_model(cls, fields, model_name='AdHocModel'):
         # fields is a list of tuples (name, db_type)
         # Check if model exists in cache
         fields = list(fields)
-        cache_key = str(fields)
+        cache_key = model_name + ' ' + str(fields)
         if cache_key in cls.ad_hoc_model_cache:
             return cls.ad_hoc_model_cache[cache_key]
         # Create an ad hoc model class
@@ -76,14 +94,22 @@ class ModelBase(type):
         if db_type.startswith('Array'):
             inner_field = cls.create_ad_hoc_field(db_type[6 : -1])
             return orm_fields.ArrayField(inner_field)
+        # Tuples (poor man's version - convert to array)
+        if db_type.startswith('Tuple'):
+            types = [s.strip() for s in db_type[6 : -1].split(',')]
+            assert len(set(types)) == 1, 'No support for mixed types in tuples - ' + db_type
+            inner_field = cls.create_ad_hoc_field(types[0])
+            return orm_fields.ArrayField(inner_field)
         # FixedString
         if db_type.startswith('FixedString'):
             length = int(db_type[12 : -1])
             return orm_fields.FixedStringField(length)
-        # Decimal
+        # Decimal / Decimal32 / Decimal64 / Decimal128
         if db_type.startswith('Decimal'):
-            precision, scale = [int(n.strip()) for n in db_type[8 : -1].split(',')]
-            return orm_fields.DecimalField(precision, scale)
+            p = db_type.index('(')
+            args = [int(n.strip()) for n in db_type[p + 1 : -1].split(',')]
+            field_class = getattr(orm_fields, db_type[:p] + 'Field')
+            return field_class(*args)
         # Nullable
         if db_type.startswith('Nullable'):
             inner_field = cls.create_ad_hoc_field(db_type[9 : -1])
@@ -99,7 +125,7 @@ class ModelBase(type):
         return getattr(orm_fields, name)()
 
 
-class Model(with_metaclass(ModelBase)):
+class Model(metaclass=ModelBase):
     '''
     A base class for ORM models. Each model class represent a ClickHouse table. For example:
 
@@ -131,7 +157,7 @@ class Model(with_metaclass(ModelBase)):
         # Assign default values
         self.__dict__.update(self._defaults)
         # Assign field values from keyword arguments
-        for name, value in iteritems(kwargs):
+        for name, value in kwargs.items():
             field = self.get_field(name)
             if field:
                 setattr(self, name, value)
@@ -144,14 +170,14 @@ class Model(with_metaclass(ModelBase)):
         This may raise a `ValueError`.
         '''
         field = self.get_field(name)
-        if field:
+        if field and (value != NO_VALUE):
             try:
                 value = field.to_python(value, pytz.utc)
                 field.validate(value)
             except ValueError:
                 tp, v, tb = sys.exc_info()
                 new_msg = "{} (field '{}')".format(v, name)
-                reraise(tp, tp(new_msg), tb)
+                raise tp.with_traceback(tp(new_msg), tb)
         super(Model, self).__setattr__(name, value)
 
     def set_database(self, db):
@@ -187,13 +213,21 @@ class Model(with_metaclass(ModelBase)):
         return cls.__name__.lower()
 
     @classmethod
+    def has_funcs_as_defaults(cls):
+        '''
+        Return True if some of the model's fields use a function expression
+        as a default value. This requires special handling when inserting instances.
+        '''
+        return cls._has_funcs_as_defaults
+
+    @classmethod
     def create_table_sql(cls, db):
         '''
         Returns the SQL command for creating a table for this model.
         '''
         parts = ['CREATE TABLE IF NOT EXISTS `%s`.`%s` (' % (db.db_name, cls.table_name())]
         cols = []
-        for name, field in iteritems(cls.fields()):
+        for name, field in cls.fields().items():
             cols.append('    %s %s' % (name, field.get_sql(db=db)))
         parts.append(',\n'.join(cols))
         parts.append(')')
@@ -218,7 +252,6 @@ class Model(with_metaclass(ModelBase)):
         - `timezone_in_use`: the timezone to use when parsing dates and datetimes.
         - `database`: if given, sets the database that this instance belongs to.
         '''
-        from six import next
         values = iter(parse_tsv(line))
         kwargs = {}
         for name in field_names:
@@ -239,7 +272,30 @@ class Model(with_metaclass(ModelBase)):
         '''
         data = self.__dict__
         fields = self.fields(writable=not include_readonly)
-        return '\t'.join(field.to_db_string(data[name], quote=False) for name, field in iteritems(fields))
+        return '\t'.join(field.to_db_string(data[name], quote=False) for name, field in fields.items())
+
+    def to_tskv(self, include_readonly=True):
+        '''
+        Returns the instance's column keys and values as a tab-separated line. A newline is not included.
+        Fields that were not assigned a value are omitted.
+
+        - `include_readonly`: if false, returns only fields that can be inserted into database.
+        '''
+        data = self.__dict__
+        fields = self.fields(writable=not include_readonly)
+        parts = []
+        for name, field in fields.items():
+            if data[name] != NO_VALUE:
+                parts.append(name + '=' + field.to_db_string(data[name], quote=False))
+        return '\t'.join(parts)
+
+    def to_db_string(self):
+        '''
+        Returns the instance as a bytestring ready to be inserted into the database.
+        '''
+        s = self.to_tskv(False) if self._has_funcs_as_defaults else self.to_tsv(False)
+        s += '\n'
+        return s.encode('utf-8')
 
     def to_dict(self, include_readonly=True, field_names=None):
         '''
@@ -306,7 +362,7 @@ class MergeModel(Model):
     '''
     Model for Merge engine
     Predefines virtual _table column an controls that rows can't be inserted to this table type
-    https://clickhouse.yandex/docs/en/single/index.html#document-table_engines/merge
+    https://clickhouse.tech/docs/en/single/index.html#document-table_engines/merge
     '''
     readonly = True
 
@@ -318,7 +374,7 @@ class MergeModel(Model):
         assert isinstance(cls.engine, Merge), "engine must be an instance of engines.Merge"
         parts = ['CREATE TABLE IF NOT EXISTS `%s`.`%s` (' % (db.db_name, cls.table_name())]
         cols = []
-        for name, field in iteritems(cls.fields()):
+        for name, field in cls.fields().items():
             if name != '_table':
                 cols.append('    %s %s' % (name, field.get_sql(db=db)))
         parts.append(',\n'.join(cols))
@@ -401,3 +457,7 @@ class DistributedModel(Model):
                 db.db_name, cls.table_name(), cls.engine.table_name),
             'ENGINE = ' + cls.engine.create_table_sql(db)]
         return '\n'.join(parts)
+
+
+# Expose only relevant classes in import *
+__all__ = get_subclass_names(locals(), Model)

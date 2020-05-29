@@ -1,5 +1,4 @@
 from __future__ import unicode_literals
-from six import string_types, binary_type, text_type, PY3
 import codecs
 import re
 
@@ -28,19 +27,23 @@ def escape(value, quote=True):
     def escape_one(match):
         return SPECIAL_CHARS[match.group(0)]
 
-    if isinstance(value, string_types):
+    if isinstance(value, str):
         value = SPECIAL_CHARS_REGEX.sub(escape_one, value)
         if quote:
             value = "'" + value + "'"
-    return text_type(value)
+    return str(value)
 
 
 def unescape(value):
     return codecs.escape_decode(value)[0].decode('utf-8')
 
 
+def string_or_func(obj):
+    return obj.to_sql() if hasattr(obj, 'to_sql') else obj
+
+
 def parse_tsv(line):
-    if PY3 and isinstance(line, binary_type):
+    if isinstance(line, bytes):
         line = line.decode()
     if line and line[-1] == '\n':
         line = line[:-1]
@@ -49,19 +52,19 @@ def parse_tsv(line):
 
 def parse_array(array_string):
     """
-    Parse an array string as returned by clickhouse. For example:
+    Parse an array or tuple string as returned by clickhouse. For example:
         "['hello', 'world']" ==> ["hello", "world"]
-        "[1,2,3]"            ==> [1, 2, 3]
+        "(1,2,3)"            ==> [1, 2, 3]
     """
     # Sanity check
-    if len(array_string) < 2 or array_string[0] != '[' or array_string[-1] != ']':
+    if len(array_string) < 2 or array_string[0] not in '[(' or array_string[-1] not in '])':
         raise ValueError('Invalid array string: "%s"' % array_string)
     # Drop opening brace
     array_string = array_string[1:]
     # Go over the string, lopping off each value at the beginning until nothing is left
     values = []
     while True:
-        if array_string == ']':
+        if array_string in '])':
             # End of array
             return values
         elif array_string[0] in ', ':
@@ -93,8 +96,38 @@ def import_submodules(package_name):
     }
 
 
-def comma_join(items):
+def comma_join(items, stringify=False):
     """
     Joins an iterable of strings with commas.
     """
-    return ', '.join(items)
+    if stringify:
+        return ', '.join(str(item) for item in items)
+    else:
+        return ', '.join(items)
+
+
+def is_iterable(obj):
+    """
+    Checks if the given object is iterable.
+    """
+    try:
+        iter(obj)
+        return True
+    except TypeError:
+        return False
+
+
+def get_subclass_names(locals, base_class):
+    from inspect import isclass
+    return [c.__name__ for c in locals.values() if isclass(c) and issubclass(c, base_class)]
+
+
+class NoValue:
+    '''
+    A sentinel for fields with an expression for a default value,
+    that were not assigned a value yet.
+    '''
+    def __repr__(self):
+        return 'NO_VALUE'
+
+NO_VALUE = NoValue()

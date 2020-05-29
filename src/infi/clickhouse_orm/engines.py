@@ -1,9 +1,8 @@
 from __future__ import unicode_literals
 
 import logging
-import six
 
-from .utils import comma_join
+from .utils import comma_join, get_subclass_names
 
 logger = logging.getLogger('clickhouse_orm')
 
@@ -38,8 +37,8 @@ class MergeTree(Engine):
                  index_granularity=8192, replica_table_path=None, replica_name=None, partition_key=None,
                  primary_key=None):
         assert type(order_by) in (list, tuple), 'order_by must be a list or tuple'
+        assert date_col is None or isinstance(date_col, str), 'date_col must be string if present'
         assert primary_key is None or type(primary_key) in (list, tuple), 'primary_key must be a list or tuple'
-        assert date_col is None or isinstance(date_col, six.string_types), 'date_col must be string if present'
         assert partition_key is None or type(partition_key) in (list, tuple),\
             'partition_key must be tuple or list if present'
         assert (replica_table_path is None) == (replica_name is None), \
@@ -75,14 +74,15 @@ class MergeTree(Engine):
             name = 'Replicated' + name
 
         # In ClickHouse 1.1.54310 custom partitioning key was introduced
-        # https://clickhouse.yandex/docs/en/table_engines/custom_partitioning_key/
+        # https://clickhouse.tech/docs/en/table_engines/custom_partitioning_key/
         # Let's check version and use new syntax if available
         if db.server_version >= (1, 1, 54310):
-            partition_sql = "PARTITION BY %s ORDER BY %s" \
-                            % ('(%s)' % comma_join(self.partition_key), '(%s)' % comma_join(self.order_by))
+            partition_sql = "PARTITION BY (%s) ORDER BY (%s)" \
+                            % (comma_join(self.partition_key, stringify=True),
+                               comma_join(self.order_by, stringify=True))
 
             if self.primary_key:
-                partition_sql += " PRIMARY KEY (%s)" % comma_join(self.primary_key)
+                partition_sql += " PRIMARY KEY (%s)" % comma_join(self.primary_key, stringify=True)
 
             if self.sampling_expr:
                 partition_sql += " SAMPLE BY %s" % self.sampling_expr
@@ -94,7 +94,7 @@ class MergeTree(Engine):
             from infi.clickhouse_orm.database import DatabaseException
             raise DatabaseException("Custom partitioning is not supported before ClickHouse 1.1.54310. "
                                     "Please update your server or use date_col syntax."
-                                    "https://clickhouse.yandex/docs/en/table_engines/custom_partitioning_key/")
+                                    "https://clickhouse.tech/docs/en/table_engines/custom_partitioning_key/")
         else:
             partition_sql = ''
 
@@ -107,14 +107,14 @@ class MergeTree(Engine):
             params += ["'%s'" % self.replica_table_path, "'%s'" % self.replica_name]
 
         # In ClickHouse 1.1.54310 custom partitioning key was introduced
-        # https://clickhouse.yandex/docs/en/table_engines/custom_partitioning_key/
+        # https://clickhouse.tech/docs/en/table_engines/custom_partitioning_key/
         # These parameters are process in create_table_sql directly.
         # In previous ClickHouse versions this this syntax does not work.
         if db.server_version < (1, 1, 54310):
             params.append(self.date_col)
             if self.sampling_expr:
                 params.append(self.sampling_expr)
-            params.append('(%s)' % comma_join(self.order_by))
+            params.append('(%s)' % comma_join(self.order_by, stringify=True))
             params.append(str(self.index_granularity))
 
         return params
@@ -172,7 +172,7 @@ class Buffer(Engine):
     """
     Buffers the data to write in RAM, periodically flushing it to another table.
     Must be used in conjuction with a `BufferModel`.
-    Read more [here](https://clickhouse.yandex/docs/en/table_engines/buffer/).
+    Read more [here](https://clickhouse.tech/docs/en/engines/table-engines/special/buffer/).
     """
 
     #Buffer(database, table, num_layers, min_time, max_time, min_rows, max_rows, min_bytes, max_bytes)
@@ -203,11 +203,11 @@ class Merge(Engine):
     The Merge engine (not to be confused with MergeTree) does not store data itself,
     but allows reading from any number of other tables simultaneously.
     Writing to a table is not supported
-    https://clickhouse.yandex/docs/en/single/index.html#document-table_engines/merge
+    https://clickhouse.tech/docs/en/engines/table-engines/special/merge/
     """
 
     def __init__(self, table_regex):
-        assert isinstance(table_regex, six.string_types), "'table_regex' parameter must be string"
+        assert isinstance(table_regex, str), "'table_regex' parameter must be string"
         self.table_regex = table_regex
 
     def create_table_sql(self, db):
@@ -222,15 +222,15 @@ class Distributed(Engine):
     During a read, the table indexes on remote servers are used, if there are any.
 
     See full documentation here
-    https://clickhouse.yandex/docs/en/table_engines/distributed.html
+    https://clickhouse.tech/docs/en/engines/table-engines/special/distributed/
     """
     def __init__(self, cluster, table=None, sharding_key=None):
         """
-        :param cluster: what cluster to access data from
-        :param table: underlying table that actually stores data.
+        - `cluster`: what cluster to access data from
+        - `table`: underlying table that actually stores data.
         If you are not specifying any table here, ensure that it can be inferred
         from your model's superclass (see models.DistributedModel.fix_engine_table)
-        :param sharding_key: how to distribute data among shards when inserting
+        - `sharding_key`: how to distribute data among shards when inserting
         straightly into Distributed table, optional
         """
         self.cluster = cluster
@@ -263,3 +263,7 @@ class Distributed(Engine):
         if self.sharding_key:
             params.append(self.sharding_key)
         return params
+
+
+# Expose only relevant classes in import *
+__all__ = get_subclass_names(locals(), Engine)
