@@ -45,11 +45,17 @@ class FuncsTestCase(TestCaseWithData):
     def _test_aggr(self, func, expected_value=NO_VALUE):
         qs = Person.objects_in(self.database).aggregate(value=func)
         logging.info(qs.as_sql())
-        result = list(qs)
-        logging.info('\t==> %s', result[0].value if result else '<empty>')
-        if expected_value != NO_VALUE:
-            self.assertEqual(result[0].value, expected_value)
-        return result[0].value if result else None
+        try:
+            result = list(qs)
+            logging.info('\t==> %s', result[0].value if result else '<empty>')
+            if expected_value != NO_VALUE:
+                self.assertEqual(result[0].value, expected_value)
+            return result[0].value if result else None
+        except ServerError as e:
+            if 'Unknown function' in e.message:
+                logging.warning(e.message)
+                return # ignore functions that don't exist in the used ClickHouse version
+            raise
 
     def test_func_to_sql(self):
         # No args
@@ -584,8 +590,9 @@ class FuncsTestCase(TestCaseWithData):
         self._test_func(F.rand(17))
         self._test_func(F.rand64())
         self._test_func(F.rand64(17))
-        self._test_func(F.randConstant())
-        self._test_func(F.randConstant(17))
+        if self.database.server_version >= (19, 15): # buggy in older versions
+            self._test_func(F.randConstant())
+            self._test_func(F.randConstant(17))
 
     def test_encoding_functions(self):
         self._test_func(F.hex(F.unhex('0FA1')), '0FA1')
