@@ -37,7 +37,7 @@ class AliasFieldsTest(unittest.TestCase):
             self.assertEqual(results[0].alias_int, instance.int_field)
             self.assertEqual(results[0].alias_str, instance.str_field)
             self.assertEqual(results[0].alias_date, instance.date_field)
-            self.assertEqual(results[0].alias_func, '08/30/16')
+            self.assertEqual(results[0].alias_func, 201608)
 
     def test_assignment_error(self):
         # I can't prevent assigning at all, in case db.select statements with model provided sets model fields.
@@ -74,6 +74,6 @@ class ModelWithAliasFields(Model):
     alias_str = StringField(alias=u'str_field')
     alias_int = Int32Field(alias='int_field')
     alias_date = DateField(alias='date_field')
-    alias_func = StringField(alias=F.formatDateTime(date_field, '%D'))
+    alias_func = Int32Field(alias=F.toYYYYMM(date_field))
 
     engine = MergeTree('date_field', ('date_field',))

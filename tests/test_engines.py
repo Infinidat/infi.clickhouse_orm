@@ -168,6 +168,9 @@ class EnginesTestCase(_EnginesHelperTestCase):
         self.assertEqual('(201701, 13)'.replace(' ', ''), parts[1].partition.replace(' ', ''))
 
     def test_custom_primary_key(self):
+        if self.database.server_version < (18, 1):
+            raise unittest.SkipTest('ClickHouse version too old')
+
         class TestModel(SampleModel):
             engine = MergeTree(
                 order_by=('date', 'event_id', 'event_group'),

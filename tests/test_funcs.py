@@ -560,9 +560,7 @@ class FuncsTestCase(TestCaseWithData):
         x = 17
         s = 'hello'
         url = 'http://example.com/a/b/c/d'
-        self._test_func(F.hex(F.halfMD5(*args)))
         self._test_func(F.hex(F.MD5(s)))
-        self._test_func(F.hex(F.sipHash64(*args)))
         self._test_func(F.hex(F.sipHash128(s)))
         self._test_func(F.hex(F.cityHash64(*args)))
         self._test_func(F.hex(F.intHash32(x)))
@@ -584,6 +582,9 @@ class FuncsTestCase(TestCaseWithData):
         self._test_func(F.hex(F.murmurHash3_128(s)))
         self._test_func(F.hex(F.xxHash32(*args)))
         self._test_func(F.hex(F.xxHash64(*args)))
+        if self.database.server_version >= (18, 1):
+            self._test_func(F.hex(F.halfMD5(*args)))
+            self._test_func(F.hex(F.sipHash64(*args)))
 
     def test_rand_functions(self):
         self._test_func(F.rand())
