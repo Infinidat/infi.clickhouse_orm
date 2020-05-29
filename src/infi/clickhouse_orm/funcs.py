@@ -443,7 +443,7 @@ class F(Cond, FunctionOperatorsMixin, metaclass=FMeta):
 
     @staticmethod
     def toISOWeek(d, timezone=''):
-        return F('toISOWeek', d, timezone)
+        return F('toISOWeek', d, timezone) if timezone else F('toISOWeek', d)
 
     @staticmethod
     def toDayOfYear(d):
@@ -531,15 +531,15 @@ class F(Cond, FunctionOperatorsMixin, metaclass=FMeta):
 
     @staticmethod
     def toYYYYMM(dt, timezone=''):
-        return F('toYYYYMM', dt, timezone)
+        return F('toYYYYMM', dt, timezone) if timezone else F('toYYYYMM', dt)
 
     @staticmethod
     def toYYYYMMDD(dt, timezone=''):
-        return F('toYYYYMMDD', dt, timezone)
+        return F('toYYYYMMDD', dt, timezone) if timezone else F('toYYYYMMDD', dt)
 
     @staticmethod
     def toYYYYMMDDhhmmss(dt, timezone=''):
-        return F('toYYYYMMDDhhmmss', dt, timezone)
+        return F('toYYYYMMDDhhmmss', dt, timezone) if timezone else F('toYYYYMMDDhhmmss', dt)
 
     @staticmethod
     def toRelativeYearNum(d, timezone=''):
