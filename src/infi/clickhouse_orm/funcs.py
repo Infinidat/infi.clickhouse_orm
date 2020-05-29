@@ -431,7 +431,7 @@ class F(Cond, FunctionOperatorsMixin, metaclass=FMeta):
 
     @staticmethod
     def toQuarter(d, timezone=''):
-        return F('toQuarter', d, timezone)
+        return F('toQuarter', d, timezone) if timezone else F('toQuarter', d)
 
     @staticmethod
     def toMonth(d):

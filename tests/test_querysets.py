@@ -471,6 +471,8 @@ class AggregateTestCase(TestCaseWithData):
         self.assertEqual(qs.conditions_as_sql(), 'the__next__number > 1')
 
     def test_limit_by(self):
+        if self.database.server_version < (19, 17):
+            raise unittest.SkipTest('ClickHouse version too old')
         # Test without offset
         qs = Person.objects_in(self.database).aggregate('first_name', 'last_name', 'height', n='count()').\
             order_by('first_name', '-height').limit_by(1, 'first_name')
