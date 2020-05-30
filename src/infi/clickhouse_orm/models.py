@@ -3,7 +3,6 @@ import sys
 from collections import OrderedDict
 from logging import getLogger
 
-from six import reraise
 import pytz
 
 from .fields import Field, StringField
