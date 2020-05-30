@@ -1,6 +1,10 @@
 Change Log
 ==========
 
+v2.0.1
+------
+- Remove unnecessary import of `six`
+
 v2.0.0
 ------
 - Dropped support for Python 2.x
