@@ -7,7 +7,7 @@ class IndexesTest(unittest.TestCase):
 
     def setUp(self):
         self.database = Database('test-db', log_statements=True)
-        if self.database.server_version < (19, 3, 3):
+        if self.database.server_version < (20, 1, 2, 4):
             raise unittest.SkipTest('ClickHouse version too old')
 
     def tearDown(self):

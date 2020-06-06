@@ -127,7 +127,7 @@ class MigrationsTestCase(unittest.TestCase):
             with self.assertRaises(ServerError):
                 self.database.insert([ModelWithConstraints(f1=99, f2='x')])
 
-        if self.database.server_version < (19, 3, 3):
+        if self.database.server_version < (20, 1, 2, 4):
             # Creating indexes
             self.database.migrate('tests.sample_migrations', 18)
             self.assertTrue(self.table_exists(ModelWithIndex))
