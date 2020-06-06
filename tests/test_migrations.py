@@ -36,7 +36,7 @@ class MigrationsTestCase(unittest.TestCase):
         return [(row.name, row.type) for row in self.database.select(query)]
 
     def get_table_def(self, model_class):
-        return self.database.raw('SHOW CREATE TABLE $db.`%s`' % self.table_name)
+        return self.database.raw('SHOW CREATE TABLE $db.`%s`' % model_class.table_name())
 
     def test_migrations(self):
         # Creation and deletion of table
@@ -131,13 +131,13 @@ class MigrationsTestCase(unittest.TestCase):
             # Creating indexes
             self.database.migrate('tests.sample_migrations', 18)
             self.assertTrue(self.table_exists(ModelWithIndex))
-            self.assertIn('INDEX `index`', self.get_table_def())
-            self.assertIn('INDEX another_index', self.get_table_def())
+            self.assertIn('INDEX index ', self.get_table_def(ModelWithIndex))
+            self.assertIn('INDEX another_index ', self.get_table_def(ModelWithIndex))
             # Modifying indexes
             self.database.migrate('tests.sample_migrations', 19)
-            self.assertNotIn('INDEX `index`', self.get_table_def())
-            self.assertIn('INDEX index2', self.get_table_def())
-            self.assertIn('INDEX another_index', self.get_table_def())
+            self.assertNotIn('INDEX index ', self.get_table_def(ModelWithIndex))
+            self.assertIn('INDEX index2 ', self.get_table_def(ModelWithIndex))
+            self.assertIn('INDEX another_index ', self.get_table_def(ModelWithIndex))
 
 
 # Several different models with the same table name, to simulate a table that changes over time

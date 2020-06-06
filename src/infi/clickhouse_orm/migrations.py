@@ -206,7 +206,7 @@ class AlterIndexes(ModelOperation):
         # Reindex
         if self.reindex:
             logger.info('        Build indexes on table')
-            self.database.raw('OPTIMIZE TABLE $db.`%s` FINAL' % self.table_name)
+            database.raw('OPTIMIZE TABLE $db.`%s` FINAL' % self.table_name)
 
     def _get_index_names(self, database):
         '''
