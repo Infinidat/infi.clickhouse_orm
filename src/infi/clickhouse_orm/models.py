@@ -1,6 +1,7 @@
 from __future__ import unicode_literals
 import sys
 from collections import OrderedDict
+from itertools import chain
 from logging import getLogger
 
 import pytz
@@ -14,6 +15,31 @@ from .engines import Merge, Distributed
 logger = getLogger('clickhouse_orm')
 
 
+
+class Constraint():
+    '''
+    Defines a model constraint.
+    '''
+
+    name   = None # this is set by the parent model
+    parent = None # this is set by the parent model
+
+    def __init__(self, expr):
+        '''
+        Initializer. Expects an expression that ClickHouse will verify when inserting data.
+        '''
+        self.expr = expr
+
+    def create_table_sql(self):
+        '''
+        Returns the SQL statement for defining this constraint during table creation.
+        '''
+        return 'CONSTRAINT `%s` CHECK %s' % (self.name, self.expr)
+
+    def str(self):
+        return self.create_table_sql()
+
+
 class ModelBase(type):
     '''
     A metaclass for ORM models. It adds the _fields list to model classes.
@@ -22,17 +48,20 @@ class ModelBase(type):
     ad_hoc_model_cache = {}
 
     def __new__(cls, name, bases, attrs):
-        # Collect fields from parent classes
-        base_fields = dict()
+        # Collect fields and constraints from parent classes
+        fields = dict()
+        constraints = dict()
         for base in bases:
             if isinstance(base, ModelBase):
-                base_fields.update(base._fields)
+                fields.update(base._fields)
+                constraints.update(base._constraints)
 
-        fields = base_fields
-
-        # Build a list of fields, in the order they were listed in the class
+        # Build a list of (name, field) tuples, in the order they were listed in the class
         fields.update({n: f for n, f in attrs.items() if isinstance(f, Field)})
         fields = sorted(fields.items(), key=lambda item: item[1].creation_counter)
+
+        # Build a list of constraints
+        constraints.update({n: c for n, c in attrs.items() if isinstance(c, Constraint)})
 
         # Build a dictionary of default values
         defaults = {}
@@ -49,16 +78,17 @@ class ModelBase(type):
         attrs = dict(
             attrs,
             _fields=OrderedDict(fields),
+            _constraints=constraints,
             _writable_fields=OrderedDict([f for f in fields if not f[1].readonly]),
             _defaults=defaults,
             _has_funcs_as_defaults=has_funcs_as_defaults
         )
         model = super(ModelBase, cls).__new__(cls, str(name), bases, attrs)
 
-        # Let each field know its parent and its own name
-        for n, f in fields:
-            setattr(f, 'parent', model)
-            setattr(f, 'name', n)
+        # Let each field and constraint know its parent and its own name
+        for n, obj in chain(fields, constraints.items()):
+            setattr(obj, 'parent', model)
+            setattr(obj, 'name', n)
 
         return model
 
@@ -222,16 +252,26 @@ class Model(metaclass=ModelBase):
     @classmethod
     def create_table_sql(cls, db):
         '''
-        Returns the SQL command for creating a table for this model.
+        Returns the SQL statement for creating a table for this model.
         '''
         parts = ['CREATE TABLE IF NOT EXISTS `%s`.`%s` (' % (db.db_name, cls.table_name())]
         cols = []
         for name, field in cls.fields().items():
             cols.append('    %s %s' % (name, field.get_sql(db=db)))
         parts.append(',\n'.join(cols))
+        parts.append(cls._constraints_sql())
         parts.append(')')
         parts.append('ENGINE = ' + cls.engine.create_table_sql(db))
         return '\n'.join(parts)
+
+    @classmethod
+    def _constraints_sql(cls):
+        '''
+        Returns this model's contraints as SQL.
+        '''
+        if not cls._constraints:
+            return ''
+        return ',' + ',\n'.join(c.create_table_sql() for c in cls._constraints.values())
 
     @classmethod
     def drop_table_sql(cls, db):
@@ -348,7 +388,7 @@ class BufferModel(Model):
     @classmethod
     def create_table_sql(cls, db):
         '''
-        Returns the SQL command for creating a table for this model.
+        Returns the SQL statement for creating a table for this model.
         '''
         parts = ['CREATE TABLE IF NOT EXISTS `%s`.`%s` AS `%s`.`%s`' % (db.db_name, cls.table_name(), db.db_name,
                                                                         cls.engine.main_model.table_name())]
@@ -370,6 +410,9 @@ class MergeModel(Model):
 
     @classmethod
     def create_table_sql(cls, db):
+        '''
+        Returns the SQL statement for creating a table for this model.
+        '''
         assert isinstance(cls.engine, Merge), "engine must be an instance of engines.Merge"
         parts = ['CREATE TABLE IF NOT EXISTS `%s`.`%s` (' % (db.db_name, cls.table_name())]
         cols = []
@@ -377,6 +420,7 @@ class MergeModel(Model):
             if name != '_table':
                 cols.append('    %s %s' % (name, field.get_sql(db=db)))
         parts.append(',\n'.join(cols))
+        parts.append(cls._constraints_sql())
         parts.append(')')
         parts.append('ENGINE = ' + cls.engine.create_table_sql(db))
         return '\n'.join(parts)
@@ -386,10 +430,14 @@ class MergeModel(Model):
 
 class DistributedModel(Model):
     """
-    Model for Distributed engine
+    Model class for use with a `Distributed` engine.
     """
 
     def set_database(self, db):
+        '''
+        Sets the `Database` that this model instance belongs to.
+        This is done automatically when the instance is read from the database or written to it.
+        '''
         assert isinstance(self.engine, Distributed), "engine must be an instance of engines.Distributed"
         res = super(DistributedModel, self).set_database(db)
         return res
@@ -447,6 +495,9 @@ class DistributedModel(Model):
 
     @classmethod
     def create_table_sql(cls, db):
+        '''
+        Returns the SQL statement for creating a table for this model.
+        '''
         assert isinstance(cls.engine, Distributed), "engine must be engines.Distributed instance"
 
         cls.fix_engine_table()
@@ -459,4 +510,4 @@ class DistributedModel(Model):
 
 
 # Expose only relevant classes in import *
-__all__ = get_subclass_names(locals(), Model)
+__all__ = get_subclass_names(locals(), (Model, Constraint))

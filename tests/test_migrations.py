@@ -1,8 +1,8 @@
 from __future__ import unicode_literals
 import unittest
 
-from infi.clickhouse_orm.database import Database
-from infi.clickhouse_orm.models import Model, BufferModel
+from infi.clickhouse_orm.database import Database, ServerError
+from infi.clickhouse_orm.models import Model, BufferModel, Constraint
 from infi.clickhouse_orm.fields import *
 from infi.clickhouse_orm.engines import *
 from infi.clickhouse_orm.migrations import MigrationHistory
@@ -94,6 +94,7 @@ class MigrationsTestCase(unittest.TestCase):
         self.assertTrue(self.tableExists(AliasModel1))
         self.assertEqual(self.getTableFields(AliasModel1),
                           [('date', 'Date'), ('int_field', 'Int8'), ('date_alias', 'Date'), ('int_field_plus_one', 'Int8')])
+        # Codecs and low cardinality
         self.database.migrate('tests.sample_migrations', 15)
         self.assertTrue(self.tableExists(Model4_compressed))
         if self.database.has_low_cardinality_support:
@@ -106,6 +107,22 @@ class MigrationsTestCase(unittest.TestCase):
                              [('date', 'Date'), ('f1', 'Int32'), ('f3', 'Float32'), ('f2', 'String'), ('f4', 'Nullable(String)'),
                               ('f5', 'Array(UInt64)')])
 
+        if self.database.server_version >= (19, 14, 3, 3):
+            # Adding constraints
+            self.database.migrate('tests.sample_migrations', 16)
+            self.assertTrue(self.tableExists(ModelWithConstraints))
+            self.database.insert([ModelWithConstraints(f1=101, f2='a')])
+            with self.assertRaises(ServerError):
+                self.database.insert([ModelWithConstraints(f1=99, f2='a')])
+            with self.assertRaises(ServerError):
+                self.database.insert([ModelWithConstraints(f1=101, f2='x')])
+            # Modifying constraints
+            self.database.migrate('tests.sample_migrations', 17)
+            self.database.insert([ModelWithConstraints(f1=99, f2='a')])
+            with self.assertRaises(ServerError):
+                self.database.insert([ModelWithConstraints(f1=101, f2='a')])
+            with self.assertRaises(ServerError):
+                self.database.insert([ModelWithConstraints(f1=99, f2='x')])
 
 # Several different models with the same table name, to simulate a table that changes over time
 
@@ -294,3 +311,36 @@ class Model2LowCardinality(Model):
     @classmethod
     def table_name(cls):
         return 'mig'
+
+
+class ModelWithConstraints(Model):
+
+    date = DateField()
+    f1 = Int32Field()
+    f2 = StringField()
+
+    constraint = Constraint(f2.isIn(['a', 'b', 'c'])) # check reserved keyword as constraint name
+    f1_constraint = Constraint(f1 > 100)
+
+    engine = MergeTree('date', ('date',))
+
+    @classmethod
+    def table_name(cls):
+        return 'modelwithconstraints'
+
+
+class ModelWithConstraints2(Model):
+
+    date = DateField()
+    f1 = Int32Field()
+    f2 = StringField()
+
+    constraint = Constraint(f2.isIn(['a', 'b', 'c']))
+    f1_constraint_new = Constraint(f1 < 100)
+
+    engine = MergeTree('date', ('date',))
+
+    @classmethod
+    def table_name(cls):
+        return 'modelwithconstraints'
+
