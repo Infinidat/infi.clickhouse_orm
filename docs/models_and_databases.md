@@ -75,6 +75,25 @@ The table name used for the model is its class name, converted to lowercase. To 
         def table_name(cls):
             return 'people'
 
+### Model Constraints
+
+It is possible to define constraints which ClickHouse verifies when data is inserted. Trying to insert invalid records will raise a `ServerError`. Each constraint has a name and an expression to validate. For example:
+
+    from infi.clickhouse_orm import Model, Constraint, F, StringField, DateField, Float32Field, MergeTree
+
+    class Person(Model):
+
+        first_name = StringField()
+        last_name = StringField()
+        birthday = DateField()
+        height = Float32Field()
+
+        # Ensure that the birthday is not a future date
+        birthday_is_in_the_past = Constraint(birthday <= F.today())
+
+        engine = MergeTree('birthday', ('first_name', 'last_name', 'birthday'))
+
+
 Using Models
 ------------
 

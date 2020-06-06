@@ -178,7 +178,7 @@ Unrecognized field names will cause an `AttributeError`.
 #### Model.create_table_sql(db)
 
 
-Returns the SQL command for creating a table for this model.
+Returns the SQL statement for creating a table for this model.
 
 
 #### Model.drop_table_sql(db)
@@ -308,7 +308,7 @@ Unrecognized field names will cause an `AttributeError`.
 #### BufferModel.create_table_sql(db)
 
 
-Returns the SQL command for creating a table for this model.
+Returns the SQL statement for creating a table for this model.
 
 
 #### BufferModel.drop_table_sql(db)
@@ -422,12 +422,147 @@ Returns the instance's column values as a tab-separated line. A newline is not i
 - `include_readonly`: if false, returns only fields that can be inserted into database.
 
 
+### MergeModel
+
+Extends Model
+
+
+Model for Merge engine
+Predefines virtual _table column an controls that rows can't be inserted to this table type
+https://clickhouse.tech/docs/en/single/index.html#document-table_engines/merge
+
+#### MergeModel(**kwargs)
+
+
+Creates a model instance, using keyword arguments as field values.
+Since values are immediately converted to their Pythonic type,
+invalid values will cause a `ValueError` to be raised.
+Unrecognized field names will cause an `AttributeError`.
+
+
+#### MergeModel.create_table_sql(db)
+
+
+Returns the SQL statement for creating a table for this model.
+
+
+#### MergeModel.drop_table_sql(db)
+
+
+Returns the SQL command for deleting this model's table.
+
+
+#### MergeModel.fields(writable=False)
+
+
+Returns an `OrderedDict` of the model's fields (from name to `Field` instance).
+If `writable` is true, only writable fields are included.
+Callers should not modify the dictionary.
+
+
+#### MergeModel.from_tsv(line, field_names, timezone_in_use=UTC, database=None)
+
+
+Create a model instance from a tab-separated line. The line may or may not include a newline.
+The `field_names` list must match the fields defined in the model, but does not have to include all of them.
+
+- `line`: the TSV-formatted data.
+- `field_names`: names of the model fields in the data.
+- `timezone_in_use`: the timezone to use when parsing dates and datetimes.
+- `database`: if given, sets the database that this instance belongs to.
+
+
+#### get_database()
+
+
+Gets the `Database` that this model instance belongs to.
+Returns `None` unless the instance was read from the database or written to it.
+
+
+#### get_field(name)
+
+
+Gets a `Field` instance given its name, or `None` if not found.
+
+
+#### MergeModel.has_funcs_as_defaults()
+
+
+Return True if some of the model's fields use a function expression
+as a default value. This requires special handling when inserting instances.
+
+
+#### MergeModel.is_read_only()
+
+
+Returns true if the model is marked as read only.
+
+
+#### MergeModel.is_system_model()
+
+
+Returns true if the model represents a system table.
+
+
+#### MergeModel.objects_in(database)
+
+
+Returns a `QuerySet` for selecting instances of this model class.
+
+
+#### set_database(db)
+
+
+Sets the `Database` that this model instance belongs to.
+This is done automatically when the instance is read from the database or written to it.
+
+
+#### MergeModel.table_name()
+
+
+Returns the model's database table name. By default this is the
+class name converted to lowercase. Override this if you want to use
+a different table name.
+
+
+#### to_db_string()
+
+
+Returns the instance as a bytestring ready to be inserted into the database.
+
+
+#### to_dict(include_readonly=True, field_names=None)
+
+
+Returns the instance's column values as a dict.
+
+- `include_readonly`: if false, returns only fields that can be inserted into database.
+- `field_names`: an iterable of field names to return (optional)
+
+
+#### to_tskv(include_readonly=True)
+
+
+Returns the instance's column keys and values as a tab-separated line. A newline is not included.
+Fields that were not assigned a value are omitted.
+
+- `include_readonly`: if false, returns only fields that can be inserted into database.
+
+
+#### to_tsv(include_readonly=True)
+
+
+Returns the instance's column values as a tab-separated line. A newline is not included.
+
+- `include_readonly`: if false, returns only fields that can be inserted into database.
+
+
 ### DistributedModel
 
 Extends Model
 
 
-Model for Distributed engine
+Model class for use with a `Distributed` engine.
 
 #### DistributedModel(**kwargs)
 
@@ -439,6 +574,9 @@ Unrecognized field names will cause an `AttributeError`.
 
 
 #### DistributedModel.create_table_sql(db)
+
+
+Returns the SQL statement for creating a table for this model.
 
 
 #### DistributedModel.drop_table_sql(db)
@@ -541,6 +679,10 @@ Returns a `QuerySet` for selecting instances of this model class.
 #### set_database(db)
 
 
+Sets the `Database` that this model instance belongs to.
+This is done automatically when the instance is read from the database or written to it.
+
+
 #### DistributedModel.table_name()
 
 
@@ -579,6 +721,26 @@ Fields that were not assigned a value are omitted.
 Returns the instance's column values as a tab-separated line. A newline is not included.
 
 - `include_readonly`: if false, returns only fields that can be inserted into database.
+
+
+### Constraint
+
+
+Defines a model constraint.
+
+#### Constraint(expr)
+
+
+Initializer. Requires an expression that ClickHouse will verify when inserting data.
+
+
+#### create_table_sql()
+
+
+Returns the SQL statement for defining this constraint on table creation.
+
+
+#### str()
 
 
 infi.clickhouse_orm.fields

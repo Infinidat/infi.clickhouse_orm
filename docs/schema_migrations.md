@@ -33,19 +33,19 @@ Each migration file is expected to contain a list of `operations`, for example:
 The following operations are supported:
 
 
-**CreateTable**
+### CreateTable
 
 A migration operation that creates a table for a given model class. If the table already exists, the operation does nothing.
 
 In case the model class is a `BufferModel`, the operation first creates the underlying on-disk table, and then creates the buffer table.
 
 
-**DropTable**
+### DropTable
 
 A migration operation that drops the table of a given model class. If the table does not exist, the operation does nothing.
 
 
-**AlterTable**
+### AlterTable
 
 A migration operation that compares the table of a given model class to the model’s fields, and alters the table to match the model. The operation can:
 
@@ -56,14 +56,19 @@ A migration operation that compares the table of a given model class to the mode
 Default values are not altered by this operation.
 
 
-**AlterTableWithBuffer**
+### AlterTableWithBuffer
 
 A compound migration operation for altering a buffer table and its underlying on-disk table. The buffer table is dropped, the on-disk table is altered, and then the buffer table is re-created. This is the procedure recommended in the ClickHouse documentation for handling scenarios in which the underlying table needs to be modified.
 
 Applying this migration operation to a regular table has the same effect as an `AlterTable` operation.
 
 
-**RunPython**
+### AlterConstraints
+
+A migration operation that adds new constraints from the model to the database table, and drops obsolete ones. Constraints are identified by their names, so a change in an existing constraint will not be detected unless its name was changed too. ClickHouse does not check that the constraints hold for existing data in the table.
+
+
+### RunPython
 
 A migration operation that runs a Python function. The function receives the `Database` instance to operate on.
 
@@ -77,9 +82,9 @@ A migration operation that runs a Python function. The function receives the `Da
     ]
 
 
-**RunSQL**
+### RunSQL
 
-A migration operation that runs raw SQL queries. It expects a string containing an SQL query, or an array of SQL-query strings.
+A migration operation that runs raw SQL statements. It expects a string containing an SQL statements, or a list of statements.
 
 Example:
 
