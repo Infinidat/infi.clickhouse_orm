@@ -4,10 +4,12 @@ from infi.clickhouse_orm import *
 from .base_test_with_data import Person
 
 
-class ArrayFieldsTest(unittest.TestCase):
+class ConstraintsTest(unittest.TestCase):
 
     def setUp(self):
         self.database = Database('test-db', log_statements=True)
+        if self.database.server_version < (19, 14, 3, 3):
+            raise unittest.SkipTest('ClickHouse version too old')
         self.database.create_table(PersonWithConstraints)
 
     def tearDown(self):
@@ -19,9 +21,6 @@ class ArrayFieldsTest(unittest.TestCase):
         ])
 
     def test_insert_invalid_values(self):
-        if self.database.server_version < (19, 14, 3, 3):
-            raise unittest.SkipTest('ClickHouse version too old')
-
         with self.assertRaises(ServerError) as e:
             self.database.insert([
                 PersonWithConstraints(first_name="Mike", last_name="Caruzo", birthday="2100-01-01", height=1.66)
