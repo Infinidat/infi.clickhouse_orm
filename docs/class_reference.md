@@ -731,16 +731,84 @@ Defines a model constraint.
 #### Constraint(expr)
 
 
-Initializer. Requires an expression that ClickHouse will verify when inserting data.
+Initializer. Expects an expression that ClickHouse will verify when inserting data.
 
 
 #### create_table_sql()
 
 
-Returns the SQL statement for defining this constraint on table creation.
+Returns the SQL statement for defining this constraint during table creation.
 
 
-#### str()
+### Index
+
+
+Defines a data-skipping index.
+
+#### Index(expr, type, granularity)
+
+
+Initializer.
+
+- `expr` - a column, expression, or tuple of columns and expressions to index.
+- `type` - the index type. Use one of the following methods to specify the type:
+  `Index.minmax`, `Index.set`, `Index.ngrambf_v1`, `Index.tokenbf_v1` or `Index.bloom_filter`.
+- `granularity` - index block size (number of multiples of the `index_granularity` defined by the engine).
+
+
+#### bloom_filter()
+
+
+An index that stores a Bloom filter containing values of the index expression.
+
+- `false_positive` - the probability (between 0 and 1) of receiving a false positive
+  response from the filter
+
+
+#### create_table_sql()
+
+
+Returns the SQL statement for defining this index during table creation.
+
+
+#### minmax()
+
+
+An index that stores extremes of the specified expression (if the expression is tuple, then it stores
+extremes for each element of tuple). The stored info is used for skipping blocks of data like the primary key.
+
+
+#### ngrambf_v1(size_of_bloom_filter_in_bytes, number_of_hash_functions, random_seed)
+
+
+An index that stores a Bloom filter containing all ngrams from a block of data.
+Works only with strings. Can be used for optimization of equals, like and in expressions.
+
+- `n` — ngram size
+- `size_of_bloom_filter_in_bytes` — Bloom filter size in bytes (you can use large values here,
+   for example 256 or 512, because it can be compressed well).
+- `number_of_hash_functions` — The number of hash functions used in the Bloom filter.
+- `random_seed` — The seed for Bloom filter hash functions.
+
+
+#### set()
+
+
+An index that stores unique values of the specified expression (no more than max_rows rows,
+or unlimited if max_rows=0). Uses the values to check if the WHERE expression is not satisfiable
+on a block of data.
+
+
+#### tokenbf_v1(number_of_hash_functions, random_seed)
+
+
+An index that stores a Bloom filter containing string tokens. Tokens are sequences
+separated by non-alphanumeric characters.
+
+- `size_of_bloom_filter_in_bytes` — Bloom filter size in bytes (you can use large values here,
+   for example 256 or 512, because it can be compressed well).
+- `number_of_hash_functions` — The number of hash functions used in the Bloom filter.
+- `random_seed` — The seed for Bloom filter hash functions.
 
 
 infi.clickhouse_orm.fields

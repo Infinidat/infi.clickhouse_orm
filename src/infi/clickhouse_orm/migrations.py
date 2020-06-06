@@ -26,12 +26,13 @@ class ModelOperation(Operation):
         Initializer.
         '''
         self.model_class = model_class
+        self.table_name = model_class.table_name()
 
     def _alter_table(self, database, cmd):
         '''
         Utility for running ALTER TABLE commands.
         '''
-        cmd = "ALTER TABLE $db.`%s` %s" % (self.model_class.table_name(), cmd)
+        cmd = "ALTER TABLE $db.`%s` %s" % (self.table_name, cmd)
         logger.debug(cmd)
         database.raw(cmd)
 
@@ -42,7 +43,7 @@ class CreateTable(ModelOperation):
     '''
 
     def apply(self, database):
-        logger.info('    Create table %s', self.model_class.table_name())
+        logger.info('    Create table %s', self.table_name)
         if issubclass(self.model_class, BufferModel):
             database.create_table(self.model_class.engine.main_model)
         database.create_table(self.model_class)
@@ -59,11 +60,11 @@ class AlterTable(ModelOperation):
     '''
 
     def _get_table_fields(self, database):
-        query = "DESC `%s`.`%s`" % (database.db_name, self.model_class.table_name())
+        query = "DESC `%s`.`%s`" % (database.db_name, self.table_name)
         return [(row.name, row.type) for row in database.select(query)]
 
     def apply(self, database):
-        logger.info('    Alter table %s', self.model_class.table_name())
+        logger.info('    Alter table %s', self.table_name)
 
         # Note that MATERIALIZED and ALIAS fields are always at the end of the DESC,
         # ADD COLUMN ... AFTER doesn't affect it
@@ -131,7 +132,7 @@ class DropTable(ModelOperation):
     '''
 
     def apply(self, database):
-        logger.info('    Drop table %s', self.model_class.table_name())
+        logger.info('    Drop table %s', self.table_name)
         database.drop_table(self.model_class)
 
 
@@ -144,7 +145,7 @@ class AlterConstraints(ModelOperation):
     '''
 
     def apply(self, database):
-        logger.info('    Alter constraints for %s', self.model_class.table_name())
+        logger.info('    Alter constraints for %s', self.table_name)
         existing = self._get_constraint_names(database)
         # Go over constraints in the model
         for constraint in self.model_class._constraints.values():
@@ -164,8 +165,56 @@ class AlterConstraints(ModelOperation):
         Returns a set containing the names of existing constraints in the table.
         '''
         import re
-        create_table_sql = database.raw('SHOW CREATE TABLE $db.`%s`' % self.model_class.table_name())
-        matches = re.findall(r'\sCONSTRAINT\s+`?(.+?)`?\s+CHECK\s', create_table_sql, flags=re.IGNORECASE)
+        table_def = database.raw('SHOW CREATE TABLE $db.`%s`' % self.table_name)
+        matches = re.findall(r'\sCONSTRAINT\s+`?(.+?)`?\s+CHECK\s', table_def)
+        return set(matches)
+
+
+class AlterIndexes(ModelOperation):
+    '''
+    A migration operation that adds new indexes from the model to the database
+    table, and drops obsolete ones. Indexes are identified by their names, so
+    a change in an existing index will not be detected unless its name was changed too.
+    '''
+
+    def __init__(self, model_class, reindex=False):
+        '''
+        Initializer.
+        By default ClickHouse does not build indexes over existing data, only for
+        new data. Passing `reindex=True` will run `OPTIMIZE TABLE` in order to build
+        the indexes over the existing data.
+        '''
+        super().__init__(model_class)
+        self.reindex = reindex
+
+    def apply(self, database):
+        logger.info('    Alter indexes for %s', self.table_name)
+        existing = self._get_index_names(database)
+        logger.info(existing)
+        # Go over indexes in the model
+        for index in self.model_class._indexes.values():
+            # Check if it's a new index
+            if index.name not in existing:
+                logger.info('        Add index %s', index.name)
+                self._alter_table(database, 'ADD %s' % index.create_table_sql())
+            else:
+                existing.remove(index.name)
+        # Remaining indexes in `existing` are obsolete
+        for name in existing:
+            logger.info('        Drop index %s', name)
+            self._alter_table(database, 'DROP INDEX `%s`' % name)
+        # Reindex
+        if self.reindex:
+            logger.info('        Build indexes on table')
+            self.database.raw('OPTIMIZE TABLE $db.`%s` FINAL' % self.table_name)
+
+    def _get_index_names(self, database):
+        '''
+        Returns a set containing the names of existing indexes in the table.
+        '''
+        import re
+        table_def = database.raw('SHOW CREATE TABLE $db.`%s`' % self.table_name)
+        matches = re.findall(r'\sINDEX\s+`?(.+?)`?\s+', table_def)
         return set(matches)
 
 

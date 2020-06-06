@@ -4,6 +4,7 @@ Change Log
 Unreleased
 ----------
 - Support for model constraints
+- Support for data skipping indexes
 
 v2.0.1
 ------
