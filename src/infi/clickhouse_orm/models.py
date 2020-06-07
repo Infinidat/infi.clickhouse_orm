@@ -6,7 +6,7 @@ from logging import getLogger
 import pytz
 
 from .fields import Field, StringField
-from .utils import parse_tsv, NO_VALUE, get_subclass_names
+from .utils import parse_tsv, NO_VALUE, get_subclass_names, unescape
 from .query import QuerySet
 from .funcs import F
 from .engines import Merge, Distributed
@@ -89,6 +89,13 @@ class ModelBase(type):
         if db_type.startswith('DateTime('):
             # Some functions return DateTimeField with timezone in brackets
             return orm_fields.DateTimeField()
+        # DateTime with timezone
+        if db_type.startswith('DateTime64('):
+            precision, *timezone = [s.strip() for s in db_type[11:-1].split(',')]
+            return orm_fields.DateTime64Field(
+                precision=int(precision),
+                timezone=timezone[0][1:-1] if timezone else None
+            )
         # Arrays
         if db_type.startswith('Array'):
             inner_field = cls.create_ad_hoc_field(db_type[6 : -1])

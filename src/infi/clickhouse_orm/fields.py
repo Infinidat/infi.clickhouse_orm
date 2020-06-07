@@ -1,11 +1,14 @@
 from __future__ import unicode_literals
 import datetime
+from typing import List
+
 import iso8601
 import pytz
 from calendar import timegm
 from decimal import Decimal, localcontext
 from uuid import UUID
 from logging import getLogger
+from pytz import UnknownTimeZoneError
 from .utils import escape, parse_array, comma_join, string_or_func, get_subclass_names
 from .funcs import F, FunctionOperatorsMixin
 from ipaddress import IPv4Address, IPv6Address
@@ -86,9 +89,16 @@ class Field(FunctionOperatorsMixin):
         - `db`: Database, used for checking supported features.
         '''
         sql = self.db_type
+        args = self.get_db_type_args()
+        if args:
+            sql += '(%s)' % ', '.join(args)
         if with_default_expression:
             sql += self._extra_params(db)
         return sql
+
+    def get_db_type_args(self) -> List[str]:
+        """Returns field type arguments"""
+        return []
 
     def _extra_params(self, db):
         sql = ''
@@ -217,6 +227,38 @@ class DateTimeField(Field):
 
     def to_db_string(self, value, quote=True):
         return escape('%010d' % timegm(value.utctimetuple()), quote)
+
+
+class DateTime64Field(DateTimeField):
+    db_type = 'DateTime64'
+
+    def __init__(self, default=None, alias=None, materialized=None, readonly=None, codec=None,
+                 precision: int = 6, timezone: str = None):
+        super().__init__(default, alias, materialized, readonly, codec)
+        assert precision is None or isinstance(precision, int), 'Precision must be int type'
+        assert timezone is None or isinstance(timezone, str), 'Timezone must be string type'
+        if timezone:
+            try:
+                pytz.timezone(timezone)
+            except UnknownTimeZoneError:
+                raise Exception('Timezone must be a valid IANA timezone identifier')
+        self.precision = precision
+        self.timezone = timezone
+
+    def get_db_type_args(self) -> List[str]:
+        args = [str(self.precision)]
+        if self.timezone:
+            args.append(escape(self.timezone))
+        return args
+
+    def to_db_string(self, value: datetime.datetime, quote=True):
+        """
+        Returns the field's value prepared for writing to the database
+
+        Returns string in 0000000000.000000 format, where remainder digits count is equal to precision
+        """
+        width = 11 + self.precision
+        return escape(f'{value.timestamp():0{width}.{self.precision}f}', quote)
 
 
 class BaseIntField(Field):

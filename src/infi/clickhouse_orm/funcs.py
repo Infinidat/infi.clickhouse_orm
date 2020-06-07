@@ -768,6 +768,11 @@ class F(Cond, FunctionOperatorsMixin, metaclass=FMeta):
         return F('toDateTime', x)
 
     @staticmethod
+    @type_conversion
+    def toDateTime64(x, precision, timezone=NO_VALUE):
+        return F('toDateTime64', x, precision, timezone)
+
+    @staticmethod
     def toString(x):
         return F('toString', x)
 

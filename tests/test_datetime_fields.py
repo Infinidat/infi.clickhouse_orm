@@ -20,8 +20,14 @@ class DateFieldsTest(unittest.TestCase):
 
     def test_ad_hoc_model(self):
         self.database.insert([
-            ModelWithDate(date_field='2016-08-30', datetime_field='2016-08-30 03:50:00'),
-            ModelWithDate(date_field='2016-08-31', datetime_field='2016-08-31 01:30:00')
+            ModelWithDate(
+                date_field='2016-08-30',
+                datetime_field='2016-08-30 03:50:00',
+                datetime64_field='2016-08-30 03:50:00.001'),
+            ModelWithDate(
+                date_field='2016-08-31',
+                datetime_field='2016-08-31 01:30:00',
+                datetime64_field='2016-08-31 01:30:00.002')
         ])
 
         # toStartOfHour returns DateTime('Asia/Yekaterinburg') in my case, so I test it here to
@@ -30,15 +36,17 @@ class DateFieldsTest(unittest.TestCase):
         self.assertEqual(len(results), 2)
         self.assertEqual(results[0].date_field, datetime.date(2016, 8, 30))
         self.assertEqual(results[0].datetime_field, datetime.datetime(2016, 8, 30, 3, 50, 0, tzinfo=pytz.UTC))
+        self.assertEqual(results[0].datetime64_field, datetime.datetime(2016, 8, 30, 3, 50, 0, 1000, tzinfo=pytz.UTC))
         self.assertEqual(results[0].hour_start, datetime.datetime(2016, 8, 30, 3, 0, 0, tzinfo=pytz.UTC))
         self.assertEqual(results[1].date_field, datetime.date(2016, 8, 31))
         self.assertEqual(results[1].datetime_field, datetime.datetime(2016, 8, 31, 1, 30, 0, tzinfo=pytz.UTC))
+        self.assertEqual(results[1].datetime64_field, datetime.datetime(2016, 8, 31, 1, 30, 0, 2000, tzinfo=pytz.UTC))
         self.assertEqual(results[1].hour_start, datetime.datetime(2016, 8, 31, 1, 0, 0, tzinfo=pytz.UTC))
 
 
 class ModelWithDate(Model):
-
     date_field = DateField()
     datetime_field = DateTimeField()
+    datetime64_field = DateTime64Field()
 
     engine = MergeTree('date_field', ('date_field',))

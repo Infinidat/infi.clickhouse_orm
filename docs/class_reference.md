@@ -635,6 +635,13 @@ Extends Field
 #### DateTimeField(default=None, alias=None, materialized=None, readonly=None, codec=None)
 
 
+### DateTime64Field
+
+Extends DateTimeField
+
+#### DateTime64Field(default=None, alias=None, materialized=None, readonly=None, codec=None, precision=6, timezone=None)
+
+
 ### Decimal128Field
 
 Extends DecimalField
