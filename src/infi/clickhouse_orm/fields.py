@@ -238,10 +238,7 @@ class DateTime64Field(DateTimeField):
         assert precision is None or isinstance(precision, int), 'Precision must be int type'
         assert timezone is None or isinstance(timezone, str), 'Timezone must be string type'
         if timezone:
-            try:
-                pytz.timezone(timezone)
-            except UnknownTimeZoneError:
-                raise Exception('Timezone must be a valid IANA timezone identifier')
+            pytz.timezone(timezone)
         self.precision = precision
         self.timezone = timezone
 
