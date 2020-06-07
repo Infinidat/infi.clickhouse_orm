@@ -1,9 +1,8 @@
-from datetime import date, datetime, tzinfo, timedelta
 from functools import wraps
 from inspect import signature, Parameter
 from types import FunctionType
 
-from .utils import is_iterable, comma_join, NO_VALUE
+from .utils import is_iterable, comma_join, NO_VALUE, arg_to_sql
 from .query import Cond, QuerySet
 
 
@@ -263,42 +262,8 @@ class F(Cond, FunctionOperatorsMixin, metaclass=FMeta):
         else:
             prefix = self.name
             sep = ', '
-        arg_strs = (F._arg_to_sql(arg) for arg in self.args if arg != NO_VALUE)
+        arg_strs = (arg_to_sql(arg) for arg in self.args if arg != NO_VALUE)
         return prefix + '(' + sep.join(arg_strs) + ')'
-
-    @staticmethod
-    def _arg_to_sql(arg):
-        """
-        Converts a function argument to SQL string according to its type.
-        Supports functions, model fields, strings, dates, datetimes, timedeltas, booleans,
-        None, numbers, timezones, arrays/iterables.
-        """
-        from .fields import Field, StringField, DateTimeField, DateField
-        if isinstance(arg, F):
-            return arg.to_sql()
-        if isinstance(arg, Field):
-            return "`%s`" % arg
-        if isinstance(arg, str):
-            return StringField().to_db_string(arg)
-        if isinstance(arg, datetime):
-            return "toDateTime(%s)" % DateTimeField().to_db_string(arg)
-        if isinstance(arg, date):
-            return "toDate('%s')" % arg.isoformat()
-        if isinstance(arg, timedelta):
-            return "toIntervalSecond(%d)" % int(arg.total_seconds())
-        if isinstance(arg, bool):
-            return str(int(arg))
-        if isinstance(arg, tzinfo):
-            return StringField().to_db_string(arg.tzname(None))
-        if arg is None:
-            return 'NULL'
-        if isinstance(arg, QuerySet):
-            return "(%s)" % arg
-        if isinstance(arg, tuple):
-            return '(' + comma_join(F._arg_to_sql(x) for x in arg) + ')'
-        if is_iterable(arg):
-            return '[' + comma_join(F._arg_to_sql(x) for x in arg) + ']'
-        return str(arg)
 
     # Arithmetic functions
 

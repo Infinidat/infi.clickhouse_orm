@@ -9,17 +9,18 @@ Defining Models
 ---------------
 
 Models are defined in a way reminiscent of Django's ORM, by subclassing `Model`:
+```python
+from infi.clickhouse_orm import Model, StringField, DateField, Float32Field, MergeTree
 
-    from infi.clickhouse_orm import Model, StringField, DateField, Float32Field, MergeTree
+class Person(Model):
 
-    class Person(Model):
+    first_name = StringField()
+    last_name = StringField()
+    birthday = DateField()
+    height = Float32Field()
 
-        first_name = StringField()
-        last_name = StringField()
-        birthday = DateField()
-        height = Float32Field()
-
-        engine = MergeTree('birthday', ('first_name', 'last_name', 'birthday'))
+    engine = MergeTree('birthday', ('first_name', 'last_name', 'birthday'))
+```
 
 The columns in the database table are represented by model fields. Each field has a type, which matches the type of the corresponding database column. All the supported fields types are listed [here](field_types.md).
 
@@ -66,14 +67,46 @@ For additional details see [here](field_options.md).
 ### Table Names
 
 The table name used for the model is its class name, converted to lowercase. To override the default name, implement the `table_name` method:
+```python
+class Person(Model):
 
-    class Person(Model):
+    ...
 
-        ...
+    @classmethod
+    def table_name(cls):
+        return 'people'
+```
 
-        @classmethod
-        def table_name(cls):
-            return 'people'
+### Model Constraints
+
+It is possible to define constraints which ClickHouse verifies when data is inserted. Trying to insert invalid records will raise a `ServerError`. Each constraint has a name and an expression to validate. For example:
+```python
+class Person(Model):
+
+    ...
+
+    # Ensure that the birthday is not a future date
+    birthday_is_in_the_past = Constraint(birthday <= F.today())
+```
+
+### Data Skipping Indexes
+
+Models that use an engine from the `MergeTree` family can define additional indexes over one or more columns or expressions. These indexes are used in SELECT queries for reducing the amount of data to read from the disk by skipping big blocks of data that do not satisfy the query's conditions.
+
+For example:
+```python
+class Person(Model):
+
+    ...
+
+    # A minmax index that can help find people taller or shorter than some height
+    height_index = Index(height, type=Index.minmax(), granularity=2)
+
+    # A trigram index that can help find substrings inside people names
+    names_index = Index((F.lower(first_name), F.lower(last_name)),
+                        type=Index.ngrambf_v1(3, 256, 2, 0), granularity=1)
+```
+
 
 Using Models
 ------------
