@@ -10,8 +10,8 @@ The following field types are supported:
 | StringField        | String     | str                   | Encoded as UTF-8 when written to ClickHouse
 | FixedStringField   | FixedString| str                   | Encoded as UTF-8 when written to ClickHouse
 | DateField          | Date       | datetime.date         | Range 1970-01-01 to 2105-12-31
-| DateTimeField      | DateTime   | datetime.datetime     | Minimal value is 1970-01-01 00:00:00; Always in UTC
-| DateTime64Field    | DateTime64 | datetime.datetime     | Minimal value is 1970-01-01 00:00:00; Always in UTC
+| DateTimeField      | DateTime   | datetime.datetime     | Minimal value is 1970-01-01 00:00:00; Timezone aware
+| DateTime64Field    | DateTime64 | datetime.datetime     | Minimal value is 1970-01-01 00:00:00; Timezone aware
 | Int8Field          | Int8       | int                   | Range -128 to 127
 | Int16Field         | Int16      | int                   | Range -32768 to 32767
 | Int32Field         | Int32      | int                   | Range -2147483648 to 2147483647
