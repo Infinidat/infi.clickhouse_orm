@@ -206,8 +206,10 @@ class ModelBase(type):
             return orm_fields.BaseEnumField.create_ad_hoc_field(db_type)
         # DateTime with timezone
         if db_type.startswith('DateTime('):
-            # Some functions return DateTimeField with timezone in brackets
-            return orm_fields.DateTimeField()
+            timezone = db_type[9:-1]
+            return orm_fields.DateTimeField(
+                timezone=timezone[1:-1] if timezone else None
+            )
         # DateTime64
         if db_type.startswith('DateTime64('):
             precision, *timezone = [s.strip() for s in db_type[11:-1].split(',')]
@@ -382,14 +384,15 @@ class Model(metaclass=ModelBase):
 
         - `line`: the TSV-formatted data.
         - `field_names`: names of the model fields in the data.
-        - `timezone_in_use`: the timezone to use when parsing dates and datetimes.
+        - `timezone_in_use`: the timezone to use when parsing dates and datetimes. Some fields use their own timezones.
         - `database`: if given, sets the database that this instance belongs to.
         '''
         values = iter(parse_tsv(line))
         kwargs = {}
         for name in field_names:
             field = getattr(cls, name)
-            kwargs[name] = field.to_python(next(values), timezone_in_use)
+            field_timezone = getattr(field, 'timezone', None) or timezone_in_use
+            kwargs[name] = field.to_python(next(values), field_timezone)
 
         obj = cls(**kwargs)
         if database is not None:
