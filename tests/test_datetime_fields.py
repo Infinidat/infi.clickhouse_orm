@@ -64,6 +64,7 @@ class ModelWithDate(Model):
 class ModelWithTz(Model):
     datetime_no_tz_field = DateTimeField()  # server tz
     datetime_tz_field = DateTimeField(timezone='Europe/Madrid')
+    datetime64_tz_field = DateTime64Field(timezone='Europe/Madrid')
     datetime_utc_field = DateTimeField(timezone=pytz.UTC)
 
     engine = MergeTree('datetime_no_tz_field', ('datetime_no_tz_field',))
@@ -82,11 +83,13 @@ class DateTimeFieldWithTzTest(unittest.TestCase):
             ModelWithTz(
                 datetime_no_tz_field='2020-06-11 04:00:00',
                 datetime_tz_field='2020-06-11 04:00:00',
+                datetime64_tz_field='2020-06-11 04:00:00',
                 datetime_utc_field='2020-06-11 04:00:00',
             ),
             ModelWithTz(
                 datetime_no_tz_field='2020-06-11 07:00:00+0300',
                 datetime_tz_field='2020-06-11 07:00:00+0300',
+                datetime64_tz_field='2020-06-11 07:00:00+0300',
                 datetime_utc_field='2020-06-11 07:00:00+0300',
             ),
         ])
@@ -95,14 +98,18 @@ class DateTimeFieldWithTzTest(unittest.TestCase):
 
         self.assertEqual(results[0].datetime_no_tz_field, datetime.datetime(2020, 6, 11, 4, 0, 0, tzinfo=pytz.UTC))
         self.assertEqual(results[0].datetime_tz_field, datetime.datetime(2020, 6, 11, 4, 0, 0, tzinfo=pytz.UTC))
+        self.assertEqual(results[0].datetime64_tz_field, datetime.datetime(2020, 6, 11, 4, 0, 0, tzinfo=pytz.UTC))
         self.assertEqual(results[0].datetime_utc_field, datetime.datetime(2020, 6, 11, 4, 0, 0, tzinfo=pytz.UTC))
         self.assertEqual(results[1].datetime_no_tz_field, datetime.datetime(2020, 6, 11, 4, 0, 0, tzinfo=pytz.UTC))
         self.assertEqual(results[1].datetime_tz_field, datetime.datetime(2020, 6, 11, 4, 0, 0, tzinfo=pytz.UTC))
+        self.assertEqual(results[1].datetime64_tz_field, datetime.datetime(2020, 6, 11, 4, 0, 0, tzinfo=pytz.UTC))
         self.assertEqual(results[1].datetime_utc_field, datetime.datetime(2020, 6, 11, 4, 0, 0, tzinfo=pytz.UTC))
 
         self.assertEqual(results[0].datetime_no_tz_field.tzinfo.zone, self.database.server_timezone.zone)
         self.assertEqual(results[0].datetime_tz_field.tzinfo.zone, pytz.timezone('Europe/Madrid').zone)
+        self.assertEqual(results[0].datetime64_tz_field.tzinfo.zone, pytz.timezone('Europe/Madrid').zone)
         self.assertEqual(results[0].datetime_utc_field.tzinfo.zone, pytz.timezone('UTC').zone)
         self.assertEqual(results[1].datetime_no_tz_field.tzinfo.zone, self.database.server_timezone.zone)
         self.assertEqual(results[1].datetime_tz_field.tzinfo.zone, pytz.timezone('Europe/Madrid').zone)
+        self.assertEqual(results[1].datetime64_tz_field.tzinfo.zone, pytz.timezone('Europe/Madrid').zone)
         self.assertEqual(results[1].datetime_utc_field.tzinfo.zone, pytz.timezone('UTC').zone)
