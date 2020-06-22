@@ -862,7 +862,14 @@ Extends Field
 
 Extends Field
 
-#### DateTimeField(default=None, alias=None, materialized=None, readonly=None, codec=None)
+#### DateTimeField(default=None, alias=None, materialized=None, readonly=None, codec=None, timezone=None)
+
+
+### DateTime64Field
+
+Extends DateTimeField
+
+#### DateTime64Field(default=None, alias=None, materialized=None, readonly=None, codec=None, precision=6, timezone=None)
 
 
 ### Decimal128Field

@@ -94,6 +94,7 @@
          * [BaseIntField](class_reference.md#baseintfield)
          * [DateField](class_reference.md#datefield)
          * [DateTimeField](class_reference.md#datetimefield)
+         * [DateTime64Field](class_reference.md#datetime64field)
          * [Decimal128Field](class_reference.md#decimal128field)
          * [Decimal32Field](class_reference.md#decimal32field)
          * [Decimal64Field](class_reference.md#decimal64field)

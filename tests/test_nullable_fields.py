@@ -38,7 +38,7 @@ class NullableFieldsTest(unittest.TestCase):
             if value == '\\N':
                 self.assertIsNone(dt)
             else:
-                self.assertEqual(dt.tzinfo, pytz.utc)
+                self.assertTrue(dt.tzinfo)
             # Verify that conversion to and from db string does not change value
             dt2 = f.to_python(f.to_db_string(dt, quote=False), pytz.utc)
             self.assertEqual(dt, dt2)

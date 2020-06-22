@@ -1,11 +1,13 @@
 from __future__ import unicode_literals
 import datetime
+from typing import List, Union
 import iso8601
 import pytz
 from calendar import timegm
 from decimal import Decimal, localcontext
 from uuid import UUID
 from logging import getLogger
+from pytz import BaseTzInfo
 from .utils import escape, parse_array, comma_join, string_or_func, get_subclass_names
 from .funcs import F, FunctionOperatorsMixin
 from ipaddress import IPv4Address, IPv6Address
@@ -86,9 +88,16 @@ class Field(FunctionOperatorsMixin):
         - `db`: Database, used for checking supported features.
         '''
         sql = self.db_type
+        args = self.get_db_type_args()
+        if args:
+            sql += '(%s)' % ', '.join(args)
         if with_default_expression:
             sql += self._extra_params(db)
         return sql
+
+    def get_db_type_args(self) -> List[str]:
+        """Returns field type arguments"""
+        return []
 
     def _extra_params(self, db):
         sql = ''
@@ -187,9 +196,23 @@ class DateTimeField(Field):
     class_default = datetime.datetime.fromtimestamp(0, pytz.utc)
     db_type = 'DateTime'
 
+    def __init__(self, default=None, alias=None, materialized=None, readonly=None, codec=None,
+                 timezone: Union[BaseTzInfo, str] = None):
+        super().__init__(default, alias, materialized, readonly, codec)
+        # assert not timezone, 'Temporarily field timezone is not supported'
+        if timezone:
+            timezone = timezone if isinstance(timezone, BaseTzInfo) else pytz.timezone(timezone)
+        self.timezone: BaseTzInfo = timezone
+
+    def get_db_type_args(self) -> List[str]:
+        args = []
+        if self.timezone:
+            args.append(escape(self.timezone.zone))
+        return args
+
     def to_python(self, value, timezone_in_use):
         if isinstance(value, datetime.datetime):
-            return value.astimezone(pytz.utc) if value.tzinfo else value.replace(tzinfo=pytz.utc)
+            return value if value.tzinfo else value.replace(tzinfo=pytz.utc)
         if isinstance(value, datetime.date):
             return datetime.datetime(value.year, value.month, value.day, tzinfo=pytz.utc)
         if isinstance(value, int):
@@ -212,11 +235,58 @@ class DateTimeField(Field):
             # convert naive to aware
             if dt.tzinfo is None or dt.tzinfo.utcoffset(dt) is None:
                 dt = timezone_in_use.localize(dt)
-            return dt.astimezone(pytz.utc)
+            return dt
         raise ValueError('Invalid value for %s - %r' % (self.__class__.__name__, value))
 
     def to_db_string(self, value, quote=True):
         return escape('%010d' % timegm(value.utctimetuple()), quote)
+
+
+class DateTime64Field(DateTimeField):
+    db_type = 'DateTime64'
+
+    def __init__(self, default=None, alias=None, materialized=None, readonly=None, codec=None,
+                 timezone: Union[BaseTzInfo, str] = None, precision: int = 6):
+        super().__init__(default, alias, materialized, readonly, codec, timezone)
+        assert precision is None or isinstance(precision, int), 'Precision must be int type'
+        self.precision = precision
+
+    def get_db_type_args(self) -> List[str]:
+        args = [str(self.precision)]
+        if self.timezone:
+            args.append(escape(self.timezone.zone))
+        return args
+
+    def to_db_string(self, value: datetime.datetime, quote=True):
+        """
+        Returns the field's value prepared for writing to the database
+
+        Returns string in 0000000000.000000 format, where remainder digits count is equal to precision
+        """
+        return escape(
+            '{timestamp:0{width}.{precision}f}'.format(
+                timestamp=value.timestamp(),
+                width=11 + self.precision,
+                precision=6),
+            quote
+        )
+
+    def to_python(self, value, timezone_in_use):
+        try:
+            return super().to_python(value, timezone_in_use)
+        except ValueError:
+            if isinstance(value, (int, float)):
+                return datetime.datetime.utcfromtimestamp(value).replace(tzinfo=pytz.utc)
+            if isinstance(value, str):
+                if value.split('.')[0] == '0000-00-00 00:00:00':
+                    return self.class_default
+                if len(value.split('.')[0]) == 10:
+                    try:
+                        value = float(value)
+                        return datetime.datetime.utcfromtimestamp(value).replace(tzinfo=pytz.utc)
+                    except ValueError:
+                        pass
+            raise
 
 
 class BaseIntField(Field):
