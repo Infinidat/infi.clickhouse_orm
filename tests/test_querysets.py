@@ -287,7 +287,7 @@ class QuerySetTestCase(TestCaseWithData):
         self._test_qs(qs[80:], 20)
 
     def test_final(self):
-        # Final can be used with CollapsingMergeTree engine only
+        # Final can be used with CollapsingMergeTree/ReplacingMergeTree engines only
         with self.assertRaises(TypeError):
             Person.objects_in(self.database).final()
 

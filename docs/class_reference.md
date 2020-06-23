@@ -203,7 +203,7 @@ The `field_names` list must match the fields defined in the model, but does not 
 
 - `line`: the TSV-formatted data.
 - `field_names`: names of the model fields in the data.
-- `timezone_in_use`: the timezone to use when parsing dates and datetimes.
+- `timezone_in_use`: the timezone to use when parsing dates and datetimes. Some fields use their own timezones.
 - `database`: if given, sets the database that this instance belongs to.
 
 
@@ -333,7 +333,7 @@ The `field_names` list must match the fields defined in the model, but does not 
 
 - `line`: the TSV-formatted data.
 - `field_names`: names of the model fields in the data.
-- `timezone_in_use`: the timezone to use when parsing dates and datetimes.
+- `timezone_in_use`: the timezone to use when parsing dates and datetimes. Some fields use their own timezones.
 - `database`: if given, sets the database that this instance belongs to.
 
 
@@ -468,7 +468,7 @@ The `field_names` list must match the fields defined in the model, but does not 
 
 - `line`: the TSV-formatted data.
 - `field_names`: names of the model fields in the data.
-- `timezone_in_use`: the timezone to use when parsing dates and datetimes.
+- `timezone_in_use`: the timezone to use when parsing dates and datetimes. Some fields use their own timezones.
 - `database`: if given, sets the database that this instance belongs to.
 
 
@@ -634,7 +634,7 @@ The `field_names` list must match the fields defined in the model, but does not 
 
 - `line`: the TSV-formatted data.
 - `field_names`: names of the model fields in the data.
-- `timezone_in_use`: the timezone to use when parsing dates and datetimes.
+- `timezone_in_use`: the timezone to use when parsing dates and datetimes. Some fields use their own timezones.
 - `database`: if given, sets the database that this instance belongs to.
 
 
@@ -858,18 +858,18 @@ Extends Field
 #### DateField(default=None, alias=None, materialized=None, readonly=None, codec=None)
 
 
+### DateTime64Field
+
+Extends DateTimeField
+
+#### DateTime64Field(default=None, alias=None, materialized=None, readonly=None, codec=None, timezone=None, precision=6)
+
+
 ### DateTimeField
 
 Extends Field
 
 #### DateTimeField(default=None, alias=None, materialized=None, readonly=None, codec=None, timezone=None)
-
-
-### DateTime64Field
-
-Extends DateTimeField
-
-#### DateTime64Field(default=None, alias=None, materialized=None, readonly=None, codec=None, precision=6, timezone=None)
 
 
 ### Decimal128Field
@@ -1217,7 +1217,7 @@ Pass `prewhere=True` to apply the conditions as PREWHERE instead of WHERE.
 
 
 Adds a FINAL modifier to table, meaning data will be collapsed to final version.
-Can be used with `CollapsingMergeTree` engine only.
+Can be used with the `CollapsingMergeTree` and `ReplacingMergeTree` engines only.
 
 
 #### limit_by(offset_limit, *fields_or_expr)
@@ -1340,7 +1340,7 @@ Pass `prewhere=True` to apply the conditions as PREWHERE instead of WHERE.
 
 
 Adds a FINAL modifier to table, meaning data will be collapsed to final version.
-Can be used with `CollapsingMergeTree` engine only.
+Can be used with the `CollapsingMergeTree` and `ReplacingMergeTree` engines only.
 
 
 #### group_by(*args)
@@ -2742,6 +2742,15 @@ Initializer.
 
 
 #### toDateTime(**kwargs)
+
+
+#### toDateTime64(**kwargs)
+
+
+#### toDateTime64OrNull(precision, timezone=NO_VALUE)
+
+
+#### toDateTime64OrZero(precision, timezone=NO_VALUE)
 
 
 #### toDateTimeOrNull()
