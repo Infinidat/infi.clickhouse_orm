@@ -36,7 +36,7 @@ class SimpleFieldsTest(unittest.TestCase):
         # Valid values
         for value in self.dates + [
             datetime(1970, 1, 1, microsecond=100000),
-            datetime(1970, 1, 1, microsecond=100000).astimezone(pytz.timezone('US/Eastern')),
+            pytz.timezone('US/Eastern').localize(datetime(1970, 1, 1, microsecond=100000)),
             '1970-01-01 00:00:00.1', '1970-01-17 00:00:17.1', '0000-00-00 00:00:00.1', 0.1,
             '2017-07-26T08:31:05.1', '2017-07-26T08:31:05.1Z', '2017-07-26 08:31.1',
             '2017-07-26T13:31:05.1+05', '2017-07-26 13:31:05.1+0500'
