@@ -3,7 +3,7 @@ from __future__ import unicode_literals
 import pytz
 from copy import copy, deepcopy
 from math import ceil
-from .engines import CollapsingMergeTree
+from .engines import CollapsingMergeTree, ReplacingMergeTree
 from datetime import date, datetime
 from .utils import comma_join, string_or_func
 
@@ -540,8 +540,8 @@ class QuerySet(object):
         Adds a FINAL modifier to table, meaning data will be collapsed to final version.
         Can be used with `CollapsingMergeTree` engine only.
         """
-        if not isinstance(self._model_cls.engine, CollapsingMergeTree):
-            raise TypeError('final() method can be used only with CollapsingMergeTree engine')
+        if not isinstance(self._model_cls.engine, (CollapsingMergeTree, ReplacingMergeTree)):
+            raise TypeError('final() method can be used only with the CollapsingMergeTree and ReplacingMergeTree engines')
 
         qs = copy(self)
         qs._final = True
