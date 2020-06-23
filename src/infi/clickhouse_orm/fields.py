@@ -89,7 +89,7 @@ class Field(FunctionOperatorsMixin):
         sql = self.db_type
         args = self.get_db_type_args()
         if args:
-            sql += '(%s)' % ', '.join(args)
+            sql += '(%s)' % comma_join(args)
         if with_default_expression:
             sql += self._extra_params(db)
         return sql
@@ -480,15 +480,8 @@ class BaseEnumField(Field):
     def to_db_string(self, value, quote=True):
         return escape(value.name, quote)
 
-    def get_sql(self, with_default_expression=True, db=None):
-        values = ['%s = %d' % (escape(item.name), item.value) for item in self.enum_cls]
-        sql = '%s(%s)' % (self.db_type, ' ,'.join(values))
-        if with_default_expression:
-            default = self.to_db_string(self.default)
-            sql = '%s DEFAULT %s' % (sql, default)
-            if self.codec and db and db.has_codec_support:
-                sql+= ' CODEC(%s)' % self.codec
-        return sql
+    def get_db_type_args(self):
+        return ['%s = %d' % (escape(item.name), item.value) for item in self.enum_cls]
 
     @classmethod
     def create_ad_hoc_field(cls, db_type):
