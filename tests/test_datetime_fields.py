@@ -13,6 +13,8 @@ class DateFieldsTest(unittest.TestCase):
 
     def setUp(self):
         self.database = Database('test-db', log_statements=True)
+        if self.database.server_version < (20, 1, 2, 4):
+            raise unittest.SkipTest('ClickHouse version too old')
         self.database.create_table(ModelWithDate)
 
     def tearDown(self):
