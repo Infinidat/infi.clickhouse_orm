@@ -267,7 +267,7 @@ class DateTime64Field(DateTimeField):
             '{timestamp:0{width}.{precision}f}'.format(
                 timestamp=value.timestamp(),
                 width=11 + self.precision,
-                precision=6),
+                precision=self.precision),
             quote
         )
 
@@ -278,9 +278,10 @@ class DateTime64Field(DateTimeField):
             if isinstance(value, (int, float)):
                 return datetime.datetime.utcfromtimestamp(value).replace(tzinfo=pytz.utc)
             if isinstance(value, str):
-                if value.split('.')[0] == '0000-00-00 00:00:00':
+                left_part = value.split('.')[0]
+                if left_part == '0000-00-00 00:00:00':
                     return self.class_default
-                if len(value.split('.')[0]) == 10:
+                if len(left_part) == 10:
                     try:
                         value = float(value)
                         return datetime.datetime.utcfromtimestamp(value).replace(tzinfo=pytz.utc)

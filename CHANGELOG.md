@@ -5,6 +5,12 @@ Unreleased
 ----------
 - Support for model constraints
 - Support for data skipping indexes
+- Added `DateTime64Field` (NiyazNz)
+- Make `DateTimeField` and `DateTime64Field` timezone-aware (NiyazNz)
+
+**Backwards incompatibile changes**
+
+Previously, `DateTimeField` always converted its value from the database timezone to UTC. This is no longer the case: the field's value now preserves the timezone it was defined with, or if not specified - the database's global timezone. This change has no effect if your database timezone is set UTC.
 
 v2.0.1
 ------

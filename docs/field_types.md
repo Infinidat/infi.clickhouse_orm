@@ -38,16 +38,22 @@ The following field types are supported:
 DateTimeField and Time Zones
 ----------------------------
 
-A `DateTimeField` can be assigned values from one of the following types:
+`DateTimeField` and `DateTime64Field` can accept a `timezone` parameter (either the timezone name or a `pytz` timezone instance). This timezone will be used as the column timezone in ClickHouse. If not provided, the fields will use the timezone defined in the database configuration.
+
+A `DateTimeField` and `DateTime64Field` can be assigned values from one of the following types:
 
 -   datetime
 -   date
 -   integer - number of seconds since the Unix epoch
+-   float (DateTime64Field only) - number of seconds and microseconds since the Unix epoch
 -   string in `YYYY-MM-DD HH:MM:SS` format or [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601)-compatible format
 
-The assigned value always gets converted to a timezone-aware `datetime` in UTC. If the assigned value is a timezone-aware `datetime` in another timezone, it will be converted to UTC. Otherwise, the assigned value is assumed to already be in UTC.
+The assigned value always gets converted to a timezone-aware `datetime` in UTC. The only exception is when the assigned value is a timezone-aware `datetime`, in which case it will not be changed.
 
-DateTime values that are read from the database are also converted to UTC. ClickHouse formats them according to the timezone of the server, and the ORM makes the necessary conversions. This requires a ClickHouse version which is new enough to support the `timezone()` function, otherwise it is assumed to be using UTC. In any case, we recommend settings the server timezone to UTC in order to prevent confusion.
+DateTime values that are read from the database are kept in the database-defined timezone - either the one defined for the field, or the global timezone defined in the database configuration.
+
+It is strongly recommended to set the server timezone to UTC and to store all datetime values in that timezone, in order to prevent confusion and subtle bugs. Conversion to a different timezone should only be performed when the value needs to be displayed.
+
 
 Working with enum fields
 ------------------------

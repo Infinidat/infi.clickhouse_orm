@@ -6,6 +6,7 @@ import pytz
 
 
 class SimpleFieldsTest(unittest.TestCase):
+
     epoch = datetime(1970, 1, 1, tzinfo=pytz.utc)
     # Valid values
     dates = [
@@ -32,7 +33,6 @@ class SimpleFieldsTest(unittest.TestCase):
 
     def test_datetime64_field(self):
         f = DateTime64Field()
-        epoch = datetime(1970, 1, 1, tzinfo=pytz.utc)
         # Valid values
         for value in self.dates + [
             datetime(1970, 1, 1, microsecond=100000),
@@ -51,6 +51,14 @@ class SimpleFieldsTest(unittest.TestCase):
                       '2017-01 15:06:00', '2017-01-01X15:06:00', '2017-13-01T15:06:00'):
             with self.assertRaises(ValueError):
                 f.to_python(value, pytz.utc)
+
+    def test_datetime64_field_precision(self):
+        for precision in range(1, 7):
+            f = DateTime64Field(precision=precision, timezone=pytz.utc)
+            dt = f.to_python(datetime(2000, 1, 1, microsecond=123456), pytz.utc)
+            dt2 = f.to_python(f.to_db_string(dt, quote=False), pytz.utc)
+            m = round(123456, precision - 6) # round rightmost microsecond digits according to precision
+            self.assertEqual(dt2, dt.replace(microsecond=m))
 
     def test_date_field(self):
         f = DateField()
