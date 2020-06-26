@@ -52,4 +52,6 @@ for row in queryset.aggregate(CPUStats.cpu_id, average=F.avg(CPUStats.cpu_percen
     print('CPU {row.cpu_id}: {row.average:.2f}%'.format(row=row))
 ```
 
+This and other examples can be found in the `examples` folder.
+
 To learn more please visit the [documentation](docs/toc.md).
