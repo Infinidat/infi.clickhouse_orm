@@ -32,6 +32,7 @@
       * [Final](querysets.md#final)
       * [Slicing](querysets.md#slicing)
       * [Pagination](querysets.md#pagination)
+      * [Mutations](querysets.md#mutations)
       * [Aggregation](querysets.md#aggregation)
          * [Adding totals](querysets.md#adding-totals)
 

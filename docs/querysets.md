@@ -151,7 +151,7 @@ Adds a DISTINCT clause to the query, meaning that any duplicate rows in the resu
     94
 
 Final
---------
+-----
 
 This method can be used only with `CollapsingMergeTree` engine.
 Adds a FINAL modifier to the query, meaning that the selected data is fully "collapsed" by the engine's sign field.
@@ -202,6 +202,23 @@ The `paginate` method returns a `namedtuple` containing the following fields:
 -   `page_size` - the number of objects per page
 
 Note that you should use `QuerySet.order_by` so that the ordering is unique, otherwise there might be inconsistencies in the pagination (such as an instance that appears on two different pages).
+
+Mutations
+---------
+
+To delete all records that match a queryset's conditions use the `delete` method:
+
+    Person.objects_in(database).filter(first_name='Max').delete()
+
+To update records that match a queryset's conditions call the `update` method and provide the field names to update and the expressions to use (as keyword arguments):
+
+    Person.objects_in(database).filter(first_name='Max').update(first_name='Maximilian')
+
+Note a few caveats:
+
+- ClickHouse cannot update columns that are used in the calculation of the primary or the partition key.
+- Mutations happen in the background, so they are not immediate.
+- Only tables in the `MergeTree` family support mutations.
 
 Aggregation
 -----------

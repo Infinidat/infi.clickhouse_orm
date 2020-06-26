@@ -1192,6 +1192,13 @@ Returns the contents of the query's `WHERE` or `PREWHERE` clause as a string.
 Returns the number of matching model instances.
 
 
+#### delete()
+
+
+Deletes all records matched by this queryset's conditions.
+Note that ClickHouse performs deletions in the background, so they are not immediate.
+
+
 #### distinct()
 
 
@@ -1268,6 +1275,14 @@ The result is a namedtuple containing `objects` (list), `number_of_objects`,
 Returns the selected fields or expressions as a SQL string.
 
 
+#### update(**kwargs)
+
+
+Updates all records matched by this queryset's conditions.
+Keyword arguments specify the field names and expressions to use for the update.
+Note that ClickHouse performs updates in the background, so they are not immediate.
+
+
 ### AggregateQuerySet
 
 Extends QuerySet
@@ -1313,6 +1328,13 @@ Returns the contents of the query's `WHERE` or `PREWHERE` clause as a string.
 
 
 Returns the number of rows after aggregation.
+
+
+#### delete()
+
+
+Deletes all records matched by this queryset's conditions.
+Note that ClickHouse performs deletions in the background, so they are not immediate.
 
 
 #### distinct()
@@ -1395,6 +1417,14 @@ The result is a namedtuple containing `objects` (list), `number_of_objects`,
 
 
 Returns the selected fields or expressions as a SQL string.
+
+
+#### update(**kwargs)
+
+
+Updates all records matched by this queryset's conditions.
+Keyword arguments specify the field names and expressions to use for the update.
+Note that ClickHouse performs updates in the background, so they are not immediate.
 
 
 #### with_totals()
