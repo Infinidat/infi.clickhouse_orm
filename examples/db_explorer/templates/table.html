@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block contents %}
+
+
+    <p>
+        <a href="../..">Home</a>
+        &raquo;
+        <a href="..">{{ db.db_name }}</a>
+        &raquo;
+        {{ tbl_name }}
+    </p>
+
+    <h1>{{ tbl_name }}</h1>
+
+    <div class="row">
+
+        <div class="column">
+            <h2>Details</h2>
+            <table>
+                <tr>
+                    <th>Total rows</th>
+                    <td>{{ "{:,}".format(tbl_info.total_rows) }}</td>
+                </tr>
+                <tr>
+                    <th>Total size</th>
+                    <td>{{ tbl_info.total_bytes|filesizeformat(true) }}</td>
+                </tr>
+                {% if tbl_info.total_rows %}
+                    <tr>
+                        <th>Average row size</th>
+                        <td>{{ (tbl_info.total_bytes / tbl_info.total_rows)|filesizeformat(true) }}</td>
+                    </tr>
+                {% endif %}
+                <tr>
+                    <th>Engine</th>
+                    <td>{{ tbl_info.engine }}</td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="column">
+            <h2>Top Columns by Size</h2>
+            {% autoescape false %}
+                {{ piechart }}
+            {% endautoescape %}
+        </div>
+
+    </div>
+
+    <h2>Columns ({{ columns.count() }})</h2>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Type</th>
+                <th>Uncompressed Size</th>
+                <th>Compressed Size</th>
+                <th>Compression Ratio</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for col in columns %}
+                <tr>
+                    <td>{{ col.name }}</td>
+                    <td>{{ col.type }}</td>
+                    <td>{{ col.data_uncompressed_bytes|filesizeformat(true) }}</td>
+                    <td>{{ col.data_compressed_bytes|filesizeformat(true) }}</td>
+                    <td>{% if col.data_compressed_bytes %} {{ "%.2f" % (col.data_uncompressed_bytes / col.data_compressed_bytes) }} {% else %} 1 {% endif %} : 1</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <h2>Table Definition</h2>
+    <pre><code>{{ create_table_sql }}</code></pre>
+
+{% endblock %}

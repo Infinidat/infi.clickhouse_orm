@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block contents %}
+
+
+    <div class="row">
+
+        <div class="column-50">
+
+            <h1>ClickHouse Explorer</h1>
+
+            <table>
+                <tr>
+                    <th>URL</th>
+                    <td>{{ db.db_url }}</td>
+                </tr>
+                <tr>
+                    <th>Version</th>
+                    <td>{{ db.server_version|join('.') }}</td>
+                </tr>
+                <tr>
+                    <th>Timezone</th>
+                    <td>{{ db.server_timezone }}</td>
+                </tr>
+            </table>
+
+            <h2>Databases ({{ databases.count() }})</h2>
+            <ul>
+                {% for d in databases %}
+                    <li>
+                        <a href="{{ d.name|urlencode }}/">{{ d.name }}</a>
+                    </li>
+                {% endfor %}
+            </ul>
+
+        </div>
+
+    </div>
+
+
+{% endblock %}

@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block contents %}
+
+    <h1>{{ db.db_name }}</h1>
+
+    <p>
+        <a href="..">Home</a>
+        &raquo;
+        {{ db.db_name }}
+    </p>
+
+    <div class="row">
+
+        <div class="column">
+            <h2>Top Tables by Size</h2>
+            {% autoescape false %}
+                {{ tables_piechart_by_size }}
+            {% endautoescape %}
+        </div>
+
+        <div class="column">
+            <h2>Top Tables by Rows</h2>
+            {% autoescape false %}
+                {{ tables_piechart_by_rows }}
+            {% endautoescape %}
+        </div>
+
+    </div>
+
+    <h2>Tables ({{ tables.count() }})</h2>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Uncompressed Size</th>
+                <th>Compressed Size</th>
+                <th>Compression Ratio</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for table in tables %}
+                <tr>
+                    <td><a href="{{ table.table|urlencode }}/">{{ table.table }}</a></th>
+                    <td>{{ table.uncompressed_size|filesizeformat(true) }}</td>
+                    <td>{{ table.compressed_size|filesizeformat(true) }}</td>
+                    <td>{% if table.uncompressed_size %} {{ "%.2f" % table.ratio }} {% else %} 1 {% endif %} : 1</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+{% endblock %}
