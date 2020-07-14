@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals, print_function
 import unittest
 from infi.clickhouse_orm.database import Database
 from infi.clickhouse_orm.query import Q

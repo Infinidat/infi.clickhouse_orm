@@ -1,4 +1,3 @@
-from __future__ import unicode_literals
 import unittest
 from uuid import UUID
 from infi.clickhouse_orm.database import Database

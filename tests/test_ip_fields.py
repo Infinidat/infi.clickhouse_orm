@@ -1,4 +1,3 @@
-from __future__ import unicode_literals
 import unittest
 from ipaddress import IPv4Address, IPv6Address
 from infi.clickhouse_orm.database import Database
