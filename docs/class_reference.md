@@ -1913,6 +1913,21 @@ Initializer.
 #### covarSampOrNullIf(y, cond)
 
 
+#### dictGet(attr_name, id_expr)
+
+
+#### dictGetHierarchy(id_expr)
+
+
+#### dictGetOrDefault(attr_name, id_expr, default)
+
+
+#### dictHas(id_expr)
+
+
+#### dictIsIn(child_id_expr, ancestor_id_expr)
+
+
 #### divide(**kwargs)
 
 

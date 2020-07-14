@@ -1789,6 +1789,28 @@ class F(Cond, FunctionOperatorsMixin, metaclass=FMeta):
     def greatest(x, y):
         return F('greatest', x, y)
 
+    # Dictionary functions
+
+    @staticmethod
+    def dictGet(dict_name, attr_name, id_expr):
+        return F('dictGet', dict_name, attr_name, id_expr)
+
+    @staticmethod
+    def dictGetOrDefault(dict_name, attr_name, id_expr, default):
+        return F('dictGetOrDefault', dict_name, attr_name, id_expr, default)
+
+    @staticmethod
+    def dictHas(dict_name, id_expr):
+        return F('dictHas', dict_name, id_expr)
+
+    @staticmethod
+    def dictGetHierarchy(dict_name, id_expr):
+        return F('dictGetHierarchy', dict_name, id_expr)
+
+    @staticmethod
+    def dictIsIn(dict_name, child_id_expr, ancestor_id_expr):
+        return F('dictIsIn', dict_name, child_id_expr, ancestor_id_expr)
+
 
 # Expose only relevant classes in import *
 __all__ = ['F']

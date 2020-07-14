@@ -6,6 +6,7 @@ Unreleased
 - Support for model constraints
 - Support for data skipping indexes
 - Support for mutations: `QuerySet.update` and `QuerySet.delete`
+- Added functions for working with external dictionaries
 - Support FINAL for `ReplacingMergeTree` (chripede)
 - Added `DateTime64Field` (NiyazNz)
 - Make `DateTimeField` and `DateTime64Field` timezone-aware (NiyazNz)
