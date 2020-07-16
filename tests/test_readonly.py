@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
 
 from infi.clickhouse_orm.database import DatabaseException, ServerError
 from .base_test_with_data import *

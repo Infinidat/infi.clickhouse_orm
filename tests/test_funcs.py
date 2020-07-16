@@ -34,6 +34,7 @@ class FuncsTestCase(TestCaseWithData):
             result = list(self.database.select(sql))
             logging.info('\t==> %s', result[0].value if result else '<empty>')
             if expected_value != NO_VALUE:
+                print('Comparing %s to %s' % (result[0].value, expected_value))
                 self.assertEqual(result[0].value, expected_value)
             return result[0].value if result else None
         except ServerError as e:
@@ -310,12 +311,13 @@ class FuncsTestCase(TestCaseWithData):
             raise unittest.SkipTest('This test must run with UTC as the server timezone')
         d = date(2018, 12, 31)
         dt = datetime(2018, 12, 31, 11, 22, 33)
+        athens_tz = pytz.timezone('Europe/Athens')
         self._test_func(F.toHour(dt), 11)
         self._test_func(F.toStartOfDay(dt), datetime(2018, 12, 31, 0, 0, 0, tzinfo=pytz.utc))
         self._test_func(F.toTime(dt, pytz.utc), datetime(1970, 1, 2, 11, 22, 33, tzinfo=pytz.utc))
-        self._test_func(F.toTime(dt, 'Europe/Athens'), datetime(1970, 1, 2, 13, 22, 33, tzinfo=pytz.utc))
-        self._test_func(F.toTime(dt, pytz.timezone('Europe/Athens')), datetime(1970, 1, 2, 13, 22, 33, tzinfo=pytz.utc))
-        self._test_func(F.toTimeZone(dt, 'Europe/Athens'), datetime(2018, 12, 31, 13, 22, 33, tzinfo=pytz.utc))
+        self._test_func(F.toTime(dt, 'Europe/Athens'), athens_tz.localize(datetime(1970, 1, 2, 13, 22, 33)))
+        self._test_func(F.toTime(dt, athens_tz), athens_tz.localize(datetime(1970, 1, 2, 13, 22, 33)))
+        self._test_func(F.toTimeZone(dt, 'Europe/Athens'), athens_tz.localize(datetime(2018, 12, 31, 13, 22, 33)))
         self._test_func(F.now(), datetime.utcnow().replace(tzinfo=pytz.utc, microsecond=0)) # FIXME this may fail if the timing is just right
         self._test_func(F.today(), datetime.utcnow().date())
         self._test_func(F.yesterday(), datetime.utcnow().date() - timedelta(days=1))
@@ -351,6 +353,7 @@ class FuncsTestCase(TestCaseWithData):
         if self.database.server_timezone != pytz.utc:
             raise unittest.SkipTest('This test must run with UTC as the server timezone')
         self._test_func(F.toDateTime('2018-12-31 11:22:33'), datetime(2018, 12, 31, 11, 22, 33, tzinfo=pytz.utc))
+        self._test_func(F.toDateTime64('2018-12-31 11:22:33.001', 6), datetime(2018, 12, 31, 11, 22, 33, 1000, tzinfo=pytz.utc))
         self._test_func(F.parseDateTimeBestEffort('31/12/2019 10:05AM'), datetime(2019, 12, 31, 10, 5, tzinfo=pytz.utc))
         self._test_func(F.parseDateTimeBestEffortOrNull('31/12/2019 10:05AM'), datetime(2019, 12, 31, 10, 5, tzinfo=pytz.utc))
         self._test_func(F.parseDateTimeBestEffortOrZero('31/12/2019 10:05AM'), datetime(2019, 12, 31, 10, 5, tzinfo=pytz.utc))

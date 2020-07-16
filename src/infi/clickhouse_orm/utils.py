@@ -1,6 +1,6 @@
-from __future__ import unicode_literals
 import codecs
 import re
+from datetime import date, datetime, tzinfo, timedelta
 
 
 SPECIAL_CHARS = {
@@ -40,6 +40,40 @@ def unescape(value):
 
 def string_or_func(obj):
     return obj.to_sql() if hasattr(obj, 'to_sql') else obj
+
+
+def arg_to_sql(arg):
+    """
+    Converts a function argument to SQL string according to its type.
+    Supports functions, model fields, strings, dates, datetimes, timedeltas, booleans,
+    None, numbers, timezones, arrays/iterables.
+    """
+    from infi.clickhouse_orm import Field, StringField, DateTimeField, DateField, F, QuerySet
+    if isinstance(arg, F):
+        return arg.to_sql()
+    if isinstance(arg, Field):
+        return "`%s`" % arg
+    if isinstance(arg, str):
+        return StringField().to_db_string(arg)
+    if isinstance(arg, datetime):
+        return "toDateTime(%s)" % DateTimeField().to_db_string(arg)
+    if isinstance(arg, date):
+        return "toDate('%s')" % arg.isoformat()
+    if isinstance(arg, timedelta):
+        return "toIntervalSecond(%d)" % int(arg.total_seconds())
+    if isinstance(arg, bool):
+        return str(int(arg))
+    if isinstance(arg, tzinfo):
+        return StringField().to_db_string(arg.tzname(None))
+    if arg is None:
+        return 'NULL'
+    if isinstance(arg, QuerySet):
+        return "(%s)" % arg
+    if isinstance(arg, tuple):
+        return '(' + comma_join(arg_to_sql(x) for x in arg) + ')'
+    if is_iterable(arg):
+        return '[' + comma_join(arg_to_sql(x) for x in arg) + ']'
+    return str(arg)
 
 
 def parse_tsv(line):

@@ -1,17 +1,122 @@
 from __future__ import unicode_literals
 import sys
 from collections import OrderedDict
+from itertools import chain
 from logging import getLogger
 
 import pytz
 
 from .fields import Field, StringField
-from .utils import parse_tsv, NO_VALUE, get_subclass_names
+from .utils import parse_tsv, NO_VALUE, get_subclass_names, arg_to_sql, unescape
 from .query import QuerySet
 from .funcs import F
 from .engines import Merge, Distributed
 
 logger = getLogger('clickhouse_orm')
+
+
+
+class Constraint:
+    '''
+    Defines a model constraint.
+    '''
+
+    name   = None # this is set by the parent model
+    parent = None # this is set by the parent model
+
+    def __init__(self, expr):
+        '''
+        Initializer. Expects an expression that ClickHouse will verify when inserting data.
+        '''
+        self.expr = expr
+
+    def create_table_sql(self):
+        '''
+        Returns the SQL statement for defining this constraint during table creation.
+        '''
+        return 'CONSTRAINT `%s` CHECK %s' % (self.name, arg_to_sql(self.expr))
+
+
+class Index:
+    '''
+    Defines a data-skipping index.
+    '''
+
+    name   = None # this is set by the parent model
+    parent = None # this is set by the parent model
+
+    def __init__(self, expr, type, granularity):
+        '''
+        Initializer.
+
+        - `expr` - a column, expression, or tuple of columns and expressions to index.
+        - `type` - the index type. Use one of the following methods to specify the type:
+          `Index.minmax`, `Index.set`, `Index.ngrambf_v1`, `Index.tokenbf_v1` or `Index.bloom_filter`.
+        - `granularity` - index block size (number of multiples of the `index_granularity` defined by the engine).
+        '''
+        self.expr = expr
+        self.type = type
+        self.granularity = granularity
+
+    def create_table_sql(self):
+        '''
+        Returns the SQL statement for defining this index during table creation.
+        '''
+        return 'INDEX `%s` %s TYPE %s GRANULARITY %d' % (self.name, arg_to_sql(self.expr), self.type, self.granularity)
+
+    @staticmethod
+    def minmax():
+        '''
+        An index that stores extremes of the specified expression (if the expression is tuple, then it stores
+        extremes for each element of tuple). The stored info is used for skipping blocks of data like the primary key.
+        '''
+        return 'minmax'
+
+    @staticmethod
+    def set(max_rows):
+        '''
+        An index that stores unique values of the specified expression (no more than max_rows rows,
+        or unlimited if max_rows=0). Uses the values to check if the WHERE expression is not satisfiable
+        on a block of data.
+        '''
+        return 'set(%d)' % max_rows
+
+    @staticmethod
+    def ngrambf_v1(n, size_of_bloom_filter_in_bytes, number_of_hash_functions, random_seed):
+        '''
+        An index that stores a Bloom filter containing all ngrams from a block of data.
+        Works only with strings. Can be used for optimization of equals, like and in expressions.
+
+        - `n` — ngram size
+        - `size_of_bloom_filter_in_bytes` — Bloom filter size in bytes (you can use large values here,
+           for example 256 or 512, because it can be compressed well).
+        - `number_of_hash_functions` — The number of hash functions used in the Bloom filter.
+        - `random_seed` — The seed for Bloom filter hash functions.
+        '''
+        return 'ngrambf_v1(%d, %d, %d, %d)' % (n, size_of_bloom_filter_in_bytes, number_of_hash_functions, random_seed)
+
+    @staticmethod
+    def tokenbf_v1(size_of_bloom_filter_in_bytes, number_of_hash_functions, random_seed):
+        '''
+        An index that stores a Bloom filter containing string tokens. Tokens are sequences
+        separated by non-alphanumeric characters.
+
+        - `size_of_bloom_filter_in_bytes` — Bloom filter size in bytes (you can use large values here,
+           for example 256 or 512, because it can be compressed well).
+        - `number_of_hash_functions` — The number of hash functions used in the Bloom filter.
+        - `random_seed` — The seed for Bloom filter hash functions.
+        '''
+        return 'tokenbf_v1(%d, %d, %d)' % (size_of_bloom_filter_in_bytes, number_of_hash_functions, random_seed)
+
+    @staticmethod
+    def bloom_filter(false_positive=0.025):
+        '''
+        An index that stores a Bloom filter containing values of the index expression.
+
+        - `false_positive` - the probability (between 0 and 1) of receiving a false positive
+          response from the filter
+        '''
+        return 'bloom_filter(%f)' % false_positive
 
 
 class ModelBase(type):
@@ -22,16 +127,27 @@ class ModelBase(type):
     ad_hoc_model_cache = {}
 
     def __new__(cls, name, bases, attrs):
-        # Collect fields from parent classes
-        base_fields = dict()
+
+        # Collect fields, constraints and indexes from parent classes
+        fields = {}
+        constraints = {}
+        indexes = {}
         for base in bases:
             if isinstance(base, ModelBase):
-                base_fields.update(base._fields)
+                fields.update(base._fields)
+                constraints.update(base._constraints)
+                indexes.update(base._indexes)
 
-        fields = base_fields
+        # Add fields, constraints and indexes from this class
+        for n, obj in attrs.items():
+            if isinstance(obj, Field):
+                fields[n] = obj
+            elif isinstance(obj, Constraint):
+                constraints[n] = obj
+            elif isinstance(obj, Index):
+                indexes[n] = obj
 
-        # Build a list of fields, in the order they were listed in the class
-        fields.update({n: f for n, f in attrs.items() if isinstance(f, Field)})
+        # Convert fields to a list of (name, field) tuples, in the order they were listed in the class
         fields = sorted(fields.items(), key=lambda item: item[1].creation_counter)
 
         # Build a dictionary of default values
@@ -46,19 +162,22 @@ class ModelBase(type):
             else:
                 defaults[n] = f.to_python(f.default, pytz.UTC)
 
+        # Create the model class
         attrs = dict(
             attrs,
             _fields=OrderedDict(fields),
+            _constraints=constraints,
+            _indexes=indexes,
             _writable_fields=OrderedDict([f for f in fields if not f[1].readonly]),
             _defaults=defaults,
             _has_funcs_as_defaults=has_funcs_as_defaults
         )
         model = super(ModelBase, cls).__new__(cls, str(name), bases, attrs)
 
-        # Let each field know its parent and its own name
-        for n, f in fields:
-            setattr(f, 'parent', model)
-            setattr(f, 'name', n)
+        # Let each field, constraint and index know its parent and its own name
+        for n, obj in chain(fields, constraints.items(), indexes.items()):
+            setattr(obj, 'parent', model)
+            setattr(obj, 'name', n)
 
         return model
 
@@ -87,8 +206,17 @@ class ModelBase(type):
             return orm_fields.BaseEnumField.create_ad_hoc_field(db_type)
         # DateTime with timezone
         if db_type.startswith('DateTime('):
-            # Some functions return DateTimeField with timezone in brackets
-            return orm_fields.DateTimeField()
+            timezone = db_type[9:-1]
+            return orm_fields.DateTimeField(
+                timezone=timezone[1:-1] if timezone else None
+            )
+        # DateTime64
+        if db_type.startswith('DateTime64('):
+            precision, *timezone = [s.strip() for s in db_type[11:-1].split(',')]
+            return orm_fields.DateTime64Field(
+                precision=int(precision),
+                timezone=timezone[0][1:-1] if timezone else None
+            )
         # Arrays
         if db_type.startswith('Array'):
             inner_field = cls.create_ad_hoc_field(db_type[6 : -1])
@@ -222,13 +350,21 @@ class Model(metaclass=ModelBase):
     @classmethod
     def create_table_sql(cls, db):
         '''
-        Returns the SQL command for creating a table for this model.
+        Returns the SQL statement for creating a table for this model.
         '''
         parts = ['CREATE TABLE IF NOT EXISTS `%s`.`%s` (' % (db.db_name, cls.table_name())]
-        cols = []
+        # Fields
+        items = []
         for name, field in cls.fields().items():
-            cols.append('    %s %s' % (name, field.get_sql(db=db)))
-        parts.append(',\n'.join(cols))
+            items.append('    %s %s' % (name, field.get_sql(db=db)))
+        # Constraints
+        for c in cls._constraints.values():
+            items.append('    %s' % c.create_table_sql())
+        # Indexes
+        for i in cls._indexes.values():
+            items.append('    %s' % i.create_table_sql())
+        parts.append(',\n'.join(items))
+        # Engine
         parts.append(')')
         parts.append('ENGINE = ' + cls.engine.create_table_sql(db))
         return '\n'.join(parts)
@@ -248,14 +384,15 @@ class Model(metaclass=ModelBase):
 
         - `line`: the TSV-formatted data.
         - `field_names`: names of the model fields in the data.
-        - `timezone_in_use`: the timezone to use when parsing dates and datetimes.
+        - `timezone_in_use`: the timezone to use when parsing dates and datetimes. Some fields use their own timezones.
         - `database`: if given, sets the database that this instance belongs to.
         '''
         values = iter(parse_tsv(line))
         kwargs = {}
         for name in field_names:
             field = getattr(cls, name)
-            kwargs[name] = field.to_python(next(values), timezone_in_use)
+            field_timezone = getattr(field, 'timezone', None) or timezone_in_use
+            kwargs[name] = field.to_python(next(values), field_timezone)
 
         obj = cls(**kwargs)
         if database is not None:
@@ -348,7 +485,7 @@ class BufferModel(Model):
     @classmethod
     def create_table_sql(cls, db):
         '''
-        Returns the SQL command for creating a table for this model.
+        Returns the SQL statement for creating a table for this model.
         '''
         parts = ['CREATE TABLE IF NOT EXISTS `%s`.`%s` AS `%s`.`%s`' % (db.db_name, cls.table_name(), db.db_name,
                                                                         cls.engine.main_model.table_name())]
@@ -370,6 +507,9 @@ class MergeModel(Model):
 
     @classmethod
     def create_table_sql(cls, db):
+        '''
+        Returns the SQL statement for creating a table for this model.
+        '''
         assert isinstance(cls.engine, Merge), "engine must be an instance of engines.Merge"
         parts = ['CREATE TABLE IF NOT EXISTS `%s`.`%s` (' % (db.db_name, cls.table_name())]
         cols = []
@@ -386,10 +526,14 @@ class MergeModel(Model):
 
 class DistributedModel(Model):
     """
-    Model for Distributed engine
+    Model class for use with a `Distributed` engine.
     """
 
     def set_database(self, db):
+        '''
+        Sets the `Database` that this model instance belongs to.
+        This is done automatically when the instance is read from the database or written to it.
+        '''
         assert isinstance(self.engine, Distributed), "engine must be an instance of engines.Distributed"
         res = super(DistributedModel, self).set_database(db)
         return res
@@ -447,6 +591,9 @@ class DistributedModel(Model):
 
     @classmethod
     def create_table_sql(cls, db):
+        '''
+        Returns the SQL statement for creating a table for this model.
+        '''
         assert isinstance(cls.engine, Distributed), "engine must be engines.Distributed instance"
 
         cls.fix_engine_table()
@@ -459,4 +606,4 @@ class DistributedModel(Model):
 
 
 # Expose only relevant classes in import *
-__all__ = get_subclass_names(locals(), Model)
+__all__ = get_subclass_names(locals(), (Model, Constraint, Index))

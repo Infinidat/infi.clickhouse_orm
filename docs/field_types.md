@@ -10,7 +10,8 @@ The following field types are supported:
 | StringField        | String     | str                   | Encoded as UTF-8 when written to ClickHouse
 | FixedStringField   | FixedString| str                   | Encoded as UTF-8 when written to ClickHouse
 | DateField          | Date       | datetime.date         | Range 1970-01-01 to 2105-12-31
-| DateTimeField      | DateTime   | datetime.datetime     | Minimal value is 1970-01-01 00:00:00; Always in UTC
+| DateTimeField      | DateTime   | datetime.datetime     | Minimal value is 1970-01-01 00:00:00; Timezone aware
+| DateTime64Field    | DateTime64 | datetime.datetime     | Minimal value is 1970-01-01 00:00:00; Timezone aware
 | Int8Field          | Int8       | int                   | Range -128 to 127
 | Int16Field         | Int16      | int                   | Range -32768 to 32767
 | Int32Field         | Int32      | int                   | Range -2147483648 to 2147483647
@@ -37,16 +38,22 @@ The following field types are supported:
 DateTimeField and Time Zones
 ----------------------------
 
-A `DateTimeField` can be assigned values from one of the following types:
+`DateTimeField` and `DateTime64Field` can accept a `timezone` parameter (either the timezone name or a `pytz` timezone instance). This timezone will be used as the column timezone in ClickHouse. If not provided, the fields will use the timezone defined in the database configuration.
+
+A `DateTimeField` and `DateTime64Field` can be assigned values from one of the following types:
 
 -   datetime
 -   date
 -   integer - number of seconds since the Unix epoch
+-   float (DateTime64Field only) - number of seconds and microseconds since the Unix epoch
 -   string in `YYYY-MM-DD HH:MM:SS` format or [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601)-compatible format
 
-The assigned value always gets converted to a timezone-aware `datetime` in UTC. If the assigned value is a timezone-aware `datetime` in another timezone, it will be converted to UTC. Otherwise, the assigned value is assumed to already be in UTC.
+The assigned value always gets converted to a timezone-aware `datetime` in UTC. The only exception is when the assigned value is a timezone-aware `datetime`, in which case it will not be changed.
 
-DateTime values that are read from the database are also converted to UTC. ClickHouse formats them according to the timezone of the server, and the ORM makes the necessary conversions. This requires a ClickHouse version which is new enough to support the `timezone()` function, otherwise it is assumed to be using UTC. In any case, we recommend settings the server timezone to UTC in order to prevent confusion.
+DateTime values that are read from the database are kept in the database-defined timezone - either the one defined for the field, or the global timezone defined in the database configuration.
+
+It is strongly recommended to set the server timezone to UTC and to store all datetime values in that timezone, in order to prevent confusion and subtle bugs. Conversion to a different timezone should only be performed when the value needs to be displayed.
+
 
 Working with enum fields
 ------------------------

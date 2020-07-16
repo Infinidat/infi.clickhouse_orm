@@ -3,9 +3,8 @@ from __future__ import unicode_literals
 import pytz
 from copy import copy, deepcopy
 from math import ceil
-from .engines import CollapsingMergeTree
 from datetime import date, datetime
-from .utils import comma_join, string_or_func
+from .utils import comma_join, string_or_func, arg_to_sql
 
 
 # TODO
@@ -538,14 +537,49 @@ class QuerySet(object):
     def final(self):
         """
         Adds a FINAL modifier to table, meaning data will be collapsed to final version.
-        Can be used with `CollapsingMergeTree` engine only.
+        Can be used with the `CollapsingMergeTree` and `ReplacingMergeTree` engines only.
         """
-        if not isinstance(self._model_cls.engine, CollapsingMergeTree):
-            raise TypeError('final() method can be used only with CollapsingMergeTree engine')
+        from .engines import CollapsingMergeTree, ReplacingMergeTree
+        if not isinstance(self._model_cls.engine, (CollapsingMergeTree, ReplacingMergeTree)):
+            raise TypeError('final() method can be used only with the CollapsingMergeTree and ReplacingMergeTree engines')
 
         qs = copy(self)
         qs._final = True
         return qs
+
+    def delete(self):
+        """
+        Deletes all records matched by this queryset's conditions.
+        Note that ClickHouse performs deletions in the background, so they are not immediate.
+        """
+        self._verify_mutation_allowed()
+        conditions = (self._where_q & self._prewhere_q).to_sql(self._model_cls)
+        sql = 'ALTER TABLE $db.`%s` DELETE WHERE %s' % (self._model_cls.table_name(), conditions)
+        self._database.raw(sql)
+        return self
+
+    def update(self, **kwargs):
+        """
+        Updates all records matched by this queryset's conditions.
+        Keyword arguments specify the field names and expressions to use for the update.
+        Note that ClickHouse performs updates in the background, so they are not immediate.
+        """
+        assert kwargs, 'No fields specified for update'
+        self._verify_mutation_allowed()
+        fields = comma_join('`%s` = %s' % (name, arg_to_sql(expr)) for name, expr in kwargs.items())
+        conditions = (self._where_q & self._prewhere_q).to_sql(self._model_cls)
+        sql = 'ALTER TABLE $db.`%s` UPDATE %s WHERE %s' % (self._model_cls.table_name(), fields, conditions)
+        self._database.raw(sql)
+        return self
+
+    def _verify_mutation_allowed(self):
+        '''
+        Checks that the queryset's state allows mutations. Raises an AssertionError if not.
+        '''
+        assert not self._limits, 'Mutations are not allowed after slicing the queryset'
+        assert not self._limit_by, 'Mutations are not allowed after calling limit_by(...)'
+        assert not self._distinct, 'Mutations are not allowed after calling distinct()'
+        assert not self._final, 'Mutations are not allowed after calling final()'
 
     def aggregate(self, *args, **kwargs):
         """
@@ -646,6 +680,9 @@ class AggregateQuerySet(QuerySet):
         qs = copy(self)
         qs._grouping_with_totals = True
         return qs
+
+    def _verify_mutation_allowed(self):
+        raise AssertionError('Cannot mutate an AggregateQuerySet')
 
 
 # Expose only relevant classes in import *

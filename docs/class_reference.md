@@ -178,7 +178,7 @@ Unrecognized field names will cause an `AttributeError`.
 #### Model.create_table_sql(db)
 
 
-Returns the SQL command for creating a table for this model.
+Returns the SQL statement for creating a table for this model.
 
 
 #### Model.drop_table_sql(db)
@@ -203,7 +203,7 @@ The `field_names` list must match the fields defined in the model, but does not 
 
 - `line`: the TSV-formatted data.
 - `field_names`: names of the model fields in the data.
-- `timezone_in_use`: the timezone to use when parsing dates and datetimes.
+- `timezone_in_use`: the timezone to use when parsing dates and datetimes. Some fields use their own timezones.
 - `database`: if given, sets the database that this instance belongs to.
 
 
@@ -308,7 +308,7 @@ Unrecognized field names will cause an `AttributeError`.
 #### BufferModel.create_table_sql(db)
 
 
-Returns the SQL command for creating a table for this model.
+Returns the SQL statement for creating a table for this model.
 
 
 #### BufferModel.drop_table_sql(db)
@@ -333,7 +333,7 @@ The `field_names` list must match the fields defined in the model, but does not 
 
 - `line`: the TSV-formatted data.
 - `field_names`: names of the model fields in the data.
-- `timezone_in_use`: the timezone to use when parsing dates and datetimes.
+- `timezone_in_use`: the timezone to use when parsing dates and datetimes. Some fields use their own timezones.
 - `database`: if given, sets the database that this instance belongs to.
 
 
@@ -422,12 +422,147 @@ Returns the instance's column values as a tab-separated line. A newline is not i
 - `include_readonly`: if false, returns only fields that can be inserted into database.
 
 
+### MergeModel
+
+Extends Model
+
+
+Model for Merge engine
+Predefines virtual _table column an controls that rows can't be inserted to this table type
+https://clickhouse.tech/docs/en/single/index.html#document-table_engines/merge
+
+#### MergeModel(**kwargs)
+
+
+Creates a model instance, using keyword arguments as field values.
+Since values are immediately converted to their Pythonic type,
+invalid values will cause a `ValueError` to be raised.
+Unrecognized field names will cause an `AttributeError`.
+
+
+#### MergeModel.create_table_sql(db)
+
+
+Returns the SQL statement for creating a table for this model.
+
+
+#### MergeModel.drop_table_sql(db)
+
+
+Returns the SQL command for deleting this model's table.
+
+
+#### MergeModel.fields(writable=False)
+
+
+Returns an `OrderedDict` of the model's fields (from name to `Field` instance).
+If `writable` is true, only writable fields are included.
+Callers should not modify the dictionary.
+
+
+#### MergeModel.from_tsv(line, field_names, timezone_in_use=UTC, database=None)
+
+
+Create a model instance from a tab-separated line. The line may or may not include a newline.
+The `field_names` list must match the fields defined in the model, but does not have to include all of them.
+
+- `line`: the TSV-formatted data.
+- `field_names`: names of the model fields in the data.
+- `timezone_in_use`: the timezone to use when parsing dates and datetimes. Some fields use their own timezones.
+- `database`: if given, sets the database that this instance belongs to.
+
+
+#### get_database()
+
+
+Gets the `Database` that this model instance belongs to.
+Returns `None` unless the instance was read from the database or written to it.
+
+
+#### get_field(name)
+
+
+Gets a `Field` instance given its name, or `None` if not found.
+
+
+#### MergeModel.has_funcs_as_defaults()
+
+
+Return True if some of the model's fields use a function expression
+as a default value. This requires special handling when inserting instances.
+
+
+#### MergeModel.is_read_only()
+
+
+Returns true if the model is marked as read only.
+
+
+#### MergeModel.is_system_model()
+
+
+Returns true if the model represents a system table.
+
+
+#### MergeModel.objects_in(database)
+
+
+Returns a `QuerySet` for selecting instances of this model class.
+
+
+#### set_database(db)
+
+
+Sets the `Database` that this model instance belongs to.
+This is done automatically when the instance is read from the database or written to it.
+
+
+#### MergeModel.table_name()
+
+
+Returns the model's database table name. By default this is the
+class name converted to lowercase. Override this if you want to use
+a different table name.
+
+
+#### to_db_string()
+
+
+Returns the instance as a bytestring ready to be inserted into the database.
+
+
+#### to_dict(include_readonly=True, field_names=None)
+
+
+Returns the instance's column values as a dict.
+
+- `include_readonly`: if false, returns only fields that can be inserted into database.
+- `field_names`: an iterable of field names to return (optional)
+
+
+#### to_tskv(include_readonly=True)
+
+
+Returns the instance's column keys and values as a tab-separated line. A newline is not included.
+Fields that were not assigned a value are omitted.
+
+- `include_readonly`: if false, returns only fields that can be inserted into database.
+
+
+#### to_tsv(include_readonly=True)
+
+
+Returns the instance's column values as a tab-separated line. A newline is not included.
+
+- `include_readonly`: if false, returns only fields that can be inserted into database.
+
+
 ### DistributedModel
 
 Extends Model
 
 
-Model for Distributed engine
+Model class for use with a `Distributed` engine.
 
 #### DistributedModel(**kwargs)
 
@@ -439,6 +574,9 @@ Unrecognized field names will cause an `AttributeError`.
 
 
 #### DistributedModel.create_table_sql(db)
+
+
+Returns the SQL statement for creating a table for this model.
 
 
 #### DistributedModel.drop_table_sql(db)
@@ -496,7 +634,7 @@ The `field_names` list must match the fields defined in the model, but does not 
 
 - `line`: the TSV-formatted data.
 - `field_names`: names of the model fields in the data.
-- `timezone_in_use`: the timezone to use when parsing dates and datetimes.
+- `timezone_in_use`: the timezone to use when parsing dates and datetimes. Some fields use their own timezones.
 - `database`: if given, sets the database that this instance belongs to.
 
 
@@ -541,6 +679,10 @@ Returns a `QuerySet` for selecting instances of this model class.
 #### set_database(db)
 
 
+Sets the `Database` that this model instance belongs to.
+This is done automatically when the instance is read from the database or written to it.
+
+
 #### DistributedModel.table_name()
 
 
@@ -579,6 +721,94 @@ Fields that were not assigned a value are omitted.
 Returns the instance's column values as a tab-separated line. A newline is not included.
 
 - `include_readonly`: if false, returns only fields that can be inserted into database.
+
+
+### Constraint
+
+
+Defines a model constraint.
+
+#### Constraint(expr)
+
+
+Initializer. Expects an expression that ClickHouse will verify when inserting data.
+
+
+#### create_table_sql()
+
+
+Returns the SQL statement for defining this constraint during table creation.
+
+
+### Index
+
+
+Defines a data-skipping index.
+
+#### Index(expr, type, granularity)
+
+
+Initializer.
+
+- `expr` - a column, expression, or tuple of columns and expressions to index.
+- `type` - the index type. Use one of the following methods to specify the type:
+  `Index.minmax`, `Index.set`, `Index.ngrambf_v1`, `Index.tokenbf_v1` or `Index.bloom_filter`.
+- `granularity` - index block size (number of multiples of the `index_granularity` defined by the engine).
+
+
+#### bloom_filter()
+
+
+An index that stores a Bloom filter containing values of the index expression.
+
+- `false_positive` - the probability (between 0 and 1) of receiving a false positive
+  response from the filter
+
+
+#### create_table_sql()
+
+
+Returns the SQL statement for defining this index during table creation.
+
+
+#### minmax()
+
+
+An index that stores extremes of the specified expression (if the expression is tuple, then it stores
+extremes for each element of tuple). The stored info is used for skipping blocks of data like the primary key.
+
+
+#### ngrambf_v1(size_of_bloom_filter_in_bytes, number_of_hash_functions, random_seed)
+
+
+An index that stores a Bloom filter containing all ngrams from a block of data.
+Works only with strings. Can be used for optimization of equals, like and in expressions.
+
+- `n` — ngram size
+- `size_of_bloom_filter_in_bytes` — Bloom filter size in bytes (you can use large values here,
+   for example 256 or 512, because it can be compressed well).
+- `number_of_hash_functions` — The number of hash functions used in the Bloom filter.
+- `random_seed` — The seed for Bloom filter hash functions.
+
+
+#### set()
+
+
+An index that stores unique values of the specified expression (no more than max_rows rows,
+or unlimited if max_rows=0). Uses the values to check if the WHERE expression is not satisfiable
+on a block of data.
+
+
+#### tokenbf_v1(number_of_hash_functions, random_seed)
+
+
+An index that stores a Bloom filter containing string tokens. Tokens are sequences
+separated by non-alphanumeric characters.
+
+- `size_of_bloom_filter_in_bytes` — Bloom filter size in bytes (you can use large values here,
+   for example 256 or 512, because it can be compressed well).
+- `number_of_hash_functions` — The number of hash functions used in the Bloom filter.
+- `random_seed` — The seed for Bloom filter hash functions.
 
 
 infi.clickhouse_orm.fields
@@ -628,11 +858,18 @@ Extends Field
 #### DateField(default=None, alias=None, materialized=None, readonly=None, codec=None)
 
 
+### DateTime64Field
+
+Extends DateTimeField
+
+#### DateTime64Field(default=None, alias=None, materialized=None, readonly=None, codec=None, timezone=None, precision=6)
+
+
 ### DateTimeField
 
 Extends Field
 
-#### DateTimeField(default=None, alias=None, materialized=None, readonly=None, codec=None)
+#### DateTimeField(default=None, alias=None, materialized=None, readonly=None, codec=None, timezone=None)
 
 
 ### Decimal128Field
@@ -955,6 +1192,13 @@ Returns the contents of the query's `WHERE` or `PREWHERE` clause as a string.
 Returns the number of matching model instances.
 
 
+#### delete()
+
+
+Deletes all records matched by this queryset's conditions.
+Note that ClickHouse performs deletions in the background, so they are not immediate.
+
+
 #### distinct()
 
 
@@ -980,7 +1224,7 @@ Pass `prewhere=True` to apply the conditions as PREWHERE instead of WHERE.
 
 
 Adds a FINAL modifier to table, meaning data will be collapsed to final version.
-Can be used with `CollapsingMergeTree` engine only.
+Can be used with the `CollapsingMergeTree` and `ReplacingMergeTree` engines only.
 
 
 #### limit_by(offset_limit, *fields_or_expr)
@@ -1031,6 +1275,14 @@ The result is a namedtuple containing `objects` (list), `number_of_objects`,
 Returns the selected fields or expressions as a SQL string.
 
 
+#### update(**kwargs)
+
+
+Updates all records matched by this queryset's conditions.
+Keyword arguments specify the field names and expressions to use for the update.
+Note that ClickHouse performs updates in the background, so they are not immediate.
+
+
 ### AggregateQuerySet
 
 Extends QuerySet
@@ -1078,6 +1330,13 @@ Returns the contents of the query's `WHERE` or `PREWHERE` clause as a string.
 Returns the number of rows after aggregation.
 
 
+#### delete()
+
+
+Deletes all records matched by this queryset's conditions.
+Note that ClickHouse performs deletions in the background, so they are not immediate.
+
+
 #### distinct()
 
 
@@ -1103,7 +1362,7 @@ Pass `prewhere=True` to apply the conditions as PREWHERE instead of WHERE.
 
 
 Adds a FINAL modifier to table, meaning data will be collapsed to final version.
-Can be used with `CollapsingMergeTree` engine only.
+Can be used with the `CollapsingMergeTree` and `ReplacingMergeTree` engines only.
 
 
 #### group_by(*args)
@@ -1158,6 +1417,14 @@ The result is a namedtuple containing `objects` (list), `number_of_objects`,
 
 
 Returns the selected fields or expressions as a SQL string.
+
+
+#### update(**kwargs)
+
+
+Updates all records matched by this queryset's conditions.
+Keyword arguments specify the field names and expressions to use for the update.
+Note that ClickHouse performs updates in the background, so they are not immediate.
 
 
 #### with_totals()
@@ -1644,6 +1911,21 @@ Initializer.
 
 
 #### covarSampOrNullIf(y, cond)
+
+
+#### dictGet(attr_name, id_expr)
+
+
+#### dictGetHierarchy(id_expr)
+
+
+#### dictGetOrDefault(attr_name, id_expr, default)
+
+
+#### dictHas(id_expr)
+
+
+#### dictIsIn(child_id_expr, ancestor_id_expr)
 
 
 #### divide(**kwargs)
@@ -2505,6 +2787,15 @@ Initializer.
 
 
 #### toDateTime(**kwargs)
+
+
+#### toDateTime64(**kwargs)
+
+
+#### toDateTime64OrNull(precision, timezone=NO_VALUE)
+
+
+#### toDateTime64OrZero(precision, timezone=NO_VALUE)
 
 
 #### toDateTimeOrNull()

@@ -1,4 +1,3 @@
-from __future__ import unicode_literals
 import unittest
 from infi.clickhouse_orm.database import Database
 from infi.clickhouse_orm.fields import Field, Int16Field

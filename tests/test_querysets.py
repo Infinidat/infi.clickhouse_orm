@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals, print_function
 import unittest
 from infi.clickhouse_orm.database import Database
 from infi.clickhouse_orm.query import Q
@@ -287,7 +286,7 @@ class QuerySetTestCase(TestCaseWithData):
         self._test_qs(qs[80:], 20)
 
     def test_final(self):
-        # Final can be used with CollapsingMergeTree engine only
+        # Final can be used with CollapsingMergeTree/ReplacingMergeTree engines only
         with self.assertRaises(TypeError):
             Person.objects_in(self.database).final()
 

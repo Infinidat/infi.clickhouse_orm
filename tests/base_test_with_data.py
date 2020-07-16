@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
 import unittest
 
 from infi.clickhouse_orm.database import Database
@@ -21,6 +20,10 @@ class TestCaseWithData(unittest.TestCase):
         self.database.drop_table(Person)
         self.database.drop_database()
 
+    def _insert_all(self):
+        self.database.insert(self._sample_data())
+        self.assertTrue(self.database.count(Person))
+
     def _insert_and_check(self, data, count, batch_size=1000):
         self.database.insert(data, batch_size=batch_size)
         self.assertEqual(count, self.database.count(Person))
@@ -30,6 +33,7 @@ class TestCaseWithData(unittest.TestCase):
     def _sample_data(self):
         for entry in data:
             yield Person(**entry)
+
 
 
 class Person(Model):

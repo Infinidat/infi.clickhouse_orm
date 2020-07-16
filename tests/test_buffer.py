@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
 import unittest
 
 from infi.clickhouse_orm.models import BufferModel
