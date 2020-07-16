@@ -1,8 +1,8 @@
 Change Log
 ==========
 
-Unreleased
-----------
+v2.1.0
+------
 - Support for model constraints
 - Support for data skipping indexes
 - Support for mutations: `QuerySet.update` and `QuerySet.delete`
@@ -11,9 +11,9 @@ Unreleased
 - Added `DateTime64Field` (NiyazNz)
 - Make `DateTimeField` and `DateTime64Field` timezone-aware (NiyazNz)
 
-**Backwards incompatibile changes**
+**Backwards incompatible changes**
 
-Previously, `DateTimeField` always converted its value from the database timezone to UTC. This is no longer the case: the field's value now preserves the timezone it was defined with, or if not specified - the database's global timezone. This change has no effect if your database timezone is set UTC.
+Previously, `DateTimeField` always converted its value from the database timezone to UTC. This is no longer the case: the field's value now preserves the timezone it was defined with, or if not specified - the database's global timezone. This change has no effect if your database timezone is set to UTC.
 
 v2.0.1
 ------
