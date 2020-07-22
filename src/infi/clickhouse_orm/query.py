@@ -387,7 +387,7 @@ class QuerySet(object):
             sql += '\nWHERE ' + self.conditions_as_sql(prewhere=False)
 
         if self._grouping_fields:
-            sql += '\nGROUP BY %s' % comma_join('`%s`' % field for field in self._grouping_fields)
+            sql += '\nGROUP BY %s' % comma_join('%s' % field for field in self._grouping_fields)
 
             if self._grouping_with_totals:
                 sql += ' WITH TOTALS'
