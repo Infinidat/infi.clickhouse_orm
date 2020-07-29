@@ -648,6 +648,28 @@ class FuncsTestCase(TestCaseWithData):
         self._test_aggr(F.varPop(Person.height))
         self._test_aggr(F.varSamp(Person.height))
 
+    def test_group_funcs(self):
+
+        self._test_aggr(F.groupBitAnd(Person.passport), 35052255 & 36052255)
+        self._test_aggr(F.groupBitOr(Person.passport), 35052255 | 36052255)
+        self._test_aggr(F.groupBitXor(Person.passport), 35052255 ^ 36052255)
+        self._test_aggr(F.groupBitmap(Person.passport), 2)
+        self._test_aggr(F.groupArray()(Person.passport))
+        self._test_aggr(F.length(F.groupArray()(Person.passport)), 2)
+        self._test_aggr(F.length(F.groupArray(1)(Person.passport)), 1)
+        self._test_aggr(F.groupArrayInsertAt()(1, 2), [0, 0, 1])
+        self._test_aggr(F.groupArrayInsertAt(1, 2)(2, 3), [1, 1])
+        self._test_aggr(F.groupArrayMovingSum()(Person.height))
+        self._test_aggr(F.groupArrayMovingSum()(Person.height > 1.6))
+        self._test_aggr(F.groupArrayMovingSum(3)(Person.height))
+        self._test_aggr(F.groupArrayMovingSum(3)(Person.height > 1.6))
+        self._test_aggr(F.groupArrayMovingAvg()(Person.height))
+        self._test_aggr(F.groupArrayMovingAvg()(Person.height > 1.6))
+        self._test_aggr(F.groupArrayMovingAvg(3)(Person.height))
+        self._test_aggr(F.groupArrayMovingAvg(3)(Person.height > 1.6))
+        self._test_aggr(F.groupUniqArray()(Person.first_name))
+        self._test_aggr(F.groupUniqArray(3)(Person.first_name))
+
     def test_aggregate_funcs__or_default(self):
         self.database.raw('TRUNCATE TABLE person')
         self._test_aggr(F.countOrDefault(), 0)

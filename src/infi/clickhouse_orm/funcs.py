@@ -67,8 +67,9 @@ def parametric(func):
         def inner(*args, **kwargs):
             f = func(*args, **kwargs)
             # Append the parameter to the function name
-            parameters_str = comma_join(parameters, stringify=True)
-            f.name = '%s(%s)' % (f.name, parameters_str)
+            if parameters:
+                parameters_str = comma_join(parameters, stringify=True)
+                f.name = '%s(%s)' % (f.name, parameters_str)
             return f
         return inner
     wrapper.f_parametric = True
@@ -1580,6 +1581,26 @@ class F(Cond, FunctionOperatorsMixin, metaclass=FMeta):
 
     @staticmethod
     @aggregate
+    def groupBitAnd(expr):
+        return F('groupBitAnd', expr)
+
+    @staticmethod
+    @aggregate
+    def groupBitOr(expr):
+        return F('groupBitOr', expr)
+
+    @staticmethod
+    @aggregate
+    def groupBitmap(expr):
+        return F('groupBitmap', expr)
+
+    @staticmethod
+    @aggregate
+    def groupBitXor(expr):
+        return F('groupBitXor', expr)
+
+    @staticmethod
+    @aggregate
     def kurtSamp(x):
         return F('kurtSamp', x)
 
@@ -1617,6 +1638,36 @@ class F(Cond, FunctionOperatorsMixin, metaclass=FMeta):
     @aggregate
     def uniqExact(*args):
         return F('uniqExact', *args)
+
+    @staticmethod
+    @aggregate
+    @parametric
+    def groupArray(x):
+        return F('groupArray', x)
+
+    @staticmethod
+    @aggregate
+    @parametric
+    def groupArrayInsertAt(x, pos):
+        return F('groupArrayInsertAt', x, pos)
+
+    @staticmethod
+    @aggregate
+    @parametric
+    def groupArrayMovingSum(numbers_for_summing):
+        return F('groupArrayMovingSum', numbers_for_summing)
+
+    @staticmethod
+    @aggregate
+    @parametric
+    def groupArrayMovingAvg(numbers_for_summing):
+        return F('groupArrayMovingAvg', numbers_for_summing)
+
+    @staticmethod
+    @aggregate
+    @parametric
+    def groupUniqArray(x):
+        return F('groupUniqArray', x)
 
     @staticmethod
     @aggregate
