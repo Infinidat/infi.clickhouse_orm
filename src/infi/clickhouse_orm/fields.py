@@ -473,7 +473,11 @@ class BaseEnumField(Field):
                 except Exception:
                     return self.enum_cls(value)
             if isinstance(value, bytes):
-                return self.enum_cls[value.decode('UTF-8')]
+                decoded = value.decode('UTF-8')
+                try:
+                    return self.enum_cls[decoded]
+                except Exception:
+                    return self.enum_cls(decoded)
             if isinstance(value, int):
                 return self.enum_cls(value)
         except (KeyError, ValueError):
