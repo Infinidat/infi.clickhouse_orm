@@ -468,16 +468,9 @@ class BaseEnumField(Field):
             return value
         try:
             if isinstance(value, str):
-                try:
-                    return self.enum_cls[value]
-                except Exception:
-                    return self.enum_cls(value)
+                return self.enum_cls[value]
             if isinstance(value, bytes):
-                decoded = value.decode('UTF-8')
-                try:
-                    return self.enum_cls[decoded]
-                except Exception:
-                    return self.enum_cls(decoded)
+                return self.enum_cls[value.decode('UTF-8')]
             if isinstance(value, int):
                 return self.enum_cls(value)
         except (KeyError, ValueError):
@@ -672,3 +665,4 @@ class LowCardinalityField(Field):
 
 # Expose only relevant classes in import *
 __all__ = get_subclass_names(locals(), Field)
+
