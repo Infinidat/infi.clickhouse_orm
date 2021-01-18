@@ -1635,6 +1635,16 @@ class F(Cond, FunctionOperatorsMixin, metaclass=FMeta):
 
     @staticmethod
     @aggregate
+    def stddevPop(expr):
+        return F('stddevPop', expr)
+
+    @staticmethod
+    @aggregate
+    def stddevSamp(expr):
+        return F('stddevSamp', expr)
+
+    @staticmethod
+    @aggregate
     @parametric
     def quantile(expr):
         return F('quantile', expr)
