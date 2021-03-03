@@ -83,10 +83,12 @@ class AlterTable(ModelOperation):
             is_regular_field = not (field.materialized or field.alias)
             if name not in table_fields:
                 logger.info('        Add column %s', name)
-                assert prev_name, 'Cannot add a column to the beginning of the table'
                 cmd = 'ADD COLUMN %s %s' % (name, field.get_sql(db=database))
                 if is_regular_field:
-                    cmd += ' AFTER %s' % prev_name
+                    if prev_name is not None:
+                        cmd += ' AFTER %s' % prev_name
+                    else:
+                        cmd += ' FIRST'
                 self._alter_table(database, cmd)
 
             if is_regular_field:
