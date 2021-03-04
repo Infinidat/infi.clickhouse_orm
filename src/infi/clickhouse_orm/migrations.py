@@ -85,7 +85,7 @@ class AlterTable(ModelOperation):
                 logger.info('        Add column %s', name)
                 cmd = 'ADD COLUMN %s %s' % (name, field.get_sql(db=database))
                 if is_regular_field:
-                    if prev_name is not None:
+                    if prev_name:
                         cmd += ' AFTER %s' % prev_name
                     else:
                         cmd += ' FIRST'
