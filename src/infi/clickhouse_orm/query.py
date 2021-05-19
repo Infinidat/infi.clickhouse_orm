@@ -295,6 +295,7 @@ class QuerySet(object):
         self._model_cls = model_cls
         self._database = database
         self._order_by = []
+        self._having = ''
         self._where_q = Q()
         self._prewhere_q = Q()
         self._grouping_fields = []
@@ -392,6 +393,9 @@ class QuerySet(object):
             if self._grouping_with_totals:
                 sql += ' WITH TOTALS'
 
+        if self._having:
+            sql += '\nhaving ' + self.having_as_sql()
+
         if self._order_by:
             sql += '\nORDER BY ' + self.order_by_as_sql()
 
@@ -412,6 +416,12 @@ class QuerySet(object):
             '%s DESC' % field[1:] if isinstance(field, str) and field[0] == '-' else str(field)
             for field in self._order_by
         ])
+
+    def having_as_sql(self):
+        """
+        Returns the contents of the query's `Having` clause as a string.
+        """
+        return self._having
 
     def conditions_as_sql(self, prewhere=False):
         """
@@ -440,6 +450,14 @@ class QuerySet(object):
         """
         qs = copy(self)
         qs._order_by = field_names
+        return qs
+
+    def having(self, having_str):
+        """
+        Returns a copy of this queryset with the having changed.
+        """
+        qs = copy(self)
+        qs._having =  having_str
         return qs
 
     def only(self, *field_names):
