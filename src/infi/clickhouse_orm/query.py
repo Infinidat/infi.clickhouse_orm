@@ -394,7 +394,7 @@ class QuerySet(object):
                 sql += ' WITH TOTALS'
 
         if self._having:
-            sql += '\nhaving ' + self.having_as_sql()
+            sql += '\nHAVING ' + self.having_as_sql()
 
         if self._order_by:
             sql += '\nORDER BY ' + self.order_by_as_sql()
