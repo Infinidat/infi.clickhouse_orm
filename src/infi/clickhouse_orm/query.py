@@ -452,12 +452,24 @@ class QuerySet(object):
         qs._order_by = field_names
         return qs
 
-    def having(self, having_str):
+    def having(self, *q, **kwargs):
         """
-        Returns a copy of this queryset with the having changed.
+        Returns a copy of this queryset that includes only rows matching the having conditions.
         """
+
         qs = copy(self)
-        qs._having =  having_str
+
+        condition = Q()
+        for arg in q:
+            if isinstance(arg, Q):
+                condition &= arg
+            else:
+                raise TypeError('Invalid argument "%r" to queryset filter' % arg)
+
+        if kwargs:
+            condition &= Q(**kwargs)
+
+        qs._having = condition.to_sql(self._model_cls)
         return qs
 
     def only(self, *field_names):
