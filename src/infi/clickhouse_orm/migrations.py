@@ -265,7 +265,12 @@ class MigrationHistory(Model):
     module_name = StringField()
     applied = DateField()
 
-    engine = MergeTree('applied', ('package_name', 'module_name'))
+    engine = MergeTree(
+        'applied',
+        ('package_name', 'module_name'),
+        replica_table_path='/clickhouse/prod/tables/noshard/posthog.infi_clickhouse_orm_migrations',
+        replica_name='{replica}-{shard}'
+    )
 
     @classmethod
     def table_name(cls):
