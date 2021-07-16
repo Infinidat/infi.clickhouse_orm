@@ -280,16 +280,19 @@ class MigrationHistory(Model):
     module_name = StringField()
     applied = DateField()
 
+    engine = MergeTree('applied', ('package_name', 'module_name'))
+
+    @classmethod
+    def table_name(cls):
+        return "infi_clickhouse_orm_migrations"
+
+class MigrationHistoryReplicated(Model):
     engine = MergeTree(
         "applied",
         ("package_name", "module_name"),
         replica_table_path="/clickhouse/prod/tables/noshard/posthog.infi_clickhouse_orm_migrations",
         replica_name="{replica}-{shard}",
     )
-
-    @classmethod
-    def table_name(cls):
-        return "infi_clickhouse_orm_migrations"
 
 
 # Expose only relevant classes in import *

@@ -330,7 +330,7 @@ class Database(object):
             page_size=page_size
         )
 
-    def migrate(self, migrations_package_name, up_to=9999):
+    def migrate(self, migrations_package_name, up_to=9999, replicated=False):
         '''
         Executes schema migrations.
 
@@ -340,7 +340,7 @@ class Database(object):
         '''
         from .migrations import MigrationHistory
         logger = logging.getLogger('migrations')
-        applied_migrations = self._get_applied_migrations(migrations_package_name)
+        applied_migrations = self._get_applied_migrations(migrations_package_name, replicated=replicated)
         modules = import_submodules(migrations_package_name)
         unapplied_migrations = set(modules.keys()) - applied_migrations
         for name in sorted(unapplied_migrations):
@@ -351,11 +351,13 @@ class Database(object):
             if int(name[:4]) >= up_to:
                 break
 
-    def _get_applied_migrations(self, migrations_package_name):
-        from .migrations import MigrationHistory
-        self.create_table(MigrationHistory)
+    def _get_applied_migrations(self, migrations_package_name, replicated):
+        from .migrations import MigrationHistory, MigrationHistoryReplicated
+
+        Model = MigrationHistoryReplicated if replicated else MigrationHistory
+        self.create_table(Model)
         query = "SELECT module_name from $table WHERE package_name = '%s'" % migrations_package_name
-        query = self._substitute(query, MigrationHistory)
+        query = self._substitute(query, Model)
         return set(obj.module_name for obj in self.select(query))
 
     def _send(self, data, settings=None, stream=False):
