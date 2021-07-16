@@ -138,7 +138,7 @@ class Database(object):
         self._send('DROP DATABASE `%s`' % self.db_name)
         self.db_exists = False
 
-    def create_table(self, model_class):
+    def create_table(self, model_class, ignore_replica_errors=False):
         '''
         Creates a table for the given model class, if it does not exist already.
         '''
@@ -146,7 +146,11 @@ class Database(object):
             raise DatabaseException("You can't create system table")
         if getattr(model_class, 'engine') is None:
             raise DatabaseException("%s class must define an engine" % model_class.__name__)
-        self._send(model_class.create_table_sql(self))
+        try:
+            self._send(model_class.create_table_sql(self))
+        except ServerError as err:
+            if not ignore_replica_errors or not re.search(r"Replica .* already exists", err.message):
+                raise err
 
     def drop_table(self, model_class):
         '''
@@ -353,7 +357,7 @@ class Database(object):
 
     def _get_applied_migrations(self, migrations_package_name):
         from .migrations import MigrationHistory
-        self.create_table(MigrationHistory)
+        self.create_table(MigrationHistory, ignore_replica_errors=True)
         query = "SELECT module_name from $table WHERE package_name = '%s'" % migrations_package_name
         query = self._substitute(query, MigrationHistory)
         return set(obj.module_name for obj in self.select(query))
