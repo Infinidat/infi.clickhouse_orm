@@ -175,7 +175,7 @@ class Buffer(Engine):
     Read more [here](https://clickhouse.tech/docs/en/engines/table-engines/special/buffer/).
     """
 
-    #Buffer(database, table, num_layers, min_time, max_time, min_rows, max_rows, min_bytes, max_bytes)
+    # Buffer(database, table, num_layers, min_time, max_time, min_rows, max_rows, min_bytes, max_bytes)
     def __init__(self, main_model, num_layers=16, min_time=10, max_time=100, min_rows=10000, max_rows=1000000,
                  min_bytes=10000000, max_bytes=100000000):
         self.main_model = main_model
@@ -191,10 +191,10 @@ class Buffer(Engine):
         # Overriden create_table_sql example:
         # sql = 'ENGINE = Buffer(merge, hits, 16, 10, 100, 10000, 1000000, 10000000, 100000000)'
         sql = 'ENGINE = Buffer(`%s`, `%s`, %d, %d, %d, %d, %d, %d, %d)' % (
-                   db.db_name, self.main_model.table_name(), self.num_layers,
-                   self.min_time, self.max_time, self.min_rows,
-                   self.max_rows, self.min_bytes, self.max_bytes
-              )
+            db.db_name, self.main_model.table_name(), self.num_layers,
+            self.min_time, self.max_time, self.min_rows,
+            self.max_rows, self.min_bytes, self.max_bytes
+        )
         return sql
 
 
