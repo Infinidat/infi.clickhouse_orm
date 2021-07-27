@@ -4,7 +4,7 @@ import re
 import requests
 from collections import namedtuple
 from .models import ModelBase
-from .utils import escape, parse_tsv, import_submodules
+from .utils import parse_tsv, import_submodules
 from math import ceil
 import datetime
 from string import Template
@@ -107,7 +107,7 @@ class Database(object):
             self.request_session.auth = (username, password or '')
         self.log_statements = log_statements
         self.settings = {}
-        self.db_exists = False # this is required before running _is_existing_database
+        self.db_exists = False  # this is required before running _is_existing_database
         self.db_exists = self._is_existing_database()
         if readonly:
             if not self.db_exists:
@@ -144,7 +144,7 @@ class Database(object):
         '''
         if model_class.is_system_model():
             raise DatabaseException("You can't create system table")
-        if getattr(model_class, 'engine') is None:
+        if model_class.engine is None:
             raise DatabaseException("%s class must define an engine" % model_class.__name__)
         self._send(model_class.create_table_sql(self))
 
