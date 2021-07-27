@@ -1,6 +1,6 @@
 import unittest
 
-from infi.clickhouse_orm import *
+from clickhouse_orm import *
 from .base_test_with_data import Person
 
 

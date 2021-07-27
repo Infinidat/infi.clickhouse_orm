@@ -25,7 +25,7 @@ class Event(Model):
     engine = Memory()
     ...
 ```
-When creating a model instance, any fields you do not specify get their default value. Fields that use a default expression are assigned a sentinel value of `infi.clickhouse_orm.utils.NO_VALUE` instead. For example:
+When creating a model instance, any fields you do not specify get their default value. Fields that use a default expression are assigned a sentinel value of `clickhouse_orm.utils.NO_VALUE` instead. For example:
 ```python
 >>> event = Event()
 >>> print(event.to_dict())
@@ -63,7 +63,7 @@ db.select('SELECT created, created_date, username, name FROM $db.event', model_c
 # created_date and username will contain a default value
 db.select('SELECT * FROM $db.event', model_class=Event)
 ```
-When creating a model instance, any alias or materialized fields are assigned a sentinel value of `infi.clickhouse_orm.utils.NO_VALUE` since their real values can only be known after insertion to the database.
+When creating a model instance, any alias or materialized fields are assigned a sentinel value of `clickhouse_orm.utils.NO_VALUE` since their real values can only be known after insertion to the database.
 
 ## codec
 

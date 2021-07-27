@@ -97,7 +97,7 @@ class AlterTable(ModelOperation):
         # Identify fields whose type was changed
         # The order of class attributes can be changed any time, so we can't count on it
         # Secondly, MATERIALIZED and ALIAS fields are always at the end of the DESC, so we can't expect them to save
-        # attribute position. Watch https://github.com/Infinidat/infi.clickhouse_orm/issues/47
+        # attribute position. Watch https://github.com/Infinidat/clickhouse_orm/issues/47
         model_fields = {name: field.get_sql(with_default_expression=False, db=database)
                         for name, field in self.model_class.fields().items()}
         for field_name, field_sql in self._get_table_fields(database):

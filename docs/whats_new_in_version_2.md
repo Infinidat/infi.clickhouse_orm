@@ -50,9 +50,9 @@ for row in QueryLog.objects_in(db).filter(QueryLog.query_duration_ms > 10000):
 
 ## Convenient ways to import ORM classes
 
-You can now import all ORM classes directly from `infi.clickhouse_orm`, without worrying about sub-modules. For example:
+You can now import all ORM classes directly from `clickhouse_orm`, without worrying about sub-modules. For example:
 ```python
-from infi.clickhouse_orm import Database, Model, StringField, DateTimeField, MergeTree
+from clickhouse_orm import Database, Model, StringField, DateTimeField, MergeTree
 ```
 See [Importing ORM Classes](importing_orm_classes.md).
 

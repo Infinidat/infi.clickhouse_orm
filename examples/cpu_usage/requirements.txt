@@ -1,2 +1,2 @@
-infi.clickhouse_orm
+clickhouse_orm
 psutil

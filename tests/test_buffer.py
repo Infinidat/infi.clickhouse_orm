@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 import unittest
 
-from infi.clickhouse_orm.models import BufferModel
-from infi.clickhouse_orm.engines import *
+from clickhouse_orm.models import BufferModel
+from clickhouse_orm.engines import *
 from .base_test_with_data import *
 
 

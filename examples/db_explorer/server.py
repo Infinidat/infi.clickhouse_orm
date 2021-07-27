@@ -1,4 +1,4 @@
-from infi.clickhouse_orm import Database, F
+from clickhouse_orm import Database, F
 from charts import tables_piechart, columns_piechart, number_formatter, bytes_formatter
 from flask import Flask
 from flask import render_template

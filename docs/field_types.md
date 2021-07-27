@@ -166,7 +166,7 @@ For example, we can create a BooleanField which will hold `True` and `False` val
 Here's the full implementation:
 
 ```python
-from infi.clickhouse_orm import Field
+from clickhouse_orm import Field
 
 class BooleanField(Field):
 

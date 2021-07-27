@@ -1,7 +1,7 @@
 import sys
 from colorama import init, Fore, Back, Style
 from nltk.stem.porter import PorterStemmer
-from infi.clickhouse_orm import Database, F
+from clickhouse_orm import Database, F
 from models import Fragment
 from load import trim_punctuation
 

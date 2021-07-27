@@ -23,7 +23,7 @@ class Operator(object):
         raise NotImplementedError   # pragma: no cover
 
     def _value_to_sql(self, field, value, quote=True):
-        from infi.clickhouse_orm.funcs import F
+        from clickhouse_orm.funcs import F
         if isinstance(value, F):
             return value.to_sql()
         return field.to_db_string(field.to_python(value, pytz.utc), quote)

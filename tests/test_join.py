@@ -2,7 +2,7 @@
 import unittest
 import json
 
-from infi.clickhouse_orm import database, engines, fields, models
+from clickhouse_orm import database, engines, fields, models
 
 
 class JoinTest(unittest.TestCase):

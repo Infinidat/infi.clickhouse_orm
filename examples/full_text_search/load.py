@@ -2,7 +2,7 @@ import sys
 import nltk
 from nltk.stem.porter import PorterStemmer
 from glob import glob
-from infi.clickhouse_orm import Database
+from clickhouse_orm import Database
 from models import Fragment
 
 

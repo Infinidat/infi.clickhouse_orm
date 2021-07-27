@@ -1,4 +1,4 @@
-from infi.clickhouse_orm import *
+from clickhouse_orm import *
 
 
 class Fragment(Model):
