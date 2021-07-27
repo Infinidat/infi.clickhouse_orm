@@ -2,7 +2,7 @@ import codecs
 import importlib
 import pkgutil
 import re
-from datetime import date, datetime, tzinfo, timedelta
+from datetime import date, datetime, timedelta, tzinfo
 
 SPECIAL_CHARS = {"\b": "\\b", "\f": "\\f", "\r": "\\r", "\n": "\\n", "\t": "\\t", "\0": "\\0", "\\": "\\\\", "'": "\\'"}
 
@@ -40,7 +40,7 @@ def arg_to_sql(arg):
     Supports functions, model fields, strings, dates, datetimes, timedeltas, booleans,
     None, numbers, timezones, arrays/iterables.
     """
-    from clickhouse_orm import Field, StringField, DateTimeField, F, QuerySet
+    from clickhouse_orm import DateTimeField, F, Field, QuerySet, StringField
 
     if isinstance(arg, F):
         return arg.to_sql()

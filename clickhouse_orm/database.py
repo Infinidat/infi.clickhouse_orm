@@ -1,16 +1,15 @@
-from __future__ import unicode_literals
-
-import re
-import requests
-from collections import namedtuple
-from .models import ModelBase
-from .utils import parse_tsv, import_submodules
-from math import ceil
 import datetime
-from string import Template
-import pytz
-
 import logging
+import re
+from collections import namedtuple
+from math import ceil
+from string import Template
+
+import pytz
+import requests
+
+from .models import ModelBase
+from .utils import import_submodules, parse_tsv
 
 logger = logging.getLogger("clickhouse_orm")
 

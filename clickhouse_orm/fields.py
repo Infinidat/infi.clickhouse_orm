@@ -1,5 +1,3 @@
-from __future__ import unicode_literals
-
 import datetime
 from calendar import timegm
 from decimal import Decimal, localcontext

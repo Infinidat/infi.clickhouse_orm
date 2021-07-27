@@ -1,10 +1,9 @@
-from __future__ import unicode_literals
-
-import pytz
 from copy import copy, deepcopy
 from math import ceil
-from .utils import comma_join, string_or_func, arg_to_sql
 
+import pytz
+
+from .utils import arg_to_sql, comma_join, string_or_func
 
 # TODO
 # - check that field names are valid
