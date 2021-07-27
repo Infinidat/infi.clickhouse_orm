@@ -8,9 +8,8 @@ from clickhouse_orm.engines import *
 
 
 class ArrayFieldsTest(unittest.TestCase):
-
     def setUp(self):
-        self.database = Database('test-db', log_statements=True)
+        self.database = Database("test-db", log_statements=True)
         self.database.create_table(ModelWithArrays)
 
     def tearDown(self):
@@ -18,12 +17,12 @@ class ArrayFieldsTest(unittest.TestCase):
 
     def test_insert_and_select(self):
         instance = ModelWithArrays(
-            date_field='2016-08-30',
-            arr_str=['goodbye,', 'cruel', 'world', 'special chars: ,"\\\'` \n\t\\[]'],
-            arr_date=['2010-01-01'],
+            date_field="2016-08-30",
+            arr_str=["goodbye,", "cruel", "world", "special chars: ,\"\\'` \n\t\\[]"],
+            arr_date=["2010-01-01"],
         )
         self.database.insert([instance])
-        query = 'SELECT * from $db.modelwitharrays ORDER BY date_field'
+        query = "SELECT * from $db.modelwitharrays ORDER BY date_field"
         for model_cls in (ModelWithArrays, None):
             results = list(self.database.select(query, model_cls))
             self.assertEqual(len(results), 1)
@@ -32,32 +31,25 @@ class ArrayFieldsTest(unittest.TestCase):
             self.assertEqual(results[0].arr_date, instance.arr_date)
 
     def test_conversion(self):
-        instance = ModelWithArrays(
-            arr_int=('1', '2', '3'),
-            arr_date=['2010-01-01']
-        )
+        instance = ModelWithArrays(arr_int=("1", "2", "3"), arr_date=["2010-01-01"])
         self.assertEqual(instance.arr_str, [])
         self.assertEqual(instance.arr_int, [1, 2, 3])
         self.assertEqual(instance.arr_date, [date(2010, 1, 1)])
 
     def test_assignment_error(self):
         instance = ModelWithArrays()
-        for value in (7, 'x', [date.today()], ['aaa'], [None]):
+        for value in (7, "x", [date.today()], ["aaa"], [None]):
             with self.assertRaises(ValueError):
                 instance.arr_int = value
 
     def test_parse_array(self):
         from clickhouse_orm.utils import parse_array, unescape
+
         self.assertEqual(parse_array("[]"), [])
         self.assertEqual(parse_array("[1, 2, 395, -44]"), ["1", "2", "395", "-44"])
         self.assertEqual(parse_array("['big','mouse','','!']"), ["big", "mouse", "", "!"])
         self.assertEqual(parse_array(unescape("['\\r\\n\\0\\t\\b']")), ["\r\n\0\t\b"])
-        for s in ("",
-                  "[",
-                  "]",
-                  "[1, 2",
-                  "3, 4]",
-                  "['aaa', 'aaa]"):
+        for s in ("", "[", "]", "[1, 2", "3, 4]", "['aaa', 'aaa]"):
             with self.assertRaises(ValueError):
                 parse_array(s)
 
@@ -74,4 +66,4 @@ class ModelWithArrays(Model):
     arr_int = ArrayField(Int32Field())
     arr_date = ArrayField(DateField())
 
-    engine = MergeTree('date_field', ('date_field',))
+    engine = MergeTree("date_field", ("date_field",))

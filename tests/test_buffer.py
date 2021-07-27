@@ -7,7 +7,6 @@ from .base_test_with_data import *
 
 
 class BufferTestCase(TestCaseWithData):
-
     def _insert_and_check_buffer(self, data, count):
         self.database.insert(data)
         self.assertEqual(count, self.database.count(PersonBuffer))

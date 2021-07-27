@@ -1,6 +1,4 @@
 from clickhouse_orm import migrations
 from ..test_migrations import *
 
-operations = [
-    migrations.AlterTable(Model3)
-]
+operations = [migrations.AlterTable(Model3)]

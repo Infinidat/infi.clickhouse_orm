@@ -9,24 +9,21 @@ from clickhouse_orm.funcs import F
 
 
 class AliasFieldsTest(unittest.TestCase):
-
     def setUp(self):
-        self.database = Database('test-db', log_statements=True)
+        self.database = Database("test-db", log_statements=True)
         self.database.create_table(ModelWithAliasFields)
 
     def tearDown(self):
         self.database.drop_database()
 
     def test_insert_and_select(self):
-        instance = ModelWithAliasFields(
-            date_field='2016-08-30',
-            int_field=-10,
-            str_field='TEST'
-        )
+        instance = ModelWithAliasFields(date_field="2016-08-30", int_field=-10, str_field="TEST")
         self.database.insert([instance])
         # We can't select * from table, as it doesn't select materialized and alias fields
-        query = 'SELECT date_field, int_field, str_field, alias_int, alias_date, alias_str, alias_func' \
-                ' FROM $db.%s ORDER BY alias_date' % ModelWithAliasFields.table_name()
+        query = (
+            "SELECT date_field, int_field, str_field, alias_int, alias_date, alias_str, alias_func"
+            " FROM $db.%s ORDER BY alias_date" % ModelWithAliasFields.table_name()
+        )
         for model_cls in (ModelWithAliasFields, None):
             results = list(self.database.select(query, model_cls))
             self.assertEqual(len(results), 1)
@@ -41,7 +38,7 @@ class AliasFieldsTest(unittest.TestCase):
     def test_assignment_error(self):
         # I can't prevent assigning at all, in case db.select statements with model provided sets model fields.
         instance = ModelWithAliasFields()
-        for value in ('x', [date.today()], ['aaa'], [None]):
+        for value in ("x", [date.today()], ["aaa"], [None]):
             with self.assertRaises(ValueError):
                 instance.alias_date = value
 
@@ -51,10 +48,10 @@ class AliasFieldsTest(unittest.TestCase):
 
     def test_duplicate_default(self):
         with self.assertRaises(AssertionError):
-            StringField(alias='str_field', default='with default')
+            StringField(alias="str_field", default="with default")
 
         with self.assertRaises(AssertionError):
-            StringField(alias='str_field', materialized='str_field')
+            StringField(alias="str_field", materialized="str_field")
 
     def test_default_value(self):
         instance = ModelWithAliasFields()
@@ -70,9 +67,9 @@ class ModelWithAliasFields(Model):
     date_field = DateField()
     str_field = StringField()
 
-    alias_str = StringField(alias=u'str_field')
-    alias_int = Int32Field(alias='int_field')
-    alias_date = DateField(alias='date_field')
+    alias_str = StringField(alias=u"str_field")
+    alias_int = Int32Field(alias="int_field")
+    alias_date = DateField(alias="date_field")
     alias_func = Int32Field(alias=F.toYYYYMM(date_field))
 
-    engine = MergeTree('date_field', ('date_field',))
+    engine = MergeTree("date_field", ("date_field",))
