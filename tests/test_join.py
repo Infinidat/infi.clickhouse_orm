@@ -1,5 +1,5 @@
-import unittest
 import json
+import unittest
 
 from clickhouse_orm import database, engines, fields, models
 

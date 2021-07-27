@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from clickhouse_orm.database import DatabaseException, ServerError
+
 from .base_test_with_data import *
 
 

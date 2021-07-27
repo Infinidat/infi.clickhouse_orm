@@ -1,11 +1,10 @@
 import unittest
+from enum import Enum
 
 from clickhouse_orm.database import Database
-from clickhouse_orm.models import Model
-from clickhouse_orm.fields import *
 from clickhouse_orm.engines import *
-
-from enum import Enum
+from clickhouse_orm.fields import *
+from clickhouse_orm.models import Model
 
 
 class EnumFieldsTest(unittest.TestCase):

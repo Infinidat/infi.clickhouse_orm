@@ -1,7 +1,6 @@
+import os
 import unittest
 from datetime import date
-
-import os
 
 from clickhouse_orm.database import Database, DatabaseException
 from clickhouse_orm.engines import *

@@ -1,6 +1,7 @@
 import unittest
 
 from clickhouse_orm import *
+
 from .base_test_with_data import Person
 
 

@@ -2,10 +2,10 @@ import unittest
 from datetime import date
 
 from clickhouse_orm.database import Database
-from clickhouse_orm.models import Model, NO_VALUE
-from clickhouse_orm.fields import *
 from clickhouse_orm.engines import *
+from clickhouse_orm.fields import *
 from clickhouse_orm.funcs import F
+from clickhouse_orm.models import NO_VALUE, Model
 
 
 class MaterializedFieldsTest(unittest.TestCase):

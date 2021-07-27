@@ -1,12 +1,11 @@
 # -*- coding: utf-8 -*-
+import logging
 import unittest
 
 from clickhouse_orm.database import Database
-from clickhouse_orm.models import Model
-from clickhouse_orm.fields import *
 from clickhouse_orm.engines import *
-
-import logging
+from clickhouse_orm.fields import *
+from clickhouse_orm.models import Model
 
 logging.getLogger("requests").setLevel(logging.WARNING)
 

@@ -1,9 +1,10 @@
 import unittest
 from ipaddress import IPv4Address, IPv6Address
+
 from clickhouse_orm.database import Database
+from clickhouse_orm.engines import Memory
 from clickhouse_orm.fields import Int16Field, IPv4Field, IPv6Field
 from clickhouse_orm.models import Model
-from clickhouse_orm.engines import Memory
 
 
 class IPFieldsTest(unittest.TestCase):

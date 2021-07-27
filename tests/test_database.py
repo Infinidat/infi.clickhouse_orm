@@ -1,13 +1,14 @@
 # -*- coding: utf-8 -*-
-import unittest
 import datetime
+import unittest
 
-from clickhouse_orm.database import ServerError, DatabaseException
-from clickhouse_orm.models import Model
+from clickhouse_orm.database import DatabaseException, ServerError
 from clickhouse_orm.engines import Memory
 from clickhouse_orm.fields import *
 from clickhouse_orm.funcs import F
+from clickhouse_orm.models import Model
 from clickhouse_orm.query import Q
+
 from .base_test_with_data import *
 
 

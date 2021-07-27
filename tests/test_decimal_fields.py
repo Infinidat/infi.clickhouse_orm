@@ -3,9 +3,9 @@ import unittest
 from decimal import Decimal
 
 from clickhouse_orm.database import Database, ServerError
-from clickhouse_orm.models import Model
-from clickhouse_orm.fields import *
 from clickhouse_orm.engines import *
+from clickhouse_orm.fields import *
+from clickhouse_orm.models import Model
 
 
 class DecimalFieldsTest(unittest.TestCase):

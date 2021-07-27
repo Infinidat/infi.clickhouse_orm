@@ -1,9 +1,8 @@
-import unittest
 import datetime
+import logging
+import unittest
 
 from clickhouse_orm import *
-
-import logging
 
 logging.getLogger("requests").setLevel(logging.WARNING)
 

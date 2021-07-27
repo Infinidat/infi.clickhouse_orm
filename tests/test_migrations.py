@@ -1,15 +1,15 @@
-import unittest
-
-from clickhouse_orm.database import Database, ServerError
-from clickhouse_orm.models import Model, BufferModel, Constraint, Index
-from clickhouse_orm.fields import *
-from clickhouse_orm.engines import *
-from clickhouse_orm.migrations import MigrationHistory
-
-from enum import Enum
+import os
 
 # Add tests to path so that migrations will be importable
-import sys, os
+import sys
+import unittest
+from enum import Enum
+
+from clickhouse_orm.database import Database, ServerError
+from clickhouse_orm.engines import *
+from clickhouse_orm.fields import *
+from clickhouse_orm.migrations import MigrationHistory
+from clickhouse_orm.models import BufferModel, Constraint, Index, Model
 
 sys.path.append(os.path.dirname(__file__))
 

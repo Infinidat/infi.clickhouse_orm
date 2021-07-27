@@ -1,15 +1,17 @@
-import unittest
-from .base_test_with_data import *
-from .test_querysets import SampleModel
-from datetime import date, datetime, tzinfo, timedelta
-import pytz
-from ipaddress import IPv4Address, IPv6Address
 import logging
+import unittest
+from datetime import date, datetime, timedelta, tzinfo
 from decimal import Decimal
+from ipaddress import IPv4Address, IPv6Address
+
+import pytz
 
 from clickhouse_orm.database import ServerError
-from clickhouse_orm.utils import NO_VALUE
 from clickhouse_orm.funcs import F
+from clickhouse_orm.utils import NO_VALUE
+
+from .base_test_with_data import *
+from .test_querysets import SampleModel
 
 
 class FuncsTestCase(TestCaseWithData):

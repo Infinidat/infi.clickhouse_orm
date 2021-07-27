@@ -1,13 +1,13 @@
 import unittest
+from datetime import date, datetime
+
 import pytz
 
 from clickhouse_orm.database import Database
-from clickhouse_orm.models import Model
-from clickhouse_orm.fields import *
 from clickhouse_orm.engines import *
+from clickhouse_orm.fields import *
+from clickhouse_orm.models import Model
 from clickhouse_orm.utils import comma_join
-
-from datetime import date, datetime
 
 
 class NullableFieldsTest(unittest.TestCase):

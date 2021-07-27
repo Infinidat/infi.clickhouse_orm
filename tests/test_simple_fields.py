@@ -1,7 +1,9 @@
 import unittest
-from clickhouse_orm.fields import *
 from datetime import date, datetime
+
 import pytz
+
+from clickhouse_orm.fields import *
 
 
 class SimpleFieldsTest(unittest.TestCase):

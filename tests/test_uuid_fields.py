@@ -1,9 +1,10 @@
 import unittest
 from uuid import UUID
+
 from clickhouse_orm.database import Database
+from clickhouse_orm.engines import Memory
 from clickhouse_orm.fields import Int16Field, UUIDField
 from clickhouse_orm.models import Model
-from clickhouse_orm.engines import Memory
 
 
 class UUIDFieldsTest(unittest.TestCase):

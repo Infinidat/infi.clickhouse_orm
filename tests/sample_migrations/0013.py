@@ -1,7 +1,8 @@
 import datetime
 
-from clickhouse_orm import migrations
 from test_migrations import Model3
+
+from clickhouse_orm import migrations
 
 
 def forward(database):
