@@ -119,3 +119,6 @@ venv
 .hypothesis/
 .mypy_cache/
 **/__pycache__/
+
+# poetry
+poetry.lock
