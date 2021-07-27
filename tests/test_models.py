@@ -30,7 +30,7 @@ class ModelTestCase(unittest.TestCase):
             float_field=3.14,
         )
         instance = SimpleModel(**kwargs)
-        for name, value in kwargs.items():
+        for name in kwargs:
             self.assertEqual(kwargs[name], getattr(instance, name))
 
     def test_assignment_error(self):

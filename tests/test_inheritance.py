@@ -1,7 +1,4 @@
-import datetime
 import unittest
-
-import pytz
 
 from clickhouse_orm.database import Database
 from clickhouse_orm.engines import *

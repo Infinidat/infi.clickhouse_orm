@@ -17,6 +17,7 @@ class IPFieldsTest(unittest.TestCase):
     def test_ipv4_field(self):
         if self.database.server_version < (19, 17):
             raise unittest.SkipTest("ClickHouse version too old")
+
         # Create a model
         class TestModel(Model):
             i = Int16Field()
@@ -39,6 +40,7 @@ class IPFieldsTest(unittest.TestCase):
     def test_ipv6_field(self):
         if self.database.server_version < (19, 17):
             raise unittest.SkipTest("ClickHouse version too old")
+
         # Create a model
         class TestModel(Model):
             i = Int16Field()

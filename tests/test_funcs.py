@@ -1,6 +1,6 @@
 import logging
 import unittest
-from datetime import date, datetime, timedelta, tzinfo
+from datetime import date, datetime, timedelta
 from decimal import Decimal
 from ipaddress import IPv4Address, IPv6Address
 
@@ -39,8 +39,8 @@ class FuncsTestCase(TestCaseWithData):
                 self.assertEqual(result[0].value, expected_value)
             return result[0].value if result else None
         except ServerError as e:
-            if "Unknown function" in e.message:
-                logging.warning(e.message)
+            if "Unknown function" in str(e):
+                logging.warning(str(e))
                 return  # ignore functions that don't exist in the used ClickHouse version
             raise
 
@@ -54,8 +54,8 @@ class FuncsTestCase(TestCaseWithData):
                 self.assertEqual(result[0].value, expected_value)
             return result[0].value if result else None
         except ServerError as e:
-            if "Unknown function" in e.message:
-                logging.warning(e.message)
+            if "Unknown function" in str(e):
+                logging.warning(str(e))
                 return  # ignore functions that don't exist in the used ClickHouse version
             raise
 
@@ -449,7 +449,7 @@ class FuncsTestCase(TestCaseWithData):
             self._test_func(F.tryBase64Decode(":-)"))
         except ServerError as e:
             # ClickHouse version that doesn't support these functions
-            raise unittest.SkipTest(e.message)
+            raise unittest.SkipTest(str(e))
 
     def test_replace_functions(self):
         haystack = "hello"

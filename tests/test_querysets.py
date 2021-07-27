@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import unittest
 from datetime import date, datetime
-from decimal import Decimal
 from enum import Enum
 from logging import getLogger
 

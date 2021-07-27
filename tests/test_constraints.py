@@ -26,14 +26,14 @@ class ConstraintsTest(unittest.TestCase):
                 [PersonWithConstraints(first_name="Mike", last_name="Caruzo", birthday="2100-01-01", height=1.66)]
             )
             self.assertEqual(e.code, 469)
-            self.assertTrue("Constraint `birthday_in_the_past`" in e.message)
+            self.assertTrue("Constraint `birthday_in_the_past`" in str(e))
 
         with self.assertRaises(ServerError) as e:
             self.database.insert(
                 [PersonWithConstraints(first_name="Mike", last_name="Caruzo", birthday="1970-01-01", height=3)]
             )
             self.assertEqual(e.code, 469)
-            self.assertTrue("Constraint `max_height`" in e.message)
+            self.assertTrue("Constraint `max_height`" in str(e))
 
 
 class PersonWithConstraints(Person):

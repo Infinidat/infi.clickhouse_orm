@@ -44,7 +44,7 @@ class CompressedFieldsTestCase(unittest.TestCase):
         )
         instance = CompressedModel(**kwargs)
         self.database.insert([instance])
-        for name, value in kwargs.items():
+        for name in kwargs:
             self.assertEqual(kwargs[name], getattr(instance, name))
 
     def test_string_conversion(self):
@@ -106,8 +106,8 @@ class CompressedFieldsTestCase(unittest.TestCase):
             )
         )
         lines = r.splitlines()
-        field_names = parse_tsv(lines[0])
-        field_types = parse_tsv(lines[1])
+        parse_tsv(lines[0])
+        parse_tsv(lines[1])
         data = [tuple(parse_tsv(line)) for line in lines[2:]]
         self.assertListEqual(
             data,

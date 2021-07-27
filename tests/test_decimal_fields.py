@@ -15,7 +15,7 @@ class DecimalFieldsTest(unittest.TestCase):
             self.database.create_table(DecimalModel)
         except ServerError as e:
             # This ClickHouse version does not support decimals yet
-            raise unittest.SkipTest(e.message)
+            raise unittest.SkipTest(str(e))
 
     def tearDown(self):
         self.database.drop_database()
@@ -78,11 +78,11 @@ class DecimalFieldsTest(unittest.TestCase):
         # Go over all valid combinations
         for precision in range(1, 39):
             for scale in range(0, precision + 1):
-                f = DecimalField(precision, scale)
+                DecimalField(precision, scale)
         # Some invalid combinations
         for precision, scale in [(0, 0), (-1, 7), (7, -1), (39, 5), (20, 21)]:
             with self.assertRaises(AssertionError):
-                f = DecimalField(precision, scale)
+                DecimalField(precision, scale)
 
     def test_min_max(self):
         # In range

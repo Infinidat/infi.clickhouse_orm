@@ -199,7 +199,7 @@ class DatabaseTestCase(TestCaseWithData):
         self.assertEqual(exc.code, 81)
         self.assertTrue(exc.message.startswith("Database db_not_here doesn't exist"))
         # Create and delete the db twice, to ensure db_exists gets updated
-        for i in range(2):
+        for _ in range(2):
             # Now create the database - should succeed
             db.create_database()
             self.assertTrue(db.db_exists)
@@ -284,7 +284,7 @@ class DatabaseTestCase(TestCaseWithData):
             try:
                 list(model.objects_in(self.database)[:10])
             except ServerError as e:
-                if "Not enough privileges" in e.message:
+                if "Not enough privileges" in str(e):
                     pass
                 else:
                     raise

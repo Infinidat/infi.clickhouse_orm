@@ -1,6 +1,6 @@
-import os
-
 # Add tests to path so that migrations will be importable
+import logging
+import os
 import sys
 import unittest
 from enum import Enum
@@ -12,9 +12,6 @@ from clickhouse_orm.migrations import MigrationHistory
 from clickhouse_orm.models import BufferModel, Constraint, Index, Model
 
 sys.path.append(os.path.dirname(__file__))
-
-
-import logging
 
 logging.basicConfig(level=logging.DEBUG, format="%(message)s")
 logging.getLogger("requests").setLevel(logging.WARNING)

@@ -17,6 +17,7 @@ class UUIDFieldsTest(unittest.TestCase):
     def test_uuid_field(self):
         if self.database.server_version < (18, 1):
             raise unittest.SkipTest("ClickHouse version too old")
+
         # Create a model
         class TestModel(Model):
             i = Int16Field()

@@ -59,7 +59,7 @@ class AliasFieldsTest(unittest.TestCase):
         # Check that NO_VALUE can be assigned to a field
         instance.str_field = NO_VALUE
         # Check that NO_VALUE can be assigned when creating a new instance
-        instance2 = ModelWithAliasFields(**instance.to_dict())
+        ModelWithAliasFields(**instance.to_dict())
 
 
 class ModelWithAliasFields(Model):

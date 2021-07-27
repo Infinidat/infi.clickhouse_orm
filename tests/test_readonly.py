@@ -25,9 +25,9 @@ class ReadonlyTestCase(TestCaseWithData):
                 self.database.drop_database()
             self._check_db_readonly_err(cm.exception, drop_table=True)
         except ServerError as e:
-            if e.code == 192 and e.message.startswith("Unknown user"):  # ClickHouse version < 20.3
+            if e.code == 192 and str(e).startswith("Unknown user"):  # ClickHouse version < 20.3
                 raise unittest.SkipTest('Database user "%s" is not defined' % username)
-            elif e.code == 516 and e.message.startswith(
+            elif e.code == 516 and str(e).startswith(
                 "readonly: Authentication failed"
             ):  # ClickHouse version >= 20.3
                 raise unittest.SkipTest('Database user "%s" is not defined' % username)
@@ -66,7 +66,7 @@ class ReadonlyTestCase(TestCaseWithData):
 
     def test_nonexisting_readonly_database(self):
         with self.assertRaises(DatabaseException) as cm:
-            db = Database("dummy", readonly=True)
+            Database("dummy", readonly=True)
         self.assertEqual(str(cm.exception), "Database does not exist, and cannot be created under readonly connection")
 
 
