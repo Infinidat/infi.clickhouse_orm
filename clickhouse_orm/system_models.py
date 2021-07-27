@@ -16,7 +16,8 @@ class SystemPart(Model):
     This model operates only fields, described in the reference. Other fields are ignored.
     https://clickhouse.tech/docs/en/system_tables/system.parts/
     """
-    OPERATIONS = frozenset({'DETACH', 'DROP', 'ATTACH', 'FREEZE', 'FETCH'})
+
+    OPERATIONS = frozenset({"DETACH", "DROP", "ATTACH", "FREEZE", "FETCH"})
 
     _readonly = True
     _system = True
@@ -51,12 +52,13 @@ class SystemPart(Model):
 
     @classmethod
     def table_name(cls):
-        return 'parts'
+        return "parts"
 
     """
     Next methods return SQL for some operations, which can be done with partitions
     https://clickhouse.tech/docs/en/query_language/queries/#manipulations-with-partitions-and-parts
     """
+
     def _partition_operation_sql(self, operation, settings=None, from_part=None):
         """
         Performs some operation over partition
@@ -83,7 +85,7 @@ class SystemPart(Model):
 
         Returns: SQL Query
         """
-        return self._partition_operation_sql('DETACH', settings=settings)
+        return self._partition_operation_sql("DETACH", settings=settings)
 
     def drop(self, settings=None):
         """
@@ -93,7 +95,7 @@ class SystemPart(Model):
 
         Returns: SQL Query
         """
-        return self._partition_operation_sql('DROP', settings=settings)
+        return self._partition_operation_sql("DROP", settings=settings)
 
     def attach(self, settings=None):
         """
@@ -103,7 +105,7 @@ class SystemPart(Model):
 
         Returns: SQL Query
         """
-        return self._partition_operation_sql('ATTACH', settings=settings)
+        return self._partition_operation_sql("ATTACH", settings=settings)
 
     def freeze(self, settings=None):
         """
@@ -113,7 +115,7 @@ class SystemPart(Model):
 
         Returns: SQL Query
         """
-        return self._partition_operation_sql('FREEZE', settings=settings)
+        return self._partition_operation_sql("FREEZE", settings=settings)
 
     def fetch(self, zookeeper_path, settings=None):
         """
@@ -124,7 +126,7 @@ class SystemPart(Model):
 
         Returns: SQL Query
         """
-        return self._partition_operation_sql('FETCH', settings=settings, from_part=zookeeper_path)
+        return self._partition_operation_sql("FETCH", settings=settings, from_part=zookeeper_path)
 
     @classmethod
     def get(cls, database, conditions=""):
@@ -140,9 +142,12 @@ class SystemPart(Model):
         assert isinstance(conditions, str), "conditions must be a string"
         if conditions:
             conditions += " AND"
-        field_names = ','.join(cls.fields())
-        return database.select("SELECT %s FROM `system`.%s WHERE %s database='%s'" %
-                               (field_names, cls.table_name(), conditions, database.db_name), model_class=cls)
+        field_names = ",".join(cls.fields())
+        return database.select(
+            "SELECT %s FROM `system`.%s WHERE %s database='%s'"
+            % (field_names, cls.table_name(), conditions, database.db_name),
+            model_class=cls,
+        )
 
     @classmethod
     def get_active(cls, database, conditions=""):
@@ -155,8 +160,8 @@ class SystemPart(Model):
         Returns: A list of SystemPart objects
         """
         if conditions:
-            conditions += ' AND '
-        conditions += 'active'
+            conditions += " AND "
+        conditions += "active"
         return SystemPart.get(database, conditions=conditions)
 
 
