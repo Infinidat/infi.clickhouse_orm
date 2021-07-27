@@ -1,9 +1,10 @@
-from .models import Model, BufferModel
-from .fields import DateField, StringField
-from .engines import MergeTree
-from .utils import escape, get_subclass_names
-
 import logging
+
+from .engines import MergeTree
+from .fields import DateField, StringField
+from .models import BufferModel, Model
+from .utils import get_subclass_names
+
 logger = logging.getLogger('migrations')
 
 

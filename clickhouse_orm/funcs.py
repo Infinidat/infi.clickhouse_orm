@@ -1,9 +1,9 @@
 from functools import wraps
-from inspect import signature, Parameter
+from inspect import Parameter, signature
 from types import FunctionType
 
-from .utils import is_iterable, comma_join, NO_VALUE, arg_to_sql
 from .query import Cond, QuerySet
+from .utils import NO_VALUE, arg_to_sql, comma_join, is_iterable
 
 
 def binary_operator(func):

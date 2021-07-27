@@ -1,4 +1,3 @@
-from __future__ import unicode_literals
 import sys
 from collections import OrderedDict
 from itertools import chain
@@ -6,14 +5,13 @@ from logging import getLogger
 
 import pytz
 
+from .engines import Distributed, Merge
 from .fields import Field, StringField
-from .utils import parse_tsv, NO_VALUE, get_subclass_names, arg_to_sql, unescape
-from .query import QuerySet
 from .funcs import F
-from .engines import Merge, Distributed
+from .query import QuerySet
+from .utils import NO_VALUE, arg_to_sql, get_subclass_names, parse_tsv
 
 logger = getLogger('clickhouse_orm')
-
 
 
 class Constraint:
@@ -21,8 +19,8 @@ class Constraint:
     Defines a model constraint.
     '''
 
-    name   = None # this is set by the parent model
-    parent = None # this is set by the parent model
+    name = None  # this is set by the parent model
+    parent = None  # this is set by the parent model
 
     def __init__(self, expr):
         '''
@@ -42,8 +40,8 @@ class Index:
     Defines a data-skipping index.
     '''
 
-    name   = None # this is set by the parent model
-    parent = None # this is set by the parent model
+    name = None  # this is set by the parent model
+    parent = None  # this is set by the parent model
 
     def __init__(self, expr, type, granularity):
         '''
@@ -126,7 +124,7 @@ class ModelBase(type):
 
     ad_hoc_model_cache = {}
 
-    def __new__(cls, name, bases, attrs):
+    def __new__(metacls, name, bases, attrs):
 
         # Collect fields, constraints and indexes from parent classes
         fields = {}
@@ -172,35 +170,36 @@ class ModelBase(type):
             _defaults=defaults,
             _has_funcs_as_defaults=has_funcs_as_defaults
         )
-        model = super(ModelBase, cls).__new__(cls, str(name), bases, attrs)
+        model = super(ModelBase, metacls).__new__(metacls, str(name), bases, attrs)
 
         # Let each field, constraint and index know its parent and its own name
         for n, obj in chain(fields, constraints.items(), indexes.items()):
-            setattr(obj, 'parent', model)
-            setattr(obj, 'name', n)
+            obj.parent = model
+            obj.name = n
 
         return model
 
     @classmethod
-    def create_ad_hoc_model(cls, fields, model_name='AdHocModel'):
+    def create_ad_hoc_model(metacls, fields, model_name='AdHocModel'):
         # fields is a list of tuples (name, db_type)
         # Check if model exists in cache
         fields = list(fields)
         cache_key = model_name + ' ' + str(fields)
-        if cache_key in cls.ad_hoc_model_cache:
-            return cls.ad_hoc_model_cache[cache_key]
+        if cache_key in metacls.ad_hoc_model_cache:
+            return metacls.ad_hoc_model_cache[cache_key]
         # Create an ad hoc model class
         attrs = {}
         for name, db_type in fields:
-            attrs[name] = cls.create_ad_hoc_field(db_type)
-        model_class = cls.__new__(cls, model_name, (Model,), attrs)
+            attrs[name] = metacls.create_ad_hoc_field(db_type)
+        model_class = metacls.__new__(metacls, model_name, (Model,), attrs)
         # Add the model class to the cache
-        cls.ad_hoc_model_cache[cache_key] = model_class
+        metacls.ad_hoc_model_cache[cache_key] = model_class
         return model_class
 
     @classmethod
-    def create_ad_hoc_field(cls, db_type):
+    def create_ad_hoc_field(metacls, db_type):
         import clickhouse_orm.fields as orm_fields
+
         # Enums
         if db_type.startswith('Enum'):
             return orm_fields.BaseEnumField.create_ad_hoc_field(db_type)
@@ -219,13 +218,13 @@ class ModelBase(type):
             )
         # Arrays
         if db_type.startswith('Array'):
-            inner_field = cls.create_ad_hoc_field(db_type[6 : -1])
+            inner_field = metacls.create_ad_hoc_field(db_type[6 : -1])
             return orm_fields.ArrayField(inner_field)
         # Tuples (poor man's version - convert to array)
         if db_type.startswith('Tuple'):
             types = [s.strip() for s in db_type[6 : -1].split(',')]
             assert len(set(types)) == 1, 'No support for mixed types in tuples - ' + db_type
-            inner_field = cls.create_ad_hoc_field(types[0])
+            inner_field = metacls.create_ad_hoc_field(types[0])
             return orm_fields.ArrayField(inner_field)
         # FixedString
         if db_type.startswith('FixedString'):
@@ -239,11 +238,11 @@ class ModelBase(type):
             return field_class(*args)
         # Nullable
         if db_type.startswith('Nullable'):
-            inner_field = cls.create_ad_hoc_field(db_type[9 : -1])
+            inner_field = metacls.create_ad_hoc_field(db_type[9 : -1])
             return orm_fields.NullableField(inner_field)
         # LowCardinality
         if db_type.startswith('LowCardinality'):
-            inner_field = cls.create_ad_hoc_field(db_type[15 : -1])
+            inner_field = metacls.create_ad_hoc_field(db_type[15 : -1])
             return orm_fields.LowCardinalityField(inner_field)
         # Simple fields
         name = db_type + 'Field'

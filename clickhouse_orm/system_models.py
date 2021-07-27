@@ -5,7 +5,7 @@ https://clickhouse.tech/docs/en/system_tables/
 from __future__ import unicode_literals
 
 from .database import Database
-from .fields import *
+from .fields import DateTimeField, StringField, UInt8Field, UInt32Field, UInt64Field
 from .models import Model
 from .utils import comma_join
 

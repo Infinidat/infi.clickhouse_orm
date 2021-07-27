@@ -1,7 +1,8 @@
 import codecs
+import importlib
+import pkgutil
 import re
 from datetime import date, datetime, tzinfo, timedelta
-
 
 SPECIAL_CHARS = {
     "\b" : "\\b",
@@ -15,7 +16,6 @@ SPECIAL_CHARS = {
 }
 
 SPECIAL_CHARS_REGEX = re.compile("[" + ''.join(SPECIAL_CHARS.values()) + "]")
-
 
 
 def escape(value, quote=True):
@@ -48,7 +48,7 @@ def arg_to_sql(arg):
     Supports functions, model fields, strings, dates, datetimes, timedeltas, booleans,
     None, numbers, timezones, arrays/iterables.
     """
-    from clickhouse_orm import Field, StringField, DateTimeField, DateField, F, QuerySet
+    from clickhouse_orm import Field, StringField, DateTimeField, F, QuerySet
     if isinstance(arg, F):
         return arg.to_sql()
     if isinstance(arg, Field):
@@ -122,7 +122,6 @@ def import_submodules(package_name):
     """
     Import all submodules of a module.
     """
-    import importlib, pkgutil
     package = importlib.import_module(package_name)
     return {
         name: importlib.import_module(package_name + '.' + name)
@@ -163,5 +162,6 @@ class NoValue:
     '''
     def __repr__(self):
         return 'NO_VALUE'
+
 
 NO_VALUE = NoValue()
