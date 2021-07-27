@@ -30,6 +30,9 @@ classifiers = [
 
 [tool.poetry.dependencies]
 python = "^3.7"
+requests = "^2.26.0"
+pytz = "^2021.1"
+iso8601 = "^0.1.16"
 
 [tool.poetry.dev-dependencies]
 flake8 = "^3.9.2"
