@@ -20,16 +20,16 @@ classifiers = [
     "License :: OSI Approved :: BSD License",
     "Operating System :: OS Independent",
     "Programming Language :: Python",
+    "Programming Language :: Python :: 3.6",
     "Programming Language :: Python :: 3.7",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Topic :: Database"
 ]
 
 [tool.poetry.dependencies]
-python = "^3.7"
+python = ">=3.6.2,<4"
 requests = "^2.26.0"
 pytz = "^2021.1"
 iso8601 = "^0.1.16"
