@@ -221,7 +221,7 @@ class Q(object):
             q._children.append(deepcopy(l_child))
         else:
             # Different modes
-            q = Q()
+            q = cls()
             q._children = [l_child, r_child]
             q._mode = mode  # AND/OR
 
@@ -259,10 +259,10 @@ class Q(object):
         return sql
 
     def __or__(self, other):
-        return Q._construct_from(self, other, self.OR_MODE)
+        return self.__class__._construct_from(self, other, self.OR_MODE)
 
     def __and__(self, other):
-        return Q._construct_from(self, other, self.AND_MODE)
+        return self.__class__._construct_from(self, other, self.AND_MODE)
 
     def __invert__(self):
         q = copy(self)
@@ -273,7 +273,7 @@ class Q(object):
         return not self.is_empty
 
     def __deepcopy__(self, memo):
-        q = Q()
+        q = self.__class__()
         q._conds = [deepcopy(cond) for cond in self._conds]
         q._negate = self._negate
         q._mode = self._mode
