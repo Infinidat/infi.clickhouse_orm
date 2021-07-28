@@ -147,7 +147,7 @@ class StringField(Field):
         if isinstance(value, str):
             return value
         if isinstance(value, bytes):
-            return value.decode("UTF-8")
+            return value.decode("utf-8")
         raise ValueError("Invalid value for %s: %r" % (self.__class__.__name__, value))
 
 
@@ -163,7 +163,7 @@ class FixedStringField(StringField):
 
     def validate(self, value):
         if isinstance(value, str):
-            value = value.encode("UTF-8")
+            value = value.encode("utf-8")
         if len(value) > self._length:
             raise ValueError("Value of %d bytes is too long for FixedStringField(%d)" % (len(value), self._length))
 
@@ -475,7 +475,7 @@ class BaseEnumField(Field):
                 except Exception:
                     return self.enum_cls(value)
             if isinstance(value, bytes):
-                decoded = value.decode("UTF-8")
+                decoded = value.decode("utf-8")
                 try:
                     return self.enum_cls[decoded]
                 except Exception:
@@ -533,7 +533,7 @@ class ArrayField(Field):
         if isinstance(value, str):
             value = parse_array(value)
         elif isinstance(value, bytes):
-            value = parse_array(value.decode("UTF-8"))
+            value = parse_array(value.decode("utf-8"))
         elif not isinstance(value, (list, tuple)):
             raise ValueError("ArrayField expects list or tuple, not %s" % type(value))
         return [self.inner_field.to_python(v, timezone_in_use) for v in value]

@@ -3,30 +3,27 @@ import importlib
 import pkgutil
 import re
 from datetime import date, datetime, timedelta, tzinfo
+from inspect import isclass
+from types import ModuleType
+from typing import Any, Dict, Iterable, List, Optional, Type, Union
 
-SPECIAL_CHARS = {"\b": "\\b", "\f": "\\f", "\r": "\\r", "\n": "\\n", "\t": "\\t", "\0": "\\0", "\\": "\\\\", "'": "\\'"}
 
-SPECIAL_CHARS_REGEX = re.compile("[" + "".join(SPECIAL_CHARS.values()) + "]")
-
-
-def escape(value, quote=True):
+def escape(value: str, quote: bool = True) -> str:
     """
     If the value is a string, escapes any special characters and optionally
     surrounds it with single quotes. If the value is not a string (e.g. a number),
     converts it to one.
     """
+    value = codecs.escape_encode(value.encode("utf-8"))[0].decode("utf-8")
+    if quote:
+        value = "'" + value + "'"
 
-    def escape_one(match):
-        return SPECIAL_CHARS[match.group(0)]
-
-    if isinstance(value, str):
-        value = SPECIAL_CHARS_REGEX.sub(escape_one, value)
-        if quote:
-            value = "'" + value + "'"
-    return str(value)
+    return value
 
 
-def unescape(value):
+def unescape(value: str) -> Optional[str]:
+    if value == "\\N":
+        return None
     return codecs.escape_decode(value)[0].decode("utf-8")
 
 
@@ -34,7 +31,7 @@ def string_or_func(obj):
     return obj.to_sql() if hasattr(obj, "to_sql") else obj
 
 
-def arg_to_sql(arg):
+def arg_to_sql(arg: Any) -> str:
     """
     Converts a function argument to SQL string according to its type.
     Supports functions, model fields, strings, dates, datetimes, timedeltas, booleans,
@@ -69,15 +66,15 @@ def arg_to_sql(arg):
     return str(arg)
 
 
-def parse_tsv(line):
+def parse_tsv(line: Union[bytes, str]) -> List[str]:
     if isinstance(line, bytes):
         line = line.decode()
     if line and line[-1] == "\n":
         line = line[:-1]
-    return [unescape(value) for value in line.split(str("\t"))]
+    return [unescape(value) for value in line.split("\t")]
 
 
-def parse_array(array_string):
+def parse_array(array_string: str) -> List[Any]:
     """
     Parse an array or tuple string as returned by clickhouse. For example:
         "['hello', 'world']" ==> ["hello", "world"]
@@ -111,7 +108,7 @@ def parse_array(array_string):
             array_string = array_string[match.end() - 1 :]
 
 
-def import_submodules(package_name):
+def import_submodules(package_name: str) -> Dict[str, ModuleType]:
     """
     Import all submodules of a module.
     """
@@ -122,17 +119,14 @@ def import_submodules(package_name):
     }
 
 
-def comma_join(items, stringify=False):
+def comma_join(items: Iterable[str]) -> str:
     """
     Joins an iterable of strings with commas.
     """
-    if stringify:
-        return ", ".join(str(item) for item in items)
-    else:
-        return ", ".join(items)
+    return ", ".join(items)
 
 
-def is_iterable(obj):
+def is_iterable(obj: Any) -> bool:
     """
     Checks if the given object is iterable.
     """
@@ -143,9 +137,7 @@ def is_iterable(obj):
         return False
 
 
-def get_subclass_names(locals, base_class):
-    from inspect import isclass
-
+def get_subclass_names(locals: Dict[str, Any], base_class: Type):
     return [c.__name__ for c in locals.values() if isclass(c) and issubclass(c, base_class)]
 
 

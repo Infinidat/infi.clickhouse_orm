@@ -86,12 +86,12 @@ class MergeTree(Engine):
         # Let's check version and use new syntax if available
         if db.server_version >= (1, 1, 54310):
             partition_sql = "PARTITION BY (%s) ORDER BY (%s)" % (
-                comma_join(self.partition_key, stringify=True),
-                comma_join(self.order_by, stringify=True),
+                comma_join(map(str, self.partition_key)),
+                comma_join(map(str, self.order_by)),
             )
 
             if self.primary_key:
-                partition_sql += " PRIMARY KEY (%s)" % comma_join(self.primary_key, stringify=True)
+                partition_sql += " PRIMARY KEY (%s)" % comma_join(map(str, self.primary_key))
 
             if self.sampling_expr:
                 partition_sql += " SAMPLE BY %s" % self.sampling_expr
@@ -126,7 +126,7 @@ class MergeTree(Engine):
             params.append(self.date_col)
             if self.sampling_expr:
                 params.append(self.sampling_expr)
-            params.append("(%s)" % comma_join(self.order_by, stringify=True))
+            params.append("(%s)" % comma_join(map(str(self.order_by))))
             params.append(str(self.index_granularity))
 
         return params

@@ -3,8 +3,8 @@ import logging
 import unittest
 
 from clickhouse_orm.database import Database
-from clickhouse_orm.engines import *
-from clickhouse_orm.fields import *
+from clickhouse_orm.engines import MergeTree
+from clickhouse_orm.fields import DateField, Float32Field, LowCardinalityField, NullableField, StringField, UInt32Field
 from clickhouse_orm.models import Model
 
 logging.getLogger("requests").setLevel(logging.WARNING)
