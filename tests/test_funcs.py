@@ -7,10 +7,11 @@ from ipaddress import IPv4Address, IPv6Address
 import pytz
 
 from clickhouse_orm.database import ServerError
+from clickhouse_orm.fields import DateTimeField
 from clickhouse_orm.funcs import F
 from clickhouse_orm.utils import NO_VALUE
 
-from .base_test_with_data import *
+from .base_test_with_data import Person, TestCaseWithData
 from .test_querysets import SampleModel
 
 
@@ -28,21 +29,26 @@ class FuncsTestCase(TestCaseWithData):
         self.assertEqual(count, expected_count)
         self.assertEqual(qs.count(), expected_count)
 
-    def _test_func(self, func, expected_value=NO_VALUE):
+    def _call_func(self, func):
         sql = "SELECT %s AS value" % func.to_sql()
         logging.info(sql)
         try:
             result = list(self.database.select(sql))
             logging.info("\t==> %s", result[0].value if result else "<empty>")
-            if expected_value != NO_VALUE:
-                print("Comparing %s to %s" % (result[0].value, expected_value))
-                self.assertEqual(result[0].value, expected_value)
             return result[0].value if result else None
         except ServerError as e:
             if "Unknown function" in str(e):
                 logging.warning(str(e))
                 return  # ignore functions that don't exist in the used ClickHouse version
             raise
+
+    def _test_func(self, func, expected_value=NO_VALUE):
+        result = self._call_func(func)
+        if expected_value != NO_VALUE:
+            print("Comparing %s to %s" % (result, expected_value))
+            self.assertEqual(result, expected_value)
+
+        return result if result else None
 
     def _test_aggr(self, func, expected_value=NO_VALUE):
         qs = Person.objects_in(self.database).aggregate(value=func)
@@ -313,7 +319,7 @@ class FuncsTestCase(TestCaseWithData):
             F.now() + F.toIntervalSecond(3000) - F.toIntervalDay(3000) == F.now() + timedelta(seconds=3000, days=-3000)
         )
 
-    def test_date_functions__utc_only(self):
+    def test_date_functions_utc_only(self):
         if self.database.server_timezone != pytz.utc:
             raise unittest.SkipTest("This test must run with UTC as the server timezone")
         d = date(2018, 12, 31)
@@ -325,15 +331,16 @@ class FuncsTestCase(TestCaseWithData):
         self._test_func(F.toTime(dt, "Europe/Athens"), athens_tz.localize(datetime(1970, 1, 2, 13, 22, 33)))
         self._test_func(F.toTime(dt, athens_tz), athens_tz.localize(datetime(1970, 1, 2, 13, 22, 33)))
         self._test_func(F.toTimeZone(dt, "Europe/Athens"), athens_tz.localize(datetime(2018, 12, 31, 13, 22, 33)))
-        self._test_func(
-            F.now(), datetime.utcnow().replace(tzinfo=pytz.utc, microsecond=0)
-        )  # FIXME this may fail if the timing is just right
         self._test_func(F.today(), datetime.utcnow().date())
         self._test_func(F.yesterday(), datetime.utcnow().date() - timedelta(days=1))
         self._test_func(F.toYYYYMMDDhhmmss(dt), 20181231112233)
         self._test_func(F.formatDateTime(dt, "%D %T"), "12/31/18 11:22:33")
         self._test_func(F.addHours(d, 7), datetime(2018, 12, 31, 7, 0, 0, tzinfo=pytz.utc))
         self._test_func(F.addMinutes(d, 7), datetime(2018, 12, 31, 0, 7, 0, tzinfo=pytz.utc))
+
+        actual = self._call_func(F.now())
+        expected = datetime.utcnow().replace(tzinfo=pytz.utc, microsecond=0)
+        self.assertLess((actual - expected).total_seconds(), 1e-3)
 
     def test_type_conversion_functions(self):
         for f in (

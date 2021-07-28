@@ -3,8 +3,8 @@ import unittest
 from datetime import date
 
 from clickhouse_orm.database import Database, DatabaseException
-from clickhouse_orm.engines import *
-from clickhouse_orm.fields import *
+from clickhouse_orm.engines import MergeTree
+from clickhouse_orm.fields import DateField, UInt32Field
 from clickhouse_orm.models import Model
 from clickhouse_orm.system_models import SystemPart
 
@@ -36,9 +36,9 @@ class SystemPartTest(unittest.TestCase):
 
     def setUp(self):
         self.database = Database("test-db", log_statements=True)
-        self.database.create_table(TestTable)
+        self.database.create_table(SomeTestTable)
         self.database.create_table(CustomPartitionedTable)
-        self.database.insert([TestTable(date_field=date.today())])
+        self.database.insert([SomeTestTable(date_field=date.today())])
         self.database.insert([CustomPartitionedTable(date_field=date.today(), group_field=13)])
 
     def tearDown(self):
@@ -69,7 +69,7 @@ class SystemPartTest(unittest.TestCase):
         self.assertEqual(len(parts), 1)
 
     def test_get_conditions(self):
-        parts = list(SystemPart.get(self.database, conditions="table='testtable'"))
+        parts = list(SystemPart.get(self.database, conditions="table='sometesttable'"))
         self.assertEqual(len(parts), 1)
         parts = list(SystemPart.get(self.database, conditions=u"table='custompartitionedtable'"))
         self.assertEqual(len(parts), 1)
@@ -107,10 +107,10 @@ class SystemPartTest(unittest.TestCase):
 
     def test_query(self):
         SystemPart.objects_in(self.database).count()
-        list(SystemPart.objects_in(self.database).filter(table="testtable"))
+        list(SystemPart.objects_in(self.database).filter(table="sometesttable"))
 
 
-class TestTable(Model):
+class SomeTestTable(Model):
     date_field = DateField()
 
     engine = MergeTree("date_field", ("date_field",))

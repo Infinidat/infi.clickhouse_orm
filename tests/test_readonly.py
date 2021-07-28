@@ -27,9 +27,7 @@ class ReadonlyTestCase(TestCaseWithData):
         except ServerError as e:
             if e.code == 192 and str(e).startswith("Unknown user"):  # ClickHouse version < 20.3
                 raise unittest.SkipTest('Database user "%s" is not defined' % username)
-            elif e.code == 516 and str(e).startswith(
-                "readonly: Authentication failed"
-            ):  # ClickHouse version >= 20.3
+            elif e.code == 516 and str(e).startswith("readonly: Authentication failed"):  # ClickHouse version >= 20.3
                 raise unittest.SkipTest('Database user "%s" is not defined' % username)
             else:
                 raise

@@ -5,10 +5,13 @@ from enum import Enum
 from logging import getLogger
 
 from clickhouse_orm.database import Database
+from clickhouse_orm.engines import CollapsingMergeTree, Memory, MergeTree
+from clickhouse_orm.fields import DateField, DateTimeField, Enum8Field, Int8Field, Int32Field, UInt64Field
 from clickhouse_orm.funcs import F
+from clickhouse_orm.models import Model
 from clickhouse_orm.query import Q
 
-from .base_test_with_data import *
+from .base_test_with_data import Person, TestCaseWithData, data
 
 logger = getLogger("tests")
 

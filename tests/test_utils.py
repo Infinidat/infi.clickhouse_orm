@@ -1,7 +1,16 @@
 # -*- coding: utf-8 -*-
 from clickhouse_orm.utils import escape, unescape
 
-SPECIAL_CHARS = {"\b": "\\x08", "\f": "\\x0c", "\r": "\\r", "\n": "\\n", "\t": "\\t", "\0": "\\x00", "\\": "\\\\", "'": "\\'"}
+SPECIAL_CHARS = {
+    "\b": "\\x08",
+    "\f": "\\x0c",
+    "\r": "\\r",
+    "\n": "\\n",
+    "\t": "\\t",
+    "\0": "\\x00",
+    "\\": "\\\\",
+    "'": "\\'",
+}
 
 
 def test_unescape():
