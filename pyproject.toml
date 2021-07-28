@@ -8,7 +8,7 @@ line_length = 120
 
 [tool.poetry]
 name = "clickhouse_orm"
-version = "0.2.1"
+version = "2.1.0"
 description = "A simple ORM for working with the Clickhouse database"
 authors = ["olliemath <oliver.margetts@gmail.com>"]
 license = "BSD"
