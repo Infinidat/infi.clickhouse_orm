@@ -6,7 +6,7 @@ from logging import getLogger
 
 from clickhouse_orm.database import Database
 from clickhouse_orm.engines import CollapsingMergeTree, Memory, MergeTree
-from clickhouse_orm.fields import DateField, DateTimeField, Enum8Field, Int8Field, Int32Field, UInt64Field
+from clickhouse_orm.fields import DateField, DateTimeField, Enum8Field, Int8Field, Int32Field, StringField, UInt64Field
 from clickhouse_orm.funcs import F
 from clickhouse_orm.models import Model
 from clickhouse_orm.query import Q
@@ -568,8 +568,20 @@ class AggregateTestCase(TestCaseWithData):
         limited_qs = qs.limit_by((6, 3), "height")
         self.assertEqual([p.first_name for p in limited_qs[:3]], ["Norman", "Octavius", "Oliver"])
 
+    def test_boolean_logic(self):
+        p = ~Q(x="eggs")
+        q = Q(y="spam")
+        r = p & q
+
+        self.assertEqual(r.to_sql(StringyModel), "(NOT (x = 'eggs')) AND (y = 'spam')")
+
 
 Color = Enum("Color", u"red blue green yellow brown white black")
+
+
+class StringyModel(Model):
+    x = StringField()
+    y = StringField()
 
 
 class SampleModel(Model):

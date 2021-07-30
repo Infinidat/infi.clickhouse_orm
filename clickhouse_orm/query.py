@@ -209,21 +209,18 @@ class Q(object):
         Checks if there are any conditions in Q object
         Returns: Boolean
         """
-        return not bool(self._conds or self._children)
+        return not (self._conds or self._children)
 
     @classmethod
     def _construct_from(cls, l_child, r_child, mode):
-        if mode == l_child._mode:
+        if mode == l_child._mode and not l_child._negate:
             q = deepcopy(l_child)
             q._children.append(deepcopy(r_child))
-        elif mode == r_child._mode:
-            q = deepcopy(r_child)
-            q._children.append(deepcopy(l_child))
+
         else:
-            # Different modes
             q = cls()
             q._children = [l_child, r_child]
-            q._mode = mode  # AND/OR
+            q._mode = mode
 
         return q
 
