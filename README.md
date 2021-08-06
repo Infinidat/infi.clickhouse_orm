@@ -1,3 +1,7 @@
+A fork of [infi.clikchouse_orm](https://github.com/Infinidat/infi.clickhouse_orm) aimed at more frequent maintenance and bugfixes.
+
+[![Tests](https://github.com/SuadeLabs/clickhouse_orm/actions/workflows/python-package.yml/badge.svg)](https://github.com/SuadeLabs/clickhouse_orm/actions/workflows/python-package.yml)
+
 Introduction
 ============
 
