@@ -8,7 +8,6 @@ from inspect import isclass
 from types import ModuleType
 from typing import Any, Dict, Iterable, List, Optional, Type, Union
 
-
 Page = namedtuple("Page", "objects number_of_objects pages_total number page_size")
 Page.__doc__ += "\nA simple data structure for paginated results."
 
