@@ -38,6 +38,8 @@ class Field(FunctionOperatorsMixin):
         ), "Materialized parameter must be a string or function object, if given"
         assert readonly is None or type(readonly) is bool, "readonly parameter must be bool if given"
         assert codec is None or isinstance(codec, str) and codec != "", "Codec field must be string, if given"
+        if alias:
+            assert codec is None, "Codec cannot be used for alias fields"
 
         self.creation_counter = Field.creation_counter
         Field.creation_counter += 1

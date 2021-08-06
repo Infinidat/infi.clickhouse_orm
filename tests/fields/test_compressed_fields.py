@@ -1,11 +1,22 @@
 import datetime
 import unittest
 
+import pytest
 import pytz
 
 from clickhouse_orm.database import Database
-from clickhouse_orm.engines import *
-from clickhouse_orm.fields import *
+from clickhouse_orm.engines import MergeTree
+from clickhouse_orm.fields import (
+    ArrayField,
+    DateField,
+    DateTimeField,
+    FixedStringField,
+    Float32Field,
+    Int64Field,
+    NullableField,
+    StringField,
+    UInt64Field,
+)
 from clickhouse_orm.models import NO_VALUE, Model
 from clickhouse_orm.utils import parse_tsv
 
@@ -50,7 +61,11 @@ class CompressedFieldsTestCase(unittest.TestCase):
     def test_string_conversion(self):
         # Check field conversion from string during construction
         instance = CompressedModel(
-            date_field="1973-12-06", int64_field="100", float_field="7", nullable_field=None, array_field="[a,b,c]"
+            date_field="1973-12-06",
+            int64_field="100",
+            float_field="7",
+            nullable_field=None,
+            array_field="[a,b,c]",
         )
         self.assertEqual(instance.date_field, datetime.date(1973, 12, 6))
         self.assertEqual(instance.int64_field, 100)
@@ -62,7 +77,12 @@ class CompressedFieldsTestCase(unittest.TestCase):
         self.assertEqual(instance.int64_field, 99)
 
     def test_to_dict(self):
-        instance = CompressedModel(date_field="1973-12-06", int64_field="100", float_field="7", array_field="[a,b,c]")
+        instance = CompressedModel(
+            date_field="1973-12-06",
+            int64_field="100",
+            float_field="7",
+            array_field="[a,b,c]",
+        )
         self.assertDictEqual(
             instance.to_dict(),
             {
@@ -70,7 +90,7 @@ class CompressedFieldsTestCase(unittest.TestCase):
                 "int64_field": 100,
                 "float_field": 7.0,
                 "datetime_field": datetime.datetime(1970, 1, 1, 0, 0, 0, tzinfo=pytz.utc),
-                "alias_field": NO_VALUE,
+                "mat_field": NO_VALUE,
                 "string_field": "dozo",
                 "nullable_field": None,
                 "uint64_field": 0,
@@ -91,14 +111,25 @@ class CompressedFieldsTestCase(unittest.TestCase):
             },
         )
         self.assertDictEqual(
-            instance.to_dict(include_readonly=False, field_names=("int64_field", "alias_field", "datetime_field")),
-            {"int64_field": 100, "datetime_field": datetime.datetime(1970, 1, 1, 0, 0, 0, tzinfo=pytz.utc)},
+            instance.to_dict(
+                include_readonly=False,
+                field_names=("int64_field", "mat_field", "datetime_field"),
+            ),
+            {
+                "int64_field": 100,
+                "datetime_field": datetime.datetime(1970, 1, 1, 0, 0, 0, tzinfo=pytz.utc),
+            },
         )
 
     def test_confirm_compression_codec(self):
         if self.database.server_version < (19, 17):
             raise unittest.SkipTest("ClickHouse version too old")
-        instance = CompressedModel(date_field="1973-12-06", int64_field="100", float_field="7", array_field="[a,b,c]")
+        instance = CompressedModel(
+            date_field="1973-12-06",
+            int64_field="100",
+            float_field="7",
+            array_field="[a,b,c]",
+        )
         self.database.insert([instance])
         r = self.database.raw(
             "select name, compression_codec from system.columns where table = '{}' and database='{}' FORMAT TabSeparatedWithNamesAndTypes".format(
@@ -120,9 +151,13 @@ class CompressedFieldsTestCase(unittest.TestCase):
                 ("nullable_field", "CODEC(ZSTD(1))"),
                 ("array_field", "CODEC(Delta(2), LZ4HC(0))"),
                 ("float_field", "CODEC(NONE)"),
-                ("alias_field", "CODEC(ZSTD(4))"),
+                ("mat_field", "CODEC(ZSTD(4))"),
             ],
         )
+
+    def test_alias_field(self):
+        with pytest.raises(AssertionError):
+            Float32Field(alias="something", codec="ZSTD(4)")
 
 
 class CompressedModel(Model):
@@ -134,6 +169,6 @@ class CompressedModel(Model):
     nullable_field = NullableField(Float32Field(), codec="ZSTD")
     array_field = ArrayField(FixedStringField(length=15), codec="Delta(2),LZ4HC")
     float_field = Float32Field(codec="NONE")
-    alias_field = Float32Field(alias="float_field", codec="ZSTD(4)")
+    mat_field = Float32Field(materialized="float_field", codec="ZSTD(4)")
 
     engine = MergeTree("datetime_field", ("uint64_field", "datetime_field"))
