@@ -2,10 +2,15 @@ import codecs
 import importlib
 import pkgutil
 import re
+from collections import namedtuple
 from datetime import date, datetime, timedelta, tzinfo
 from inspect import isclass
 from types import ModuleType
 from typing import Any, Dict, Iterable, List, Optional, Type, Union
+
+
+Page = namedtuple("Page", "objects number_of_objects pages_total number page_size")
+Page.__doc__ += "\nA simple data structure for paginated results."
 
 
 def escape(value: str, quote: bool = True) -> str:

@@ -3,7 +3,8 @@ from math import ceil
 
 import pytz
 
-from .utils import arg_to_sql, comma_join, string_or_func
+from .engines import CollapsingMergeTree, ReplacingMergeTree
+from .utils import Page, arg_to_sql, comma_join, string_or_func
 
 # TODO
 # - check that field names are valid
@@ -22,10 +23,10 @@ class Operator(object):
         raise NotImplementedError  # pragma: no cover
 
     def _value_to_sql(self, field, value, quote=True):
-        from clickhouse_orm.funcs import F
-
-        if isinstance(value, F):
+        if isinstance(value, Cond):
+            # This is an 'in-database' value, rather than a python one
             return value.to_sql()
+
         return field.to_db_string(field.to_python(value, pytz.utc), quote)
 
 
@@ -256,9 +257,15 @@ class Q(object):
         return sql
 
     def __or__(self, other):
+        if not isinstance(other, Q):
+            return NotImplemented
+
         return self.__class__._construct_from(self, other, self.OR_MODE)
 
     def __and__(self, other):
+        if not isinstance(other, Q):
+            return NotImplemented
+
         return self.__class__._construct_from(self, other, self.AND_MODE)
 
     def __invert__(self):
@@ -456,8 +463,6 @@ class QuerySet(object):
         return qs
 
     def _filter_or_exclude(self, *q, **kwargs):
-        from .funcs import F
-
         inverse = kwargs.pop("_inverse", False)
         prewhere = kwargs.pop("prewhere", False)
 
@@ -467,10 +472,10 @@ class QuerySet(object):
         for arg in q:
             if isinstance(arg, Q):
                 condition &= arg
-            elif isinstance(arg, F):
+            elif isinstance(arg, Cond):
                 condition &= Q(arg)
             else:
-                raise TypeError('Invalid argument "%r" to queryset filter' % arg)
+                raise TypeError(f"Invalid argument '{arg}' of type '{type(arg)}' to filter")
 
         if kwargs:
             condition &= Q(**kwargs)
@@ -512,8 +517,6 @@ class QuerySet(object):
         The result is a namedtuple containing `objects` (list), `number_of_objects`,
         `pages_total`, `number` (of the current page), and `page_size`.
         """
-        from .database import Page
-
         count = self.count()
         pages_total = int(ceil(count / float(page_size)))
         if page_num == -1:
@@ -543,8 +546,6 @@ class QuerySet(object):
         Adds a FINAL modifier to table, meaning data will be collapsed to final version.
         Can be used with the `CollapsingMergeTree` and `ReplacingMergeTree` engines only.
         """
-        from .engines import CollapsingMergeTree, ReplacingMergeTree
-
         if not isinstance(self._model_cls.engine, (CollapsingMergeTree, ReplacingMergeTree)):
             raise TypeError(
                 "final() method can be used only with the CollapsingMergeTree and ReplacingMergeTree engines"

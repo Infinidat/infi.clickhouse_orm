@@ -1,7 +1,6 @@
 import datetime
 import logging
 import re
-from collections import namedtuple
 from math import ceil
 from string import Template
 
@@ -9,12 +8,9 @@ import pytz
 import requests
 
 from .models import ModelBase
-from .utils import import_submodules, parse_tsv
+from .utils import Page, import_submodules, parse_tsv
 
 logger = logging.getLogger("clickhouse_orm")
-
-
-Page = namedtuple("Page", "objects number_of_objects pages_total number page_size")
 
 
 class DatabaseException(Exception):
