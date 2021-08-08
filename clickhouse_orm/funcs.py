@@ -400,103 +400,103 @@ class F(Cond, FunctionOperatorsMixin, metaclass=FMeta):
     # Functions for working with dates and times
 
     @staticmethod
-    def toYear(d):
-        return F("toYear", d)
+    def toYear(d, timezone=NO_VALUE):
+        return F("toYear", d, timezone)
 
     @staticmethod
-    def toISOYear(d, timezone=""):
+    def toISOYear(d, timezone=NO_VALUE):
         return F("toISOYear", d, timezone)
 
     @staticmethod
-    def toQuarter(d, timezone=""):
-        return F("toQuarter", d, timezone) if timezone else F("toQuarter", d)
+    def toQuarter(d, timezone=NO_VALUE):
+        return F("toQuarter", d, timezone)
 
     @staticmethod
-    def toMonth(d):
-        return F("toMonth", d)
+    def toMonth(d, timezone=NO_VALUE):
+        return F("toMonth", d, timezone)
 
     @staticmethod
-    def toWeek(d, mode=0, timezone=""):
+    def toWeek(d, mode=0, timezone=NO_VALUE):
         return F("toWeek", d, mode, timezone)
 
     @staticmethod
-    def toISOWeek(d, timezone=""):
-        return F("toISOWeek", d, timezone) if timezone else F("toISOWeek", d)
+    def toISOWeek(d, timezone=NO_VALUE):
+        return F("toISOWeek", d, timezone)
 
     @staticmethod
-    def toDayOfYear(d):
-        return F("toDayOfYear", d)
+    def toDayOfYear(d, timezone=NO_VALUE):
+        return F("toDayOfYear", d, timezone)
 
     @staticmethod
-    def toDayOfMonth(d):
-        return F("toDayOfMonth", d)
+    def toDayOfMonth(d, timezone=NO_VALUE):
+        return F("toDayOfMonth", d, timezone)
 
     @staticmethod
-    def toDayOfWeek(d):
-        return F("toDayOfWeek", d)
+    def toDayOfWeek(d, timezone=NO_VALUE):
+        return F("toDayOfWeek", d, timezone)
 
     @staticmethod
-    def toHour(d):
-        return F("toHour", d)
+    def toHour(d, timezone=NO_VALUE):
+        return F("toHour", d, timezone)
 
     @staticmethod
-    def toMinute(d):
-        return F("toMinute", d)
+    def toMinute(d, timezone=NO_VALUE):
+        return F("toMinute", d, timezone)
 
     @staticmethod
-    def toSecond(d):
-        return F("toSecond", d)
+    def toSecond(d, timezone=NO_VALUE):
+        return F("toSecond", d, timezone)
 
     @staticmethod
-    def toMonday(d):
-        return F("toMonday", d)
+    def toMonday(d, timezone=NO_VALUE):
+        return F("toMonday", d, timezone)
 
     @staticmethod
-    def toStartOfMonth(d):
-        return F("toStartOfMonth", d)
+    def toStartOfMonth(d, timezone=NO_VALUE):
+        return F("toStartOfMonth", d, timezone)
 
     @staticmethod
-    def toStartOfQuarter(d):
-        return F("toStartOfQuarter", d)
+    def toStartOfQuarter(d, timezone=NO_VALUE):
+        return F("toStartOfQuarter", d, timezone)
 
     @staticmethod
-    def toStartOfYear(d):
-        return F("toStartOfYear", d)
+    def toStartOfYear(d, timezone=NO_VALUE):
+        return F("toStartOfYear", d, timezone)
 
     @staticmethod
-    def toStartOfISOYear(d):
-        return F("toStartOfISOYear", d)
+    def toStartOfISOYear(d, timezone=NO_VALUE):
+        return F("toStartOfISOYear", d, timezone)
 
     @staticmethod
-    def toStartOfTenMinutes(d):
-        return F("toStartOfTenMinutes", d)
+    def toStartOfTenMinutes(d, timezone=NO_VALUE):
+        return F("toStartOfTenMinutes", d, timezone)
 
     @staticmethod
-    def toStartOfWeek(d, mode=0):
-        return F("toStartOfWeek", d)
+    def toStartOfWeek(d, timezone=NO_VALUE):
+        return F("toStartOfWeek", d, timezone)
 
     @staticmethod
-    def toStartOfMinute(d):
-        return F("toStartOfMinute", d)
+    def toStartOfMinute(d, timezone=NO_VALUE):
+        return F("toStartOfMinute", d, timezone)
 
     @staticmethod
-    def toStartOfFiveMinute(d):
-        return F("toStartOfFiveMinute", d)
+    def toStartOfFiveMinute(d, timezone=NO_VALUE):
+        return F("toStartOfFiveMinute", d, timezone)
 
     @staticmethod
-    def toStartOfFifteenMinutes(d):
-        return F("toStartOfFifteenMinutes", d)
+    def toStartOfFifteenMinutes(d, timezone=NO_VALUE):
+        return F("toStartOfFifteenMinutes", d, timezone)
 
     @staticmethod
-    def toStartOfHour(d):
-        return F("toStartOfHour", d)
+    def toStartOfHour(d, timezone=NO_VALUE):
+        return F("toStartOfHour", d, timezone)
 
     @staticmethod
-    def toStartOfDay(d):
-        return F("toStartOfDay", d)
+    def toStartOfDay(d, timezone=NO_VALUE):
+        return F("toStartOfDay", d, timezone)
 
     @staticmethod
-    def toTime(d, timezone=""):
+    def toTime(d, timezone=NO_VALUE):
         return F("toTime", d, timezone)
 
     @staticmethod
@@ -504,47 +504,47 @@ class F(Cond, FunctionOperatorsMixin, metaclass=FMeta):
         return F("toTimeZone", dt, timezone)
 
     @staticmethod
-    def toUnixTimestamp(dt, timezone=""):
+    def toUnixTimestamp(dt, timezone=NO_VALUE):
         return F("toUnixTimestamp", dt, timezone)
 
     @staticmethod
-    def toYYYYMM(dt, timezone=""):
-        return F("toYYYYMM", dt, timezone) if timezone else F("toYYYYMM", dt)
+    def toYYYYMM(dt, timezone=NO_VALUE):
+        return F("toYYYYMM", dt, timezone)
 
     @staticmethod
-    def toYYYYMMDD(dt, timezone=""):
-        return F("toYYYYMMDD", dt, timezone) if timezone else F("toYYYYMMDD", dt)
+    def toYYYYMMDD(dt, timezone=NO_VALUE):
+        return F("toYYYYMMDD", dt, timezone)
 
     @staticmethod
-    def toYYYYMMDDhhmmss(dt, timezone=""):
-        return F("toYYYYMMDDhhmmss", dt, timezone) if timezone else F("toYYYYMMDDhhmmss", dt)
+    def toYYYYMMDDhhmmss(dt, timezone=NO_VALUE):
+        return F("toYYYYMMDDhhmmss", dt, timezone)
 
     @staticmethod
-    def toRelativeYearNum(d, timezone=""):
+    def toRelativeYearNum(d, timezone=NO_VALUE):
         return F("toRelativeYearNum", d, timezone)
 
     @staticmethod
-    def toRelativeMonthNum(d, timezone=""):
+    def toRelativeMonthNum(d, timezone=NO_VALUE):
         return F("toRelativeMonthNum", d, timezone)
 
     @staticmethod
-    def toRelativeWeekNum(d, timezone=""):
+    def toRelativeWeekNum(d, timezone=NO_VALUE):
         return F("toRelativeWeekNum", d, timezone)
 
     @staticmethod
-    def toRelativeDayNum(d, timezone=""):
+    def toRelativeDayNum(d, timezone=NO_VALUE):
         return F("toRelativeDayNum", d, timezone)
 
     @staticmethod
-    def toRelativeHourNum(d, timezone=""):
+    def toRelativeHourNum(d, timezone=NO_VALUE):
         return F("toRelativeHourNum", d, timezone)
 
     @staticmethod
-    def toRelativeMinuteNum(d, timezone=""):
+    def toRelativeMinuteNum(d, timezone=NO_VALUE):
         return F("toRelativeMinuteNum", d, timezone)
 
     @staticmethod
-    def toRelativeSecondNum(d, timezone=""):
+    def toRelativeSecondNum(d, timezone=NO_VALUE):
         return F("toRelativeSecondNum", d, timezone)
 
     @staticmethod
@@ -568,7 +568,7 @@ class F(Cond, FunctionOperatorsMixin, metaclass=FMeta):
         return F("timeSlots", start_time, F.toUInt32(duration))
 
     @staticmethod
-    def formatDateTime(d, format, timezone=""):
+    def formatDateTime(d, format, timezone=NO_VALUE):
         return F("formatDateTime", d, format, timezone)
 
     @staticmethod
