@@ -3,7 +3,7 @@ Change Log
 
 v2.2.0
 ------
-- Support up to clickhouse 20.8
+- Support up to clickhouse 20.12, including LTS 20.8 release
 - Fixed boolean logic for Q objects (https://github.com/Infinidat/infi.clickhouse_orm/issues/158)
 - Remove implicit use of '\N' character (which was causing deprecation warnings in queries)
 - Tooling updates: use poetry, pytest, isort, black
