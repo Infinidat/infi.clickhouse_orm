@@ -154,5 +154,11 @@ class NoValue:
     def __repr__(self):
         return "NO_VALUE"
 
+    def __copy__(self):
+        return self
+
+    def __deepcopy__(self, memo):
+        return self
+
 
 NO_VALUE = NoValue()
