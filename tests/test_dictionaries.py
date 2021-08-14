@@ -14,14 +14,17 @@ class DictionaryTestMixin:
     def tearDown(self):
         self.database.drop_database()
 
-    def _test_func(self, func, expected_value):
+    def _call_func(self, func):
         sql = "SELECT %s AS value" % func.to_sql()
         logging.info(sql)
         result = list(self.database.select(sql))
         logging.info("\t==> %s", result[0].value if result else "<empty>")
+        return result
+
+    def _test_func(self, func, expected_value):
+        result = self._call_func(func)
         print("Comparing %s to %s" % (result[0].value, expected_value))
-        self.assertEqual(result[0].value, expected_value)
-        return result[0].value if result else None
+        assert result[0].value == expected_value
 
 
 class SimpleDictionaryTest(DictionaryTestMixin, unittest.TestCase):
@@ -114,7 +117,10 @@ class HierarchicalDictionaryTest(DictionaryTestMixin, unittest.TestCase):
 
     def test_dictgethierarchy(self):
         self._test_func(F.dictGetHierarchy(self.dict_name, F.toUInt64(3)), [3, 2, 1])
-        self._test_func(F.dictGetHierarchy(self.dict_name, F.toUInt64(99)), [99])
+        # Default behaviour changed in CH, but we're not really testing that
+        default = self._call_func(F.dictGetHierarchy(self.dict_name, F.toUInt64(99)))
+        assert isinstance(default, list)
+        assert len(default) <= 1  # either [] or [99]
 
     def test_dictisin(self):
         self._test_func(F.dictIsIn(self.dict_name, F.toUInt64(3), F.toUInt64(1)), 1)

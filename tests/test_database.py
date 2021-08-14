@@ -296,6 +296,10 @@ class DatabaseTestCase(TestCaseWithData):
             self.assertTrue(model.is_system_model())
             self.assertTrue(model.is_read_only())
             self.assertEqual(model.table_name(), row.name)
+
+            if row.name == "distributed_ddl_queue":
+                continue  # Since zookeeper is not set up in our tests
+
             # Read a few records
             try:
                 list(model.objects_in(self.database)[:10])
