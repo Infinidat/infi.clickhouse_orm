@@ -227,7 +227,7 @@ class EnginesTestCase(_EnginesHelperTestCase):
             )
 
         class TestCollapseModel(SampleModel):
-            sign = Int8Field()
+            sign = Int8Field(default=-1)
 
             engine = CollapsingMergeTree(
                 sign_col="sign",
@@ -259,7 +259,7 @@ class EnginesTestCase(_EnginesHelperTestCase):
             )
 
         class TestCollapseModel(SampleModel):
-            sign = Int8Field()
+            sign = Int8Field(default=1)
 
             engine = CollapsingMergeTree(
                 sign_col="sign",
@@ -427,10 +427,6 @@ class DistributedTestCase(_EnginesHelperTestCase):
             res[1].to_dict(include_readonly=include_readonly),
         )
 
-    @unittest.skip(
-        "Bad support of materialized fields in Distributed tables "
-        "https://groups.google.com/forum/#!topic/clickhouse/XEYRRwZrsSc"
-    )
     def test_insert_distributed_select_local(self):
         return self._test_insert_select(local_to_distributed=False)
 
