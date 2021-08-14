@@ -3,7 +3,7 @@ from datetime import date, datetime
 
 import pytz
 
-from clickhouse_orm.fields import *
+from clickhouse_orm.fields import DateField, DateTime64Field, DateTimeField, UInt8Field
 
 
 class SimpleFieldsTest(unittest.TestCase):
@@ -36,7 +36,14 @@ class SimpleFieldsTest(unittest.TestCase):
             dt2 = f.to_python(f.to_db_string(dt, quote=False), pytz.utc)
             self.assertEqual(dt, dt2)
         # Invalid values
-        for value in ("nope", "21/7/1999", 0.5, "2017-01 15:06:00", "2017-01-01X15:06:00", "2017-13-01T15:06:00"):
+        for value in (
+            "nope",
+            "21/7/1999",
+            0.5,
+            "2017-01 15:06:00",
+            "2017-01-01X15:06:00",
+            "2017-13-01T15:06:00",
+        ):
             with self.assertRaises(ValueError):
                 f.to_python(value, pytz.utc)
 
@@ -62,7 +69,13 @@ class SimpleFieldsTest(unittest.TestCase):
             dt2 = f.to_python(f.to_db_string(dt, quote=False), pytz.utc)
             self.assertEqual(dt, dt2)
         # Invalid values
-        for value in ("nope", "21/7/1999", "2017-01 15:06:00", "2017-01-01X15:06:00", "2017-13-01T15:06:00"):
+        for value in (
+            "nope",
+            "21/7/1999",
+            "2017-01 15:06:00",
+            "2017-01-01X15:06:00",
+            "2017-13-01T15:06:00",
+        ):
             with self.assertRaises(ValueError):
                 f.to_python(value, pytz.utc)
 

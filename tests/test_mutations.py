@@ -3,7 +3,7 @@ from time import sleep
 
 from clickhouse_orm import F
 
-from .base_test_with_data import *
+from .base_test_with_data import Person, TestCaseWithData
 
 
 class MutationsTestCase(TestCaseWithData):

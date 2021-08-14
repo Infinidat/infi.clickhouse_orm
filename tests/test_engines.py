@@ -2,7 +2,21 @@ import datetime
 import logging
 import unittest
 
-from clickhouse_orm import *
+from clickhouse_orm.database import Database, DatabaseException, ServerError
+from clickhouse_orm.engines import (
+    CollapsingMergeTree,
+    Log,
+    Memory,
+    Merge,
+    MergeTree,
+    ReplacingMergeTree,
+    SummingMergeTree,
+    TinyLog,
+)
+from clickhouse_orm.fields import DateField, Int8Field, UInt8Field, UInt16Field, UInt32Field
+from clickhouse_orm.funcs import F
+from clickhouse_orm.models import Distributed, DistributedModel, MergeModel, Model
+from clickhouse_orm.system_models import SystemPart
 
 logging.getLogger("requests").setLevel(logging.WARNING)
 
@@ -19,7 +33,15 @@ class EnginesTestCase(_EnginesHelperTestCase):
     def _create_and_insert(self, model_class):
         self.database.create_table(model_class)
         self.database.insert(
-            [model_class(date="2017-01-01", event_id=23423, event_group=13, event_count=7, event_version=1)]
+            [
+                model_class(
+                    date="2017-01-01",
+                    event_id=23423,
+                    event_group=13,
+                    event_count=7,
+                    event_version=1,
+                )
+            ]
         )
 
     def test_merge_tree(self):
@@ -31,7 +53,9 @@ class EnginesTestCase(_EnginesHelperTestCase):
     def test_merge_tree_with_sampling(self):
         class TestModel(SampleModel):
             engine = MergeTree(
-                "date", ("date", "event_id", "event_group", "intHash32(event_id)"), sampling_expr="intHash32(event_id)"
+                "date",
+                ("date", "event_id", "event_group", "intHash32(event_id)"),
+                sampling_expr="intHash32(event_id)",
             )
 
         self._create_and_insert(TestModel)
@@ -129,15 +153,44 @@ class EnginesTestCase(_EnginesHelperTestCase):
         # Insert operations are restricted for this model type
         with self.assertRaises(DatabaseException):
             self.database.insert(
-                [TestMergeModel(date="2017-01-01", event_id=23423, event_group=13, event_count=7, event_version=1)]
+                [
+                    TestMergeModel(
+                        date="2017-01-01",
+                        event_id=23423,
+                        event_group=13,
+                        event_count=7,
+                        event_version=1,
+                    )
+                ]
             )
 
         # Testing select
-        self.database.insert([TestModel1(date="2017-01-01", event_id=1, event_group=1, event_count=1, event_version=1)])
-        self.database.insert([TestModel2(date="2017-01-02", event_id=2, event_group=2, event_count=2, event_version=2)])
+        self.database.insert(
+            [
+                TestModel1(
+                    date="2017-01-01",
+                    event_id=1,
+                    event_group=1,
+                    event_count=1,
+                    event_version=1,
+                )
+            ]
+        )
+        self.database.insert(
+            [
+                TestModel2(
+                    date="2017-01-02",
+                    event_id=2,
+                    event_group=2,
+                    event_count=2,
+                    event_version=2,
+                )
+            ]
+        )
         # event_uversion is materialized field. So * won't select it and it will be zero
         res = self.database.select(
-            "SELECT *, _table, event_uversion FROM $table ORDER BY event_id", model_class=TestMergeModel
+            "SELECT *, _table, event_uversion FROM $table ORDER BY event_id",
+            model_class=TestMergeModel,
         )
         res = list(res)
         self.assertEqual(2, len(res))
@@ -169,7 +222,8 @@ class EnginesTestCase(_EnginesHelperTestCase):
     def test_custom_partitioning(self):
         class TestModel(SampleModel):
             engine = MergeTree(
-                order_by=("date", "event_id", "event_group"), partition_key=("toYYYYMM(date)", "event_group")
+                order_by=("date", "event_id", "event_group"),
+                partition_key=("toYYYYMM(date)", "event_group"),
             )
 
         class TestCollapseModel(SampleModel):
@@ -327,12 +381,27 @@ class DistributedTestCase(_EnginesHelperTestCase):
 
         self.database.insert(
             [
-                to_insert(date="2017-01-01", event_id=1, event_group=1, event_count=1, event_version=1),
-                to_insert(date="2017-01-02", event_id=2, event_group=2, event_count=2, event_version=2),
+                to_insert(
+                    date="2017-01-01",
+                    event_id=1,
+                    event_group=1,
+                    event_count=1,
+                    event_version=1,
+                ),
+                to_insert(
+                    date="2017-01-02",
+                    event_id=2,
+                    event_group=2,
+                    event_count=2,
+                    event_version=2,
+                ),
             ]
         )
         # event_uversion is materialized field. So * won't select it and it will be zero
-        res = self.database.select("SELECT *, event_uversion FROM $table ORDER BY event_id", model_class=to_select)
+        res = self.database.select(
+            "SELECT *, event_uversion FROM $table ORDER BY event_id",
+            model_class=to_select,
+        )
         res = [row for row in res]
         self.assertEqual(2, len(res))
         self.assertDictEqual(

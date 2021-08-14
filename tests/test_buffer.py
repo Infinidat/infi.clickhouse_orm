@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
-from clickhouse_orm.engines import *
+from clickhouse_orm.engines import Buffer
 from clickhouse_orm.models import BufferModel
 
-from .base_test_with_data import *
+from .base_test_with_data import Person, TestCaseWithData, data
 
 
 class BufferTestCase(TestCaseWithData):

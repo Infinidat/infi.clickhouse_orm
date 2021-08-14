@@ -120,7 +120,10 @@ class CustomPartitionedTable(Model):
     date_field = DateField()
     group_field = UInt32Field()
 
-    engine = MergeTree(order_by=("date_field", "group_field"), partition_key=("toYYYYMM(date_field)", "group_field"))
+    engine = MergeTree(
+        order_by=("date_field", "group_field"),
+        partition_key=("toYYYYMM(date_field)", "group_field"),
+    )
 
 
 class SystemTestModel(Model):

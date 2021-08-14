@@ -1,6 +1,6 @@
 import unittest
 
-from clickhouse_orm import *
+from clickhouse_orm import Constraint, Database, F, ServerError
 
 from .base_test_with_data import Person
 
@@ -17,20 +17,41 @@ class ConstraintsTest(unittest.TestCase):
 
     def test_insert_valid_values(self):
         self.database.insert(
-            [PersonWithConstraints(first_name="Mike", last_name="Caruzo", birthday="2000-01-01", height=1.66)]
+            [
+                PersonWithConstraints(
+                    first_name="Mike",
+                    last_name="Caruzo",
+                    birthday="2000-01-01",
+                    height=1.66,
+                )
+            ]
         )
 
     def test_insert_invalid_values(self):
         with self.assertRaises(ServerError) as e:
             self.database.insert(
-                [PersonWithConstraints(first_name="Mike", last_name="Caruzo", birthday="2100-01-01", height=1.66)]
+                [
+                    PersonWithConstraints(
+                        first_name="Mike",
+                        last_name="Caruzo",
+                        birthday="2100-01-01",
+                        height=1.66,
+                    )
+                ]
             )
             self.assertEqual(e.code, 469)
             self.assertTrue("Constraint `birthday_in_the_past`" in str(e))
 
         with self.assertRaises(ServerError) as e:
             self.database.insert(
-                [PersonWithConstraints(first_name="Mike", last_name="Caruzo", birthday="1970-01-01", height=3)]
+                [
+                    PersonWithConstraints(
+                        first_name="Mike",
+                        last_name="Caruzo",
+                        birthday="1970-01-01",
+                        height=3,
+                    )
+                ]
             )
             self.assertEqual(e.code, 469)
             self.assertTrue("Constraint `max_height`" in str(e))

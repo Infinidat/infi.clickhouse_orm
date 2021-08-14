@@ -2,8 +2,8 @@
 import unittest
 
 from clickhouse_orm.database import Database
-from clickhouse_orm.engines import *
-from clickhouse_orm.fields import *
+from clickhouse_orm.engines import MergeTree
+from clickhouse_orm.fields import DateField, FixedStringField
 from clickhouse_orm.models import Model
 
 

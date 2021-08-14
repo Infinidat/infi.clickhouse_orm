@@ -1,6 +1,7 @@
 import unittest
 
-from clickhouse_orm import *
+from clickhouse_orm import Database, F, Index, MergeTree, Model
+from clickhouse_orm.fields import DateField, Int32Field, StringField
 
 
 class IndexesTest(unittest.TestCase):

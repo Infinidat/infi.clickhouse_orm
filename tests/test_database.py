@@ -2,14 +2,14 @@
 import datetime
 import unittest
 
-from clickhouse_orm.database import DatabaseException, ServerError
+from clickhouse_orm.database import Database, DatabaseException, ServerError
 from clickhouse_orm.engines import Memory
-from clickhouse_orm.fields import *
+from clickhouse_orm.fields import DateField, DateTimeField, Float32Field, Int32Field, StringField
 from clickhouse_orm.funcs import F
 from clickhouse_orm.models import Model
 from clickhouse_orm.query import Q
 
-from .base_test_with_data import *
+from .base_test_with_data import Person, TestCaseWithData, data
 
 
 class DatabaseTestCase(TestCaseWithData):
@@ -136,12 +136,19 @@ class DatabaseTestCase(TestCaseWithData):
             page_a = self.database.paginate(Person, "first_name, last_name", -1, page_size)
             page_b = self.database.paginate(Person, "first_name, last_name", page_a.pages_total, page_size)
             self.assertEqual(page_a[1:], page_b[1:])
-            self.assertEqual([obj.to_tsv() for obj in page_a.objects], [obj.to_tsv() for obj in page_b.objects])
+            self.assertEqual(
+                [obj.to_tsv() for obj in page_a.objects],
+                [obj.to_tsv() for obj in page_b.objects],
+            )
 
     def test_pagination_empty_page(self):
         for page_num in (-1, 1, 2):
             page = self.database.paginate(
-                Person, "first_name, last_name", page_num, 10, conditions="first_name = 'Ziggy'"
+                Person,
+                "first_name, last_name",
+                page_num,
+                10,
+                conditions="first_name = 'Ziggy'",
             )
             self.assertEqual(page.number_of_objects, 0)
             self.assertEqual(page.objects, [])
@@ -160,7 +167,13 @@ class DatabaseTestCase(TestCaseWithData):
         page = self.database.paginate(Person, "first_name, last_name", 1, 100, conditions="first_name < 'Ava'")
         self.assertEqual(page.number_of_objects, 10)
         # Conditions as expression
-        page = self.database.paginate(Person, "first_name, last_name", 1, 100, conditions=Person.first_name < "Ava")
+        page = self.database.paginate(
+            Person,
+            "first_name, last_name",
+            1,
+            100,
+            conditions=Person.first_name < "Ava",
+        )
         self.assertEqual(page.number_of_objects, 10)
         # Conditions as Q object
         page = self.database.paginate(Person, "first_name, last_name", 1, 100, conditions=Q(first_name__lt="Ava"))
@@ -177,7 +190,10 @@ class DatabaseTestCase(TestCaseWithData):
         self._insert_and_check(self._sample_data(), len(data))
         query = "SELECT * FROM `test-db`.person WHERE first_name = 'Whitney' ORDER BY last_name"
         results = self.database.raw(query)
-        self.assertEqual(results, "Whitney\tDurham\t1977-09-15\t1.72\t\\N\nWhitney\tScott\t1971-07-04\t1.7\t\\N\n")
+        self.assertEqual(
+            results,
+            "Whitney\tDurham\t1977-09-15\t1.72\t\\N\nWhitney\tScott\t1971-07-04\t1.7\t\\N\n",
+        )
 
     def test_invalid_user(self):
         with self.assertRaises(ServerError) as cm:

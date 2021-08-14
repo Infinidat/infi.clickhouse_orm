@@ -1,7 +1,7 @@
 import logging
 import unittest
 
-from clickhouse_orm import *
+from clickhouse_orm import Database, F, Memory, Model, StringField, UInt64Field
 
 
 class DictionaryTestMixin:
@@ -99,8 +99,14 @@ class HierarchicalDictionaryTest(DictionaryTestMixin, unittest.TestCase):
         self._test_func(F.dictGet(self.dict_name, "region_name", F.toUInt64(99)), "?")
 
     def test_dictgetordefault(self):
-        self._test_func(F.dictGetOrDefault(self.dict_name, "region_name", F.toUInt64(3), "n/a"), "Center")
-        self._test_func(F.dictGetOrDefault(self.dict_name, "region_name", F.toUInt64(99), "n/a"), "n/a")
+        self._test_func(
+            F.dictGetOrDefault(self.dict_name, "region_name", F.toUInt64(3), "n/a"),
+            "Center",
+        )
+        self._test_func(
+            F.dictGetOrDefault(self.dict_name, "region_name", F.toUInt64(99), "n/a"),
+            "n/a",
+        )
 
     def test_dicthas(self):
         self._test_func(F.dictHas(self.dict_name, F.toUInt64(3)), 1)

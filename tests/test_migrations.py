@@ -6,8 +6,23 @@ import unittest
 from enum import Enum
 
 from clickhouse_orm.database import Database, ServerError
-from clickhouse_orm.engines import *
-from clickhouse_orm.fields import *
+from clickhouse_orm.engines import Buffer, MergeTree
+from clickhouse_orm.fields import (
+    ArrayField,
+    DateField,
+    DateTimeField,
+    Enum8Field,
+    Enum16Field,
+    Float32Field,
+    Float64Field,
+    Int8Field,
+    Int32Field,
+    Int64Field,
+    LowCardinalityField,
+    NullableField,
+    StringField,
+    UInt64Field,
+)
 from clickhouse_orm.migrations import MigrationHistory
 from clickhouse_orm.models import BufferModel, Constraint, Index, Model
 
@@ -45,7 +60,10 @@ class MigrationsTestCase(unittest.TestCase):
         self.database.migrate("tests.sample_migrations", 3)
         self.assertTrue(self.table_exists(Model1))
         # Adding, removing and altering simple fields
-        self.assertEqual(self.get_table_fields(Model1), [("date", "Date"), ("f1", "Int32"), ("f2", "String")])
+        self.assertEqual(
+            self.get_table_fields(Model1),
+            [("date", "Date"), ("f1", "Int32"), ("f2", "String")],
+        )
         self.database.migrate("tests.sample_migrations", 4)
         self.assertEqual(
             self.get_table_fields(Model2),
@@ -60,36 +78,59 @@ class MigrationsTestCase(unittest.TestCase):
         )
         self.database.migrate("tests.sample_migrations", 5)
         self.assertEqual(
-            self.get_table_fields(Model3), [("date", "Date"), ("f1", "Int64"), ("f3", "Float64"), ("f4", "String")]
+            self.get_table_fields(Model3),
+            [("date", "Date"), ("f1", "Int64"), ("f3", "Float64"), ("f4", "String")],
         )
         # Altering enum fields
         self.database.migrate("tests.sample_migrations", 6)
         self.assertTrue(self.table_exists(EnumModel1))
         self.assertEqual(
-            self.get_table_fields(EnumModel1), [("date", "Date"), ("f1", "Enum8('dog' = 1, 'cat' = 2, 'cow' = 3)")]
+            self.get_table_fields(EnumModel1),
+            [("date", "Date"), ("f1", "Enum8('dog' = 1, 'cat' = 2, 'cow' = 3)")],
         )
         self.database.migrate("tests.sample_migrations", 7)
         self.assertTrue(self.table_exists(EnumModel1))
         self.assertEqual(
             self.get_table_fields(EnumModel2),
-            [("date", "Date"), ("f1", "Enum16('dog' = 1, 'cat' = 2, 'horse' = 3, 'pig' = 4)")],
+            [
+                ("date", "Date"),
+                ("f1", "Enum16('dog' = 1, 'cat' = 2, 'horse' = 3, 'pig' = 4)"),
+            ],
         )
         # Materialized fields and alias fields
         self.database.migrate("tests.sample_migrations", 8)
         self.assertTrue(self.table_exists(MaterializedModel))
-        self.assertEqual(self.get_table_fields(MaterializedModel), [("date_time", "DateTime"), ("date", "Date")])
+        self.assertEqual(
+            self.get_table_fields(MaterializedModel),
+            [("date_time", "DateTime"), ("date", "Date")],
+        )
         self.database.migrate("tests.sample_migrations", 9)
         self.assertTrue(self.table_exists(AliasModel))
-        self.assertEqual(self.get_table_fields(AliasModel), [("date", "Date"), ("date_alias", "Date")])
+        self.assertEqual(
+            self.get_table_fields(AliasModel),
+            [("date", "Date"), ("date_alias", "Date")],
+        )
         # Buffer models creation and alteration
         self.database.migrate("tests.sample_migrations", 10)
         self.assertTrue(self.table_exists(Model4))
         self.assertTrue(self.table_exists(Model4Buffer))
-        self.assertEqual(self.get_table_fields(Model4), [("date", "Date"), ("f1", "Int32"), ("f2", "String")])
-        self.assertEqual(self.get_table_fields(Model4Buffer), [("date", "Date"), ("f1", "Int32"), ("f2", "String")])
+        self.assertEqual(
+            self.get_table_fields(Model4),
+            [("date", "Date"), ("f1", "Int32"), ("f2", "String")],
+        )
+        self.assertEqual(
+            self.get_table_fields(Model4Buffer),
+            [("date", "Date"), ("f1", "Int32"), ("f2", "String")],
+        )
         self.database.migrate("tests.sample_migrations", 11)
-        self.assertEqual(self.get_table_fields(Model4), [("date", "Date"), ("f3", "DateTime"), ("f2", "String")])
-        self.assertEqual(self.get_table_fields(Model4Buffer), [("date", "Date"), ("f3", "DateTime"), ("f2", "String")])
+        self.assertEqual(
+            self.get_table_fields(Model4),
+            [("date", "Date"), ("f3", "DateTime"), ("f2", "String")],
+        )
+        self.assertEqual(
+            self.get_table_fields(Model4Buffer),
+            [("date", "Date"), ("f3", "DateTime"), ("f2", "String")],
+        )
 
         self.database.migrate("tests.sample_migrations", 12)
         self.assertEqual(self.database.count(Model3), 3)
@@ -105,12 +146,22 @@ class MigrationsTestCase(unittest.TestCase):
         self.assertTrue(self.table_exists(MaterializedModel1))
         self.assertEqual(
             self.get_table_fields(MaterializedModel1),
-            [("date_time", "DateTime"), ("int_field", "Int8"), ("date", "Date"), ("int_field_plus_one", "Int8")],
+            [
+                ("date_time", "DateTime"),
+                ("int_field", "Int8"),
+                ("date", "Date"),
+                ("int_field_plus_one", "Int8"),
+            ],
         )
         self.assertTrue(self.table_exists(AliasModel1))
         self.assertEqual(
             self.get_table_fields(AliasModel1),
-            [("date", "Date"), ("int_field", "Int8"), ("date_alias", "Date"), ("int_field_plus_one", "Int8")],
+            [
+                ("date", "Date"),
+                ("int_field", "Int8"),
+                ("date_alias", "Date"),
+                ("int_field_plus_one", "Int8"),
+            ],
         )
         # Codecs and low cardinality
         self.database.migrate("tests.sample_migrations", 15)

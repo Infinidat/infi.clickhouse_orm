@@ -3,8 +3,8 @@ import unittest
 
 import pytz
 
-from clickhouse_orm.engines import *
-from clickhouse_orm.fields import *
+from clickhouse_orm.engines import MergeTree
+from clickhouse_orm.fields import DateField, DateTimeField, Float32Field, Int32Field, StringField
 from clickhouse_orm.funcs import F
 from clickhouse_orm.models import NO_VALUE, Model
 
@@ -83,8 +83,14 @@ class ModelTestCase(unittest.TestCase):
             },
         )
         self.assertDictEqual(
-            instance.to_dict(include_readonly=False, field_names=("int_field", "alias_field", "datetime_field")),
-            {"int_field": 100, "datetime_field": datetime.datetime(1970, 1, 1, 0, 0, 0, tzinfo=pytz.utc)},
+            instance.to_dict(
+                include_readonly=False,
+                field_names=("int_field", "alias_field", "datetime_field"),
+            ),
+            {
+                "int_field": 100,
+                "datetime_field": datetime.datetime(1970, 1, 1, 0, 0, 0, tzinfo=pytz.utc),
+            },
         )
 
     def test_field_name_in_error_message_for_invalid_value_in_constructor(self):
@@ -93,7 +99,8 @@ class ModelTestCase(unittest.TestCase):
             SimpleModel(str_field=bad_value)
 
         self.assertEqual(
-            "Invalid value for StringField: {} (field 'str_field')".format(repr(bad_value)), str(cm.exception)
+            "Invalid value for StringField: {} (field 'str_field')".format(repr(bad_value)),
+            str(cm.exception),
         )
 
     def test_field_name_in_error_message_for_invalid_value_in_assignment(self):
@@ -103,7 +110,8 @@ class ModelTestCase(unittest.TestCase):
             instance.float_field = bad_value
 
         self.assertEqual(
-            "Invalid value for Float32Field - {} (field 'float_field')".format(repr(bad_value)), str(cm.exception)
+            "Invalid value for Float32Field - {} (field 'float_field')".format(repr(bad_value)),
+            str(cm.exception),
         )
 
 

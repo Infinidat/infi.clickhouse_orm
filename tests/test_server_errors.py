@@ -16,7 +16,10 @@ class ServerErrorTest(unittest.TestCase):
             "Code: 161, e.displayText() = DB::Exception: Limit for number of columns to read exceeded. Requested: 11, maximum: 1, e.what() = DB::Exception\n"
         )
         self.assertEqual(code, 161)
-        self.assertEqual(msg, "Limit for number of columns to read exceeded. Requested: 11, maximum: 1")
+        self.assertEqual(
+            msg,
+            "Limit for number of columns to read exceeded. Requested: 11, maximum: 1",
+        )
 
     def test_new_format(self):
 

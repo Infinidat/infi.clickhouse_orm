@@ -1,3 +1,12 @@
+[tool.black]
+line-length = 120
+extend-exclude = '''
+/(
+  | examples
+  | scripts
+)/
+'''
+
 [tool.isort]
 multi_line_output = 3
 include_trailing_comma = true

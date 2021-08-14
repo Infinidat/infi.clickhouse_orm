@@ -3,8 +3,8 @@ import unittest
 from decimal import Decimal
 
 from clickhouse_orm.database import Database, ServerError
-from clickhouse_orm.engines import *
-from clickhouse_orm.fields import *
+from clickhouse_orm.engines import Memory
+from clickhouse_orm.fields import DateField, Decimal32Field, Decimal64Field, Decimal128Field, DecimalField
 from clickhouse_orm.models import Model
 
 

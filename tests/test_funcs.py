@@ -246,11 +246,20 @@ class FuncsTestCase(TestCaseWithData):
         self._test_func(F.toStartOfYear(d), date(2018, 1, 1))
         self._test_func(F.toStartOfYear(dt), date(2018, 1, 1))
         self._test_func(F.toStartOfMinute(dt), datetime(2018, 12, 31, 11, 22, 0, tzinfo=pytz.utc))
-        self._test_func(F.toStartOfFiveMinute(dt), datetime(2018, 12, 31, 11, 20, 0, tzinfo=pytz.utc))
-        self._test_func(F.toStartOfFifteenMinutes(dt), datetime(2018, 12, 31, 11, 15, 0, tzinfo=pytz.utc))
+        self._test_func(
+            F.toStartOfFiveMinute(dt),
+            datetime(2018, 12, 31, 11, 20, 0, tzinfo=pytz.utc),
+        )
+        self._test_func(
+            F.toStartOfFifteenMinutes(dt),
+            datetime(2018, 12, 31, 11, 15, 0, tzinfo=pytz.utc),
+        )
         self._test_func(F.toStartOfHour(dt), datetime(2018, 12, 31, 11, 0, 0, tzinfo=pytz.utc))
         self._test_func(F.toStartOfISOYear(dt), date(2018, 12, 31))
-        self._test_func(F.toStartOfTenMinutes(dt), datetime(2018, 12, 31, 11, 20, 0, tzinfo=pytz.utc))
+        self._test_func(
+            F.toStartOfTenMinutes(dt),
+            datetime(2018, 12, 31, 11, 20, 0, tzinfo=pytz.utc),
+        )
         self._test_func(F.toStartOfWeek(dt), date(2018, 12, 30))
         self._test_func(F.toTime(dt), datetime(1970, 1, 2, 11, 22, 33, tzinfo=pytz.utc))
         self._test_func(F.toUnixTimestamp(dt, "UTC"), int(dt.replace(tzinfo=pytz.utc).timestamp()))
@@ -328,9 +337,18 @@ class FuncsTestCase(TestCaseWithData):
         self._test_func(F.toHour(dt), 11)
         self._test_func(F.toStartOfDay(dt), datetime(2018, 12, 31, 0, 0, 0, tzinfo=pytz.utc))
         self._test_func(F.toTime(dt, pytz.utc), datetime(1970, 1, 2, 11, 22, 33, tzinfo=pytz.utc))
-        self._test_func(F.toTime(dt, "Europe/Athens"), athens_tz.localize(datetime(1970, 1, 2, 13, 22, 33)))
-        self._test_func(F.toTime(dt, athens_tz), athens_tz.localize(datetime(1970, 1, 2, 13, 22, 33)))
-        self._test_func(F.toTimeZone(dt, "Europe/Athens"), athens_tz.localize(datetime(2018, 12, 31, 13, 22, 33)))
+        self._test_func(
+            F.toTime(dt, "Europe/Athens"),
+            athens_tz.localize(datetime(1970, 1, 2, 13, 22, 33)),
+        )
+        self._test_func(
+            F.toTime(dt, athens_tz),
+            athens_tz.localize(datetime(1970, 1, 2, 13, 22, 33)),
+        )
+        self._test_func(
+            F.toTimeZone(dt, "Europe/Athens"),
+            athens_tz.localize(datetime(2018, 12, 31, 13, 22, 33)),
+        )
         self._test_func(F.today(), datetime.utcnow().date())
         self._test_func(F.yesterday(), datetime.utcnow().date() - timedelta(days=1))
         self._test_func(F.toYYYYMMDDhhmmss(dt), 20181231112233)
@@ -390,16 +408,25 @@ class FuncsTestCase(TestCaseWithData):
     def test_type_conversion_functions__utc_only(self):
         if self.database.server_timezone != pytz.utc:
             raise unittest.SkipTest("This test must run with UTC as the server timezone")
-        self._test_func(F.toDateTime("2018-12-31 11:22:33"), datetime(2018, 12, 31, 11, 22, 33, tzinfo=pytz.utc))
         self._test_func(
-            F.toDateTime64("2018-12-31 11:22:33.001", 6), datetime(2018, 12, 31, 11, 22, 33, 1000, tzinfo=pytz.utc)
-        )
-        self._test_func(F.parseDateTimeBestEffort("31/12/2019 10:05AM"), datetime(2019, 12, 31, 10, 5, tzinfo=pytz.utc))
-        self._test_func(
-            F.parseDateTimeBestEffortOrNull("31/12/2019 10:05AM"), datetime(2019, 12, 31, 10, 5, tzinfo=pytz.utc)
+            F.toDateTime("2018-12-31 11:22:33"),
+            datetime(2018, 12, 31, 11, 22, 33, tzinfo=pytz.utc),
         )
         self._test_func(
-            F.parseDateTimeBestEffortOrZero("31/12/2019 10:05AM"), datetime(2019, 12, 31, 10, 5, tzinfo=pytz.utc)
+            F.toDateTime64("2018-12-31 11:22:33.001", 6),
+            datetime(2018, 12, 31, 11, 22, 33, 1000, tzinfo=pytz.utc),
+        )
+        self._test_func(
+            F.parseDateTimeBestEffort("31/12/2019 10:05AM"),
+            datetime(2019, 12, 31, 10, 5, tzinfo=pytz.utc),
+        )
+        self._test_func(
+            F.parseDateTimeBestEffortOrNull("31/12/2019 10:05AM"),
+            datetime(2019, 12, 31, 10, 5, tzinfo=pytz.utc),
+        )
+        self._test_func(
+            F.parseDateTimeBestEffortOrZero("31/12/2019 10:05AM"),
+            datetime(2019, 12, 31, 10, 5, tzinfo=pytz.utc),
         )
 
     def test_string_functions(self):
@@ -420,7 +447,10 @@ class FuncsTestCase(TestCaseWithData):
         self._test_func(F.substringUTF8("123456", 3, 2), "34")
         self._test_func(F.appendTrailingCharIfAbsent("Hello", "!"), "Hello!")
         self._test_func(F.appendTrailingCharIfAbsent("Hello!", "!"), "Hello!")
-        self._test_func(F.convertCharset(F.convertCharset("Hello", "latin1", "utf16"), "utf16", "latin1"), "Hello")
+        self._test_func(
+            F.convertCharset(F.convertCharset("Hello", "latin1", "utf16"), "utf16", "latin1"),
+            "Hello",
+        )
         self._test_func(F.startsWith("aaa", "aa"), True)
         self._test_func(F.startsWith("aaa", "bb"), False)
         self._test_func(F.endsWith("aaa", "aa"), True)
@@ -592,17 +622,36 @@ class FuncsTestCase(TestCaseWithData):
         self._test_func(F.bitmapContains(F.bitmapBuild([1, 5, 7, 9]), F.toUInt32(9)), 1)
         self._test_func(F.bitmapHasAny(F.bitmapBuild([1, 2, 3]), F.bitmapBuild([3, 4, 5])), 1)
         self._test_func(F.bitmapHasAll(F.bitmapBuild([1, 2, 3]), F.bitmapBuild([3, 4, 5])), 0)
-        self._test_func(F.bitmapToArray(F.bitmapAnd(F.bitmapBuild([1, 2, 3]), F.bitmapBuild([3, 4, 5]))), [3])
         self._test_func(
-            F.bitmapToArray(F.bitmapOr(F.bitmapBuild([1, 2, 3]), F.bitmapBuild([3, 4, 5]))), [1, 2, 3, 4, 5]
+            F.bitmapToArray(F.bitmapAnd(F.bitmapBuild([1, 2, 3]), F.bitmapBuild([3, 4, 5]))),
+            [3],
         )
-        self._test_func(F.bitmapToArray(F.bitmapXor(F.bitmapBuild([1, 2, 3]), F.bitmapBuild([3, 4, 5]))), [1, 2, 4, 5])
-        self._test_func(F.bitmapToArray(F.bitmapAndnot(F.bitmapBuild([1, 2, 3]), F.bitmapBuild([3, 4, 5]))), [1, 2])
+        self._test_func(
+            F.bitmapToArray(F.bitmapOr(F.bitmapBuild([1, 2, 3]), F.bitmapBuild([3, 4, 5]))),
+            [1, 2, 3, 4, 5],
+        )
+        self._test_func(
+            F.bitmapToArray(F.bitmapXor(F.bitmapBuild([1, 2, 3]), F.bitmapBuild([3, 4, 5]))),
+            [1, 2, 4, 5],
+        )
+        self._test_func(
+            F.bitmapToArray(F.bitmapAndnot(F.bitmapBuild([1, 2, 3]), F.bitmapBuild([3, 4, 5]))),
+            [1, 2],
+        )
         self._test_func(F.bitmapCardinality(F.bitmapBuild([1, 2, 3, 4, 5])), 5)
-        self._test_func(F.bitmapAndCardinality(F.bitmapBuild([1, 2, 3]), F.bitmapBuild([3, 4, 5])), 1)
+        self._test_func(
+            F.bitmapAndCardinality(F.bitmapBuild([1, 2, 3]), F.bitmapBuild([3, 4, 5])),
+            1,
+        )
         self._test_func(F.bitmapOrCardinality(F.bitmapBuild([1, 2, 3]), F.bitmapBuild([3, 4, 5])), 5)
-        self._test_func(F.bitmapXorCardinality(F.bitmapBuild([1, 2, 3]), F.bitmapBuild([3, 4, 5])), 4)
-        self._test_func(F.bitmapAndnotCardinality(F.bitmapBuild([1, 2, 3]), F.bitmapBuild([3, 4, 5])), 2)
+        self._test_func(
+            F.bitmapXorCardinality(F.bitmapBuild([1, 2, 3]), F.bitmapBuild([3, 4, 5])),
+            4,
+        )
+        self._test_func(
+            F.bitmapAndnotCardinality(F.bitmapBuild([1, 2, 3]), F.bitmapBuild([3, 4, 5])),
+            2,
+        )
 
     def test_hash_functions(self):
         args = ["x", "y", "z"]
@@ -662,16 +711,26 @@ class FuncsTestCase(TestCaseWithData):
         self._test_func(F.IPv4NumToString(F.toUInt32(1)), "0.0.0.1")
         self._test_func(F.IPv4NumToStringClassC(F.toUInt32(1)), "0.0.0.xxx")
         self._test_func(F.IPv4StringToNum("0.0.0.17"), 17)
-        self._test_func(F.IPv6NumToString(F.IPv4ToIPv6(F.IPv4StringToNum("192.168.0.1"))), "::ffff:192.168.0.1")
+        self._test_func(
+            F.IPv6NumToString(F.IPv4ToIPv6(F.IPv4StringToNum("192.168.0.1"))),
+            "::ffff:192.168.0.1",
+        )
         self._test_func(F.IPv6NumToString(F.IPv6StringToNum("2a02:6b8::11")), "2a02:6b8::11")
         self._test_func(F.toIPv4("10.20.30.40"), IPv4Address("10.20.30.40"))
-        self._test_func(F.toIPv6("2001:438:ffff::407d:1bc1"), IPv6Address("2001:438:ffff::407d:1bc1"))
         self._test_func(
-            F.IPv4CIDRToRange(F.toIPv4("192.168.5.2"), 16), [IPv4Address("192.168.0.0"), IPv4Address("192.168.255.255")]
+            F.toIPv6("2001:438:ffff::407d:1bc1"),
+            IPv6Address("2001:438:ffff::407d:1bc1"),
+        )
+        self._test_func(
+            F.IPv4CIDRToRange(F.toIPv4("192.168.5.2"), 16),
+            [IPv4Address("192.168.0.0"), IPv4Address("192.168.255.255")],
         )
         self._test_func(
             F.IPv6CIDRToRange(F.toIPv6("2001:0db8:0000:85a3:0000:0000:ac1f:8001"), 32),
-            [IPv6Address("2001:db8::"), IPv6Address("2001:db8:ffff:ffff:ffff:ffff:ffff:ffff")],
+            [
+                IPv6Address("2001:db8::"),
+                IPv6Address("2001:db8:ffff:ffff:ffff:ffff:ffff:ffff"),
+            ],
         )
 
     def test_aggregate_funcs(self):
@@ -680,7 +739,10 @@ class FuncsTestCase(TestCaseWithData):
         self._test_aggr(F.anyLast(Person.first_name))
         self._test_aggr(F.argMin(Person.first_name, Person.height))
         self._test_aggr(F.argMax(Person.first_name, Person.height))
-        self._test_aggr(F.round(F.avg(Person.height), 4), sum(p.height for p in self._sample_data()) / 100)
+        self._test_aggr(
+            F.round(F.avg(Person.height), 4),
+            sum(p.height for p in self._sample_data()) / 100,
+        )
         self._test_aggr(F.corr(Person.height, Person.height), 1)
         self._test_aggr(F.count(), 100)
         self._test_aggr(F.round(F.covarPop(Person.height, Person.height), 2), 0)

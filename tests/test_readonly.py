@@ -1,8 +1,12 @@
 # -*- coding: utf-8 -*-
+import unittest
 
-from clickhouse_orm.database import DatabaseException, ServerError
+from clickhouse_orm.database import Database, DatabaseException, ServerError
+from clickhouse_orm.engines import MergeTree
+from clickhouse_orm.fields import DateField, StringField
+from clickhouse_orm.models import Model
 
-from .base_test_with_data import *
+from .base_test_with_data import Person, TestCaseWithData, data
 
 
 class ReadonlyTestCase(TestCaseWithData):
@@ -65,7 +69,10 @@ class ReadonlyTestCase(TestCaseWithData):
     def test_nonexisting_readonly_database(self):
         with self.assertRaises(DatabaseException) as cm:
             Database("dummy", readonly=True)
-        self.assertEqual(str(cm.exception), "Database does not exist, and cannot be created under readonly connection")
+        self.assertEqual(
+            str(cm.exception),
+            "Database does not exist, and cannot be created under readonly connection",
+        )
 
 
 class ReadOnlyModel(Model):

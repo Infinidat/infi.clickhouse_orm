@@ -4,8 +4,25 @@ from datetime import date, datetime
 import pytz
 
 from clickhouse_orm.database import Database
-from clickhouse_orm.engines import *
-from clickhouse_orm.fields import *
+from clickhouse_orm.engines import MergeTree
+from clickhouse_orm.fields import (
+    BaseFloatField,
+    BaseIntField,
+    DateField,
+    DateTimeField,
+    Float32Field,
+    Float64Field,
+    Int8Field,
+    Int16Field,
+    Int32Field,
+    Int64Field,
+    NullableField,
+    StringField,
+    UInt8Field,
+    UInt16Field,
+    UInt32Field,
+    UInt64Field,
+)
 from clickhouse_orm.models import Model
 from clickhouse_orm.utils import comma_join
 
@@ -79,7 +96,16 @@ class NullableFieldsTest(unittest.TestCase):
             f = NullableField(field())
             self.assertTrue(f.isinstance(field))
             self.assertTrue(f.isinstance(NullableField))
-        for field in (Int8Field, Int16Field, Int32Field, Int64Field, UInt8Field, UInt16Field, UInt32Field, UInt64Field):
+        for field in (
+            Int8Field,
+            Int16Field,
+            Int32Field,
+            Int64Field,
+            UInt8Field,
+            UInt16Field,
+            UInt32Field,
+            UInt64Field,
+        ):
             f = NullableField(field())
             self.assertTrue(f.isinstance(BaseIntField))
         for field in (Float32Field, Float64Field):
@@ -95,10 +121,19 @@ class NullableFieldsTest(unittest.TestCase):
         self.database.insert(
             [
                 ModelWithNullable(date_field="2016-08-30", null_str="", null_int=42, null_date=dt),
-                ModelWithNullable(date_field="2016-08-30", null_str="nothing", null_int=None, null_date=None),
+                ModelWithNullable(
+                    date_field="2016-08-30",
+                    null_str="nothing",
+                    null_int=None,
+                    null_date=None,
+                ),
                 ModelWithNullable(date_field="2016-08-31", null_str=None, null_int=42, null_date=dt),
                 ModelWithNullable(
-                    date_field="2016-08-31", null_str=None, null_int=None, null_date=None, null_default=None
+                    date_field="2016-08-31",
+                    null_str=None,
+                    null_int=None,
+                    null_date=None,
+                    null_default=None,
                 ),
             ]
         )

@@ -79,7 +79,10 @@ class QuerySetTestCase(TestCaseWithData):
         qs = Person.objects_in(self.database)
         self._test_qs(qs.filter(Q(first_name="Ciaran")), 2)
         self._test_qs(qs.filter(Q(first_name="Ciaran") | Q(first_name="Chelsea")), 3)
-        self._test_qs(qs.filter(Q(first_name__in=["Warren", "Whilemina", "Whitney"]) & Q(height__gte=1.7)), 3)
+        self._test_qs(
+            qs.filter(Q(first_name__in=["Warren", "Whilemina", "Whitney"]) & Q(height__gte=1.7)),
+            3,
+        )
         self._test_qs(
             qs.filter(
                 (
@@ -103,7 +106,10 @@ class QuerySetTestCase(TestCaseWithData):
             ),
             2,
         )
-        self._test_qs(qs.filter(Q(first_name="Courtney") | Q(first_name="Cassady") & Q(last_name="Knapp")), 3)
+        self._test_qs(
+            qs.filter(Q(first_name="Courtney") | Q(first_name="Cassady") & Q(last_name="Knapp")),
+            3,
+        )
 
     def test_filter_unicode_string(self):
         self.database.insert([Person(first_name=u"דונלד", last_name=u"דאק")])
@@ -269,7 +275,10 @@ class QuerySetTestCase(TestCaseWithData):
             page_a = qs.paginate(-1, page_size)
             page_b = qs.paginate(page_a.pages_total, page_size)
             self.assertEqual(page_a[1:], page_b[1:])
-            self.assertEqual([obj.to_tsv() for obj in page_a.objects], [obj.to_tsv() for obj in page_b.objects])
+            self.assertEqual(
+                [obj.to_tsv() for obj in page_a.objects],
+                [obj.to_tsv() for obj in page_b.objects],
+            )
 
     def test_pagination_invalid_page(self):
         qs = Person.objects_in(self.database).order_by("first_name", "last_name")
@@ -320,7 +329,8 @@ class QuerySetTestCase(TestCaseWithData):
         qs = Person.objects_in(self.database)
         qs = qs.filter(Q(first_name="a"), F("greater", Person.height, 1.7), last_name="b")
         self.assertEqual(
-            qs.conditions_as_sql(), "(first_name = 'a') AND (greater(`height`, 1.7)) AND (last_name = 'b')"
+            qs.conditions_as_sql(),
+            "(first_name = 'a') AND (greater(`height`, 1.7)) AND (last_name = 'b')",
         )
 
     def test_invalid_filter(self):
