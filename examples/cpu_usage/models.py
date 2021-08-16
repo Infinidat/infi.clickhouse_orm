@@ -1,4 +1,4 @@
-from clickhouse_orm import Model, DateTimeField, UInt16Field, Float32Field, Memory
+from clickhouse_orm import DateTimeField, Float32Field, Memory, Model, UInt16Field
 
 
 class CPUStats(Model):
@@ -8,4 +8,3 @@ class CPUStats(Model):
     cpu_percent = Float32Field()
 
     engine = Memory()
-

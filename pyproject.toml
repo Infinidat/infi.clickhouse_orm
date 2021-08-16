@@ -1,10 +1,5 @@
 [tool.black]
 line-length = 120
-extend-exclude = '''
-/(
-  | examples
-)/
-'''
 
 [tool.isort]
 multi_line_output = 3
