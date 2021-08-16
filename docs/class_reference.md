@@ -2,7 +2,7 @@ Class Reference
 ===============
 
 clickhouse_orm.database
-----------------------------
+-----------------------
 
 ### Database
 
@@ -153,7 +153,7 @@ Extends Exception
 Raised when a database operation fails.
 
 clickhouse_orm.models
---------------------------
+---------------------
 
 ### Model
 
@@ -812,7 +812,7 @@ separated by non-alphanumeric characters.
 
 
 clickhouse_orm.fields
---------------------------
+---------------------
 
 ### ArrayField
 
@@ -1047,7 +1047,7 @@ Extends Field
 
 
 clickhouse_orm.engines
----------------------------
+----------------------
 
 ### Engine
 
@@ -1141,7 +1141,7 @@ Extends MergeTree
 
 
 clickhouse_orm.query
--------------------------
+--------------------
 
 ### QuerySet
 
@@ -1444,7 +1444,7 @@ https://clickhouse.tech/docs/en/query_language/select/#with-totals-modifier
 
 
 clickhouse_orm.funcs
--------------------------
+--------------------
 
 ### F
 
@@ -2012,7 +2012,7 @@ Initializer.
 #### floor(n=None)
 
 
-#### formatDateTime(format, timezone="")
+#### formatDateTime(format, timezone=NO_VALUE)
 
 
 #### gcd(b)
@@ -2804,13 +2804,13 @@ Initializer.
 #### toDateTimeOrZero()
 
 
-#### toDayOfMonth()
+#### toDayOfMonth(timezone=NO_VALUE)
 
 
-#### toDayOfWeek()
+#### toDayOfWeek(timezone=NO_VALUE)
 
 
-#### toDayOfYear()
+#### toDayOfYear(timezone=NO_VALUE)
 
 
 #### toDecimal128(**kwargs)
@@ -2861,7 +2861,7 @@ Initializer.
 #### toFloat64OrZero()
 
 
-#### toHour()
+#### toHour(timezone=NO_VALUE)
 
 
 #### toIPv4()
@@ -2870,10 +2870,10 @@ Initializer.
 #### toIPv6()
 
 
-#### toISOWeek(timezone="")
+#### toISOWeek(timezone=NO_VALUE)
 
 
-#### toISOYear(timezone="")
+#### toISOYear(timezone=NO_VALUE)
 
 
 #### toInt16(**kwargs)
@@ -2936,73 +2936,73 @@ Initializer.
 #### toIntervalYear()
 
 
-#### toMinute()
+#### toMinute(timezone=NO_VALUE)
 
 
-#### toMonday()
+#### toMonday(timezone=NO_VALUE)
 
 
-#### toMonth()
+#### toMonth(timezone=NO_VALUE)
 
 
-#### toQuarter(timezone="")
+#### toQuarter(timezone=NO_VALUE)
 
 
-#### toRelativeDayNum(timezone="")
+#### toRelativeDayNum(timezone=NO_VALUE)
 
 
-#### toRelativeHourNum(timezone="")
+#### toRelativeHourNum(timezone=NO_VALUE)
 
 
-#### toRelativeMinuteNum(timezone="")
+#### toRelativeMinuteNum(timezone=NO_VALUE)
 
 
-#### toRelativeMonthNum(timezone="")
+#### toRelativeMonthNum(timezone=NO_VALUE)
 
 
-#### toRelativeSecondNum(timezone="")
+#### toRelativeSecondNum(timezone=NO_VALUE)
 
 
-#### toRelativeWeekNum(timezone="")
+#### toRelativeWeekNum(timezone=NO_VALUE)
 
 
-#### toRelativeYearNum(timezone="")
+#### toRelativeYearNum(timezone=NO_VALUE)
 
 
-#### toSecond()
+#### toSecond(timezone=NO_VALUE)
 
 
-#### toStartOfDay()
+#### toStartOfDay(timezone=NO_VALUE)
 
 
-#### toStartOfFifteenMinutes()
+#### toStartOfFifteenMinutes(timezone=NO_VALUE)
 
 
-#### toStartOfFiveMinute()
+#### toStartOfFiveMinute(timezone=NO_VALUE)
 
 
-#### toStartOfHour()
+#### toStartOfHour(timezone=NO_VALUE)
 
 
-#### toStartOfISOYear()
+#### toStartOfISOYear(timezone=NO_VALUE)
 
 
-#### toStartOfMinute()
+#### toStartOfMinute(timezone=NO_VALUE)
 
 
-#### toStartOfMonth()
+#### toStartOfMonth(timezone=NO_VALUE)
 
 
-#### toStartOfQuarter()
+#### toStartOfQuarter(timezone=NO_VALUE)
 
 
-#### toStartOfTenMinutes()
+#### toStartOfTenMinutes(timezone=NO_VALUE)
 
 
-#### toStartOfWeek(mode=0)
+#### toStartOfWeek(timezone=NO_VALUE)
 
 
-#### toStartOfYear()
+#### toStartOfYear(timezone=NO_VALUE)
 
 
 #### toString()
@@ -3011,7 +3011,7 @@ Initializer.
 #### toStringCutToZero()
 
 
-#### toTime(timezone="")
+#### toTime(timezone=NO_VALUE)
 
 
 #### toTimeZone(timezone)
@@ -3056,22 +3056,22 @@ Initializer.
 #### toUUID()
 
 
-#### toUnixTimestamp(timezone="")
+#### toUnixTimestamp(timezone=NO_VALUE)
 
 
-#### toWeek(mode=0, timezone="")
+#### toWeek(mode=0, timezone=NO_VALUE)
 
 
-#### toYYYYMM(timezone="")
+#### toYYYYMM(timezone=NO_VALUE)
 
 
-#### toYYYYMMDD(timezone="")
+#### toYYYYMMDD(timezone=NO_VALUE)
 
 
-#### toYYYYMMDDhhmmss(timezone="")
+#### toYYYYMMDDhhmmss(timezone=NO_VALUE)
 
 
-#### toYear()
+#### toYear(timezone=NO_VALUE)
 
 
 #### to_sql(*args)
@@ -3142,5 +3142,310 @@ For other functions:
 
 
 #### uniqExact(**kwargs)
+
+
+#### uniqExactIf(*args)
+
+
+#### uniqExactOrDefault()
+
+
+#### uniqExactOrDefaultIf(*args)
+
+
+#### uniqExactOrNull()
+
+
+#### uniqExactOrNullIf(*args)
+
+
+#### uniqHLL12(**kwargs)
+
+
+#### uniqHLL12If(*args)
+
+
+#### uniqHLL12OrDefault()
+
+
+#### uniqHLL12OrDefaultIf(*args)
+
+
+#### uniqHLL12OrNull()
+
+
+#### uniqHLL12OrNullIf(*args)
+
+
+#### uniqIf(*args)
+
+
+#### uniqOrDefault()
+
+
+#### uniqOrDefaultIf(*args)
+
+
+#### uniqOrNull()
+
+
+#### uniqOrNullIf(*args)
+
+
+#### upper(**kwargs)
+
+
+#### upperUTF8()
+
+
+#### varPop(**kwargs)
+
+
+#### varPopIf(cond)
+
+
+#### varPopOrDefault()
+
+
+#### varPopOrDefaultIf(cond)
+
+
+#### varPopOrNull()
+
+
+#### varPopOrNullIf(cond)
+
+
+#### varSamp(**kwargs)
+
+
+#### varSampIf(cond)
+
+
+#### varSampOrDefault()
+
+
+#### varSampOrDefaultIf(cond)
+
+
+#### varSampOrNull()
+
+
+#### varSampOrNullIf(cond)
+
+
+#### xxHash32()
+
+
+#### xxHash64()
+
+
+#### yesterday()
+
+
+clickhouse_orm.system_models
+----------------------------
+
+### SystemPart
+
+Extends Model
+
+
+Contains information about parts of a table in the MergeTree family.
+This model operates only fields, described in the reference. Other fields are ignored.
+https://clickhouse.tech/docs/en/system_tables/system.parts/
+
+#### SystemPart(**kwargs)
+
+
+Creates a model instance, using keyword arguments as field values.
+Since values are immediately converted to their Pythonic type,
+invalid values will cause a `ValueError` to be raised.
+Unrecognized field names will cause an `AttributeError`.
+
+
+#### attach(settings=None)
+
+
+ Add a new part or partition from the 'detached' directory to the table.
+
+- `settings`: Settings for executing request to ClickHouse over db.raw() method
+
+Returns: SQL Query
+
+
+#### SystemPart.create_table_sql(db)
+
+
+Returns the SQL statement for creating a table for this model.
+
+
+#### detach(settings=None)
+
+
+Move a partition to the 'detached' directory and forget it.
+
+- `settings`: Settings for executing request to ClickHouse over db.raw() method
+
+Returns: SQL Query
+
+
+#### drop(settings=None)
+
+
+Delete a partition
+
+- `settings`: Settings for executing request to ClickHouse over db.raw() method
+
+Returns: SQL Query
+
+
+#### SystemPart.drop_table_sql(db)
+
+
+Returns the SQL command for deleting this model's table.
+
+
+#### fetch(zookeeper_path, settings=None)
+
+
+Download a partition from another server.
+
+- `zookeeper_path`: Path in zookeeper to fetch from
+- `settings`: Settings for executing request to ClickHouse over db.raw() method
+
+Returns: SQL Query
+
+
+#### SystemPart.fields(writable=False)
+
+
+Returns an `OrderedDict` of the model's fields (from name to `Field` instance).
+If `writable` is true, only writable fields are included.
+Callers should not modify the dictionary.
+
+
+#### freeze(settings=None)
+
+
+Create a backup of a partition.
+
+- `settings`: Settings for executing request to ClickHouse over db.raw() method
+
+Returns: SQL Query
+
+
+#### SystemPart.from_tsv(line, field_names, timezone_in_use=UTC, database=None)
+
+
+Create a model instance from a tab-separated line. The line may or may not include a newline.
+The `field_names` list must match the fields defined in the model, but does not have to include all of them.
+
+- `line`: the TSV-formatted data.
+- `field_names`: names of the model fields in the data.
+- `timezone_in_use`: the timezone to use when parsing dates and datetimes. Some fields use their own timezones.
+- `database`: if given, sets the database that this instance belongs to.
+
+
+#### SystemPart.get(database, conditions="")
+
+
+Get all data from system.parts table
+
+- `database`: A database object to fetch data from.
+- `conditions`: WHERE clause conditions. Database condition is added automatically
+
+Returns: A list of SystemPart objects
+
+
+#### SystemPart.get_active(database, conditions="")
+
+
+Gets active data from system.parts table
+
+- `database`: A database object to fetch data from.
+- `conditions`: WHERE clause conditions. Database and active conditions are added automatically
+
+Returns: A list of SystemPart objects
+
+
+#### get_database()
+
+
+Gets the `Database` that this model instance belongs to.
+Returns `None` unless the instance was read from the database or written to it.
+
+
+#### get_field(name)
+
+
+Gets a `Field` instance given its name, or `None` if not found.
+
+
+#### SystemPart.has_funcs_as_defaults()
+
+
+Return True if some of the model's fields use a function expression
+as a default value. This requires special handling when inserting instances.
+
+
+#### SystemPart.is_read_only()
+
+
+Returns true if the model is marked as read only.
+
+
+#### SystemPart.is_system_model()
+
+
+Returns true if the model represents a system table.
+
+
+#### SystemPart.objects_in(database)
+
+
+Returns a `QuerySet` for selecting instances of this model class.
+
+
+#### set_database(db)
+
+
+Sets the `Database` that this model instance belongs to.
+This is done automatically when the instance is read from the database or written to it.
+
+
+#### SystemPart.table_name()
+
+
+#### to_db_string()
+
+
+Returns the instance as a bytestring ready to be inserted into the database.
+
+
+#### to_dict(include_readonly=True, field_names=None)
+
+
+Returns the instance's column values as a dict.
+
+- `include_readonly`: if false, returns only fields that can be inserted into database.
+- `field_names`: an iterable of field names to return (optional)
+
+
+#### to_tskv(include_readonly=True)
+
+
+Returns the instance's column keys and values as a tab-separated line. A newline is not included.
+Fields that were not assigned a value are omitted.
+
+- `include_readonly`: if false, returns only fields that can be inserted into database.
+
+
+#### to_tsv(include_readonly=True)
+
+
+Returns the instance's column values as a tab-separated line. A newline is not included.
+
+- `include_readonly`: if false, returns only fields that can be inserted into database.
 
 

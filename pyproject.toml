@@ -3,7 +3,6 @@ line-length = 120
 extend-exclude = '''
 /(
   | examples
-  | scripts
 )/
 '''
 
