@@ -35,6 +35,6 @@ jobs:
       - name: Builds and upload to PyPI
         run: |
           poetry config pypi-token.pypi "$TWINE_TOKEN"
-          poetry publish
+          poetry publish --build
         env:
           TWINE_TOKEN: ${{ secrets.TWINE_TOKEN }}
