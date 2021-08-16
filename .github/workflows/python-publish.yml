@@ -1,0 +1,40 @@
+name: Upload to PIP
+
+# Controls when the action will run. 
+on:
+  # Triggers the workflow when a release is created
+  release: 
+    types: [created]
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "upload"
+  upload:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
+
+      # Sets up python
+      - uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+
+      # Install dependencies
+      - name: Install dependencies
+        run: |
+          python -m pip install poetry
+          poetry install --no-dev
+
+      # Build and upload to PyPI
+      - name: Builds and upload to PyPI
+        run: |
+          poetry config pypi-token.pypi "$TWINE_TOKEN"
+          poetry publish
+        env:
+          TWINE_TOKEN: ${{ secrets.TWINE_TOKEN }}
