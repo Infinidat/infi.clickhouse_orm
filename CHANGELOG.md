@@ -1,6 +1,11 @@
 Change Log
 ==========
 
+v2.2.1
+------
+- Minor tooling changes for PyPI
+- Better project description for PyPI
+
 v2.2.0
 ------
 - Support up to clickhouse 20.12, including LTS 20.8 release
