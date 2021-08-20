@@ -1,6 +1,10 @@
 Change Log
 ==========
 
+v2.2.2
+------
+- Unpined requirements to enhance compatability
+
 v2.2.1
 ------
 - Minor tooling changes for PyPI
