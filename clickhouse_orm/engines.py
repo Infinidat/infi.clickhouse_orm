@@ -36,6 +36,7 @@ class MergeTree(Engine):
         replica_name=None,
         partition_key=None,
         primary_key=None,
+        settings=None,
     ):
         assert type(order_by) in (list, tuple), "order_by must be a list or tuple"
         assert date_col is None or isinstance(date_col, str), "date_col must be string if present"
@@ -47,6 +48,7 @@ class MergeTree(Engine):
         assert (replica_table_path is None) == (
             replica_name is None
         ), "both replica_table_path and replica_name must be specified"
+        assert settings is None or type(settings) is dict, 'settings must be dict'
 
         # These values conflict with each other (old and new syntax of table engines.
         # So let's control only one of them is given.
@@ -60,6 +62,7 @@ class MergeTree(Engine):
         self.index_granularity = index_granularity
         self.replica_table_path = replica_table_path
         self.replica_name = replica_name
+        self.settings = settings
 
     # I changed field name for new reality and syntax
     @property
@@ -97,6 +100,9 @@ class MergeTree(Engine):
                 partition_sql += " SAMPLE BY %s" % self.sampling_expr
 
             partition_sql += " SETTINGS index_granularity=%d" % self.index_granularity
+            if self.settings:
+                settings_sql = ", ".join('%s=%s' % (key, value) for key, value in self.settings.items())
+                partition_sql += ", " + settings_sql
 
         elif not self.date_col:
             # Can't import it globally due to circular import
@@ -144,6 +150,7 @@ class CollapsingMergeTree(MergeTree):
         replica_name=None,
         partition_key=None,
         primary_key=None,
+        settings=None,
     ):
         super(CollapsingMergeTree, self).__init__(
             date_col,
@@ -154,6 +161,7 @@ class CollapsingMergeTree(MergeTree):
             replica_name,
             partition_key,
             primary_key,
+            settings=settings,
         )
         self.sign_col = sign_col
 
