@@ -22,7 +22,7 @@ To write migrations, create a Python package. Then create a python file for the 
 
 Each migration file is expected to contain a list of `operations`, for example:
 
-    from infi.clickhouse_orm import migrations
+    from clickhouse_orm import migrations
     from analytics import models
 
     operations = [

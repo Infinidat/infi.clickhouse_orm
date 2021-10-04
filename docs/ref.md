@@ -1,7 +1,7 @@
 Class Reference
 ===============
 
-infi.clickhouse_orm.database
+clickhouse_orm.database
 ----------------------------
 
 ### Database
@@ -104,7 +104,7 @@ Extends Exception
 
 Raised when a database operation fails.
 
-infi.clickhouse_orm.models
+clickhouse_orm.models
 --------------------------
 
 ### Model
@@ -263,7 +263,7 @@ Returns the instance's column values as a tab-separated line. A newline is not i
 - `include_readonly`: if false, returns only fields that can be inserted into database.
 
 
-infi.clickhouse_orm.fields
+clickhouse_orm.fields
 --------------------------
 
 ### Field
@@ -419,7 +419,7 @@ Extends BaseEnumField
 #### Enum16Field(enum_cls, default=None, alias=None, materialized=None)
 
 
-infi.clickhouse_orm.engines
+clickhouse_orm.engines
 ---------------------------
 
 ### Engine
@@ -474,7 +474,7 @@ Extends MergeTree
 #### ReplacingMergeTree(date_col, key_cols, ver_col=None, sampling_expr=None, index_granularity=8192, replica_table_path=None, replica_name=None)
 
 
-infi.clickhouse_orm.query
+clickhouse_orm.query
 -------------------------
 
 ### QuerySet

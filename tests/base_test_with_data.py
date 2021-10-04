@@ -1,19 +1,18 @@
 # -*- coding: utf-8 -*-
+import logging
 import unittest
 
-from infi.clickhouse_orm.database import Database
-from infi.clickhouse_orm.models import Model
-from infi.clickhouse_orm.fields import *
-from infi.clickhouse_orm.engines import *
+from clickhouse_orm.database import Database
+from clickhouse_orm.engines import MergeTree
+from clickhouse_orm.fields import DateField, Float32Field, LowCardinalityField, NullableField, StringField, UInt32Field
+from clickhouse_orm.models import Model
 
-import logging
 logging.getLogger("requests").setLevel(logging.WARNING)
 
 
 class TestCaseWithData(unittest.TestCase):
-
     def setUp(self):
-        self.database = Database('test-db', log_statements=True)
+        self.database = Database("test-db", log_statements=True)
         self.database.create_table(Person)
 
     def tearDown(self):
@@ -35,7 +34,6 @@ class TestCaseWithData(unittest.TestCase):
             yield Person(**entry)
 
 
-
 class Person(Model):
 
     first_name = StringField()
@@ -44,16 +42,12 @@ class Person(Model):
     height = Float32Field()
     passport = NullableField(UInt32Field())
 
-    engine = MergeTree('birthday', ('first_name', 'last_name', 'birthday'))
+    engine = MergeTree("birthday", ("first_name", "last_name", "birthday"))
 
 
 data = [
-    {"first_name": "Abdul", "last_name": "Hester", "birthday": "1970-12-02", "height": "1.63",
-     "passport": 35052255},
-
-    {"first_name": "Adam", "last_name": "Goodman", "birthday": "1986-01-07", "height": "1.74",
-     "passport": 36052255},
-
+    {"first_name": "Abdul", "last_name": "Hester", "birthday": "1970-12-02", "height": "1.63", "passport": 35052255},
+    {"first_name": "Adam", "last_name": "Goodman", "birthday": "1986-01-07", "height": "1.74", "passport": 36052255},
     {"first_name": "Adena", "last_name": "Norman", "birthday": "1979-05-14", "height": "1.66"},
     {"first_name": "Aline", "last_name": "Crane", "birthday": "1988-05-01", "height": "1.62"},
     {"first_name": "Althea", "last_name": "Barrett", "birthday": "2004-07-28", "height": "1.71"},
@@ -151,5 +145,5 @@ data = [
     {"first_name": "Whitney", "last_name": "Durham", "birthday": "1977-09-15", "height": "1.72"},
     {"first_name": "Whitney", "last_name": "Scott", "birthday": "1971-07-04", "height": "1.70"},
     {"first_name": "Wynter", "last_name": "Garcia", "birthday": "1975-01-10", "height": "1.69"},
-    {"first_name": "Yolanda", "last_name": "Duke", "birthday": "1997-02-25", "height": "1.74"}
+    {"first_name": "Yolanda", "last_name": "Duke", "birthday": "1997-02-25", "height": "1.74"},
 ]

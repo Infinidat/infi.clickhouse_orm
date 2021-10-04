@@ -1,0 +1,52 @@
+[tool.black]
+line-length = 120
+
+[tool.isort]
+multi_line_output = 3
+include_trailing_comma = true
+force_grid_wrap = 0
+use_parentheses = true
+ensure_newline_before_comments = true
+line_length = 120
+
+[tool.poetry]
+name = "clickhouse_orm"
+version = "2.2.2"
+description = "A simple ORM for working with the Clickhouse database. Maintainance fork of infi.clickhouse_orm."
+authors = ["olliemath <oliver.margetts@gmail.com>"]
+license = "BSD"
+homepage = "https://github.com/SuadeLabs/clickhouse_orm"
+repository = "https://github.com/SuadeLabs/clickhouse_orm"
+classifiers = [
+    "Intended Audience :: Developers",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: BSD License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3.6",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Database"
+]
+
+[tool.poetry.dependencies]
+python = ">=3.6.2,<4"
+requests = "*"
+pytz = "*"
+iso8601 = "*"
+
+[tool.poetry.dev-dependencies]
+flake8 = "^3.9.2"
+flake8-bugbear = "^21.4.3"
+pep8-naming = "^0.12.0"
+pytest = "^6.2.4"
+flake8-isort = "^4.0.0"
+black = {version = "^21.7b0", markers = "platform_python_implementation == 'CPython'"}
+isort = "^5.9.2"
+freezegun = "^1.1.0"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

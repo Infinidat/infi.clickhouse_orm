@@ -1,7 +1,7 @@
-
+#!/bin/bash
 generate_one() {
     # Converts Markdown to HTML using Pandoc, and then extracts the header tags
-    pandoc "$1" | python "../scripts/html_to_markdown_toc.py" "$1" >> toc.md
+    pandoc "$1" | poetry run python "../scripts/html_to_markdown_toc.py" "$1" >> toc.md
 }
 
 printf "# Table of Contents\n\n" > toc.md

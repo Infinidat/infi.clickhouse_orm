@@ -13,7 +13,7 @@ Using Expressions
 
 Expressions usually include ClickHouse database functions, which are made available by the `F` class. Here's a simple function:
 ```python
-from infi.clickhouse_orm import F
+from clickhouse_orm import F
 expr = F.today()
 ```
 

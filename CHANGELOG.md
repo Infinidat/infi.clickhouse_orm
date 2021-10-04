@@ -1,6 +1,26 @@
 Change Log
 ==========
 
+v2.2.2
+------
+- Unpined requirements to enhance compatability
+
+v2.2.1
+------
+- Minor tooling changes for PyPI
+- Better project description for PyPI
+
+v2.2.0
+------
+- Support up to clickhouse 20.12, including LTS 20.8 release
+- Fixed boolean logic for Q objects (https://github.com/Infinidat/infi.clickhouse_orm/issues/158)
+- Remove implicit use of '\N' character (which was causing deprecation warnings in queries)
+- Tooling updates: use poetry, pytest, isort, black
+
+**Backwards incompatible changes**
+
+You can no longer supply a codec for an `alias` field. Previously this had no effect in clickhouse, but now it explicitly returns an error.
+
 v2.1.0
 ------
 - Support for model constraints

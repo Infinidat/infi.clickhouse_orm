@@ -1,3 +1,8 @@
+A fork of [infi.clikchouse_orm](https://github.com/Infinidat/infi.clickhouse_orm) aimed at more frequent maintenance and bugfixes.
+
+[![Tests](https://github.com/SuadeLabs/clickhouse_orm/actions/workflows/python-test.yml/badge.svg)](https://github.com/SuadeLabs/clickhouse_orm/actions/workflows/python-test.yml)
+![PyPI](https://img.shields.io/pypi/v/clickhouse_orm)
+
 Introduction
 ============
 
@@ -8,7 +13,7 @@ Let's jump right in with a simple example of monitoring CPU usage. First we need
 connect to the database and create a table for the model:
 
 ```python
-from infi.clickhouse_orm import Database, Model, DateTimeField, UInt16Field, Float32Field, Memory, F
+from clickhouse_orm import Database, Model, DateTimeField, UInt16Field, Float32Field, Memory, F
 
 class CPUStats(Model):
 

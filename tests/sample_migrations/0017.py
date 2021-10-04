@@ -1,6 +1,5 @@
-from infi.clickhouse_orm import migrations
+from clickhouse_orm import migrations
+
 from ..test_migrations import *
 
-operations = [
-    migrations.AlterConstraints(ModelWithConstraints2)
-]
+operations = [migrations.AlterConstraints(ModelWithConstraints2)]

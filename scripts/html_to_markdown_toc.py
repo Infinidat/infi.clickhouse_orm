@@ -1,14 +1,13 @@
-from html.parser import HTMLParser
 import sys
+from html.parser import HTMLParser
 
-
-HEADER_TAGS = ('h1', 'h2', 'h3')
+HEADER_TAGS = ("h1", "h2", "h3")
 
 
 class HeadersToMarkdownParser(HTMLParser):
 
     inside = None
-    text = ''
+    text = ""
 
     def handle_starttag(self, tag, attrs):
         if tag.lower() in HEADER_TAGS:
@@ -16,11 +15,11 @@ class HeadersToMarkdownParser(HTMLParser):
 
     def handle_endtag(self, tag):
         if tag.lower() in HEADER_TAGS:
-            indent = '   ' * int(self.inside[1])
-            fragment = self.text.lower().replace(' ', '-').replace('.', '')
-            print('%s* [%s](%s#%s)' % (indent, self.text, sys.argv[1], fragment))
+            indent = "   " * int(self.inside[1])
+            fragment = self.text.lower().replace(" ", "-").replace(".", "")
+            print("%s* [%s](%s#%s)" % (indent, self.text, sys.argv[1], fragment))
             self.inside = None
-            self.text = ''
+            self.text = ""
 
     def handle_data(self, data):
         if self.inside:
@@ -28,4 +27,4 @@ class HeadersToMarkdownParser(HTMLParser):
 
 
 HeadersToMarkdownParser().feed(sys.stdin.read())
-print('')
+print("")

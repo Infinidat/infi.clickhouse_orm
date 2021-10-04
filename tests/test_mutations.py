@@ -1,19 +1,20 @@
 import unittest
-from infi.clickhouse_orm import F
-from .base_test_with_data import *
 from time import sleep
+
+from clickhouse_orm import F
+
+from .base_test_with_data import Person, TestCaseWithData
 
 
 class MutationsTestCase(TestCaseWithData):
-
     def setUp(self):
         super().setUp()
         if self.database.server_version < (18,):
-            raise unittest.SkipTest('ClickHouse version too old')
+            raise unittest.SkipTest("ClickHouse version too old")
         self._insert_all()
 
     def _wait_for_mutations(self):
-        sql = 'SELECT * FROM system.mutations WHERE is_done = 0'
+        sql = "SELECT * FROM system.mutations WHERE is_done = 0"
         while list(self.database.raw(sql)):
             sleep(0.25)
 
@@ -23,7 +24,7 @@ class MutationsTestCase(TestCaseWithData):
         self.assertFalse(Person.objects_in(self.database))
 
     def test_delete_with_where_cond(self):
-        cond = Person.first_name == 'Cassady'
+        cond = Person.first_name == "Cassady"
         self.assertTrue(Person.objects_in(self.database).filter(cond))
         Person.objects_in(self.database).filter(cond).delete()
         self._wait_for_mutations()
@@ -41,11 +42,12 @@ class MutationsTestCase(TestCaseWithData):
     def test_update_all(self):
         Person.objects_in(self.database).update(height=0)
         self._wait_for_mutations()
-        for p in Person.objects_in(self.database): print(p.height)
+        for p in Person.objects_in(self.database):
+            print(p.height)
         self.assertFalse(Person.objects_in(self.database).exclude(height=0))
 
     def test_update_with_where_cond(self):
-        cond = Person.first_name == 'Cassady'
+        cond = Person.first_name == "Cassady"
         Person.objects_in(self.database).filter(cond).update(height=0)
         self._wait_for_mutations()
         self.assertFalse(Person.objects_in(self.database).filter(cond).exclude(height=0))
@@ -71,9 +73,9 @@ class MutationsTestCase(TestCaseWithData):
         base_query = Person.objects_in(self.database)
         queries = [
             base_query[0:1],
-            base_query.limit_by(5, 'first_name'),
+            base_query.limit_by(5, "first_name"),
             base_query.distinct(),
-            base_query.aggregate('first_name', count=F.count())
+            base_query.aggregate("first_name", count=F.count()),
         ]
         for query in queries:
             print(query)

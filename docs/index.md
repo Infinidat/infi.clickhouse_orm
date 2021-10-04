@@ -8,9 +8,9 @@ Version 1.x supports Python 2.7 and 3.5+. Version 2.x dropped support for Python
 Installation
 ------------
 
-To install infi.clickhouse_orm:
+To install clickhouse_orm:
 
-    pip install infi.clickhouse_orm
+    pip install clickhouse_orm
 
 ---
 

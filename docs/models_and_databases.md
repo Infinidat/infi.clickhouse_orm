@@ -10,7 +10,7 @@ Defining Models
 
 Models are defined in a way reminiscent of Django's ORM, by subclassing `Model`:
 ```python
-from infi.clickhouse_orm import Model, StringField, DateField, Float32Field, MergeTree
+from clickhouse_orm import Model, StringField, DateField, Float32Field, MergeTree
 
 class Person(Model):
 
@@ -133,7 +133,7 @@ Inserting to the Database
 
 To write your instances to ClickHouse, you need a `Database` instance:
 
-    from infi.clickhouse_orm import Database
+    from clickhouse_orm import Database
 
     db = Database('my_test_db')
 

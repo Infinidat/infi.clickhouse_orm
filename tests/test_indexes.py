@@ -1,14 +1,14 @@
 import unittest
 
-from infi.clickhouse_orm import *
+from clickhouse_orm import Database, F, Index, MergeTree, Model
+from clickhouse_orm.fields import DateField, Int32Field, StringField
 
 
 class IndexesTest(unittest.TestCase):
-
     def setUp(self):
-        self.database = Database('test-db', log_statements=True)
+        self.database = Database("test-db", log_statements=True)
         if self.database.server_version < (20, 1, 2, 4):
-            raise unittest.SkipTest('ClickHouse version too old')
+            raise unittest.SkipTest("ClickHouse version too old")
 
     def tearDown(self):
         self.database.drop_database()
@@ -29,4 +29,4 @@ class ModelWithIndexes(Model):
     i4 = Index(F.lower(f2), type=Index.tokenbf_v1(256, 2, 0), granularity=2)
     i5 = Index((F.toQuarter(date), f2), type=Index.bloom_filter(), granularity=3)
 
-    engine = MergeTree('date', ('date',))
+    engine = MergeTree("date", ("date",))

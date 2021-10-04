@@ -30,7 +30,7 @@ A partition in a table is data for a single calendar month. Table "system.parts"
 
 Usage example:
 
-    from infi.clickhouse_orm import Database, SystemPart
+    from clickhouse_orm import Database, SystemPart
     db = Database('my_test_db', db_url='http://192.168.1.1:8050', username='scott', password='tiger')
     partitions = SystemPart.get_active(db, conditions='')  # Getting all active partitions of the database
     if len(partitions) > 0:
