@@ -17,10 +17,10 @@ class _EnginesHelperTestCase(unittest.TestCase):
 
 
 class EnginesTestCase(_EnginesHelperTestCase):
-    def _create_and_insert(self, model_class):
+    def _create_and_insert(self, model_class, **kwargs):
         self.database.create_table(model_class)
         self.database.insert([
-            model_class(date='2017-01-01', event_id=23423, event_group=13, event_count=7, event_version=1)
+            model_class(date='2017-01-01', event_id=23423, event_group=13, event_count=7, event_version=1, **kwargs)
         ])
 
     def test_merge_tree(self):
@@ -155,7 +155,7 @@ class EnginesTestCase(_EnginesHelperTestCase):
             )
 
         self._create_and_insert(TestModel)
-        self._create_and_insert(TestCollapseModel)
+        self._create_and_insert(TestCollapseModel, sign=1)
 
         # Result order may be different, lets sort manually
         parts = sorted(list(SystemPart.get(self.database)), key=lambda x: x.table)
@@ -188,7 +188,7 @@ class EnginesTestCase(_EnginesHelperTestCase):
             )
 
         self._create_and_insert(TestModel)
-        self._create_and_insert(TestCollapseModel)
+        self._create_and_insert(TestCollapseModel, sign=1)
 
         self.assertEqual(2, len(list(SystemPart.get(self.database))))
 

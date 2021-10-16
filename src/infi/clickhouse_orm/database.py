@@ -51,6 +51,11 @@ class ServerError(DatabaseException):
             Code:\ (?P<code>\d+),
             \ e\.displayText\(\)\ =\ (?P<type1>[^ \n]+):\ (?P<msg>.+)
         ''', re.VERBOSE | re.DOTALL),
+        # ClickHouse v21+
+        re.compile(r'''
+            Code:\ (?P<code>\d+).
+            \ (?P<type1>[^ \n]+):\ (?P<msg>.+)
+        ''', re.VERBOSE | re.DOTALL),
     )
 
     @classmethod
