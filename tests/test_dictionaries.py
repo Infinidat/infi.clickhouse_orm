@@ -105,7 +105,7 @@ class HierarchicalDictionaryTest(DictionaryTestMixin, unittest.TestCase):
 
     def test_dictgethierarchy(self):
         self._test_func(F.dictGetHierarchy(self.dict_name, F.toUInt64(3)), [3, 2, 1])
-        self._test_func(F.dictGetHierarchy(self.dict_name, F.toUInt64(99)), [99])
+        self._test_func(F.dictGetHierarchy(self.dict_name, F.toUInt64(99)), [])
 
     def test_dictisin(self):
         self._test_func(F.dictIsIn(self.dict_name, F.toUInt64(3), F.toUInt64(1)), 1)

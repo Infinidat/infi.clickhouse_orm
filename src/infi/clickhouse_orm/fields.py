@@ -109,7 +109,7 @@ class Field(FunctionOperatorsMixin):
         elif self.default:
             default = self.to_db_string(self.default)
             sql += ' DEFAULT %s' % default
-        if self.codec and db and db.has_codec_support:
+        if self.codec and db and db.has_codec_support and not self.alias:
             sql += ' CODEC(%s)' % self.codec
         return sql
 

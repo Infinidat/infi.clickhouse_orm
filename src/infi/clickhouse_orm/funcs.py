@@ -391,11 +391,11 @@ class F(Cond, FunctionOperatorsMixin, metaclass=FMeta):
         return F('toYear', d)
 
     @staticmethod
-    def toISOYear(d, timezone=''):
+    def toISOYear(d, timezone=NO_VALUE):
         return F('toISOYear', d, timezone)
 
     @staticmethod
-    def toQuarter(d, timezone=''):
+    def toQuarter(d, timezone=NO_VALUE):
         return F('toQuarter', d, timezone) if timezone else F('toQuarter', d)
 
     @staticmethod
@@ -403,11 +403,11 @@ class F(Cond, FunctionOperatorsMixin, metaclass=FMeta):
         return F('toMonth', d)
 
     @staticmethod
-    def toWeek(d, mode=0, timezone=''):
+    def toWeek(d, mode=0, timezone=NO_VALUE):
         return F('toWeek', d, mode, timezone)
 
     @staticmethod
-    def toISOWeek(d, timezone=''):
+    def toISOWeek(d, timezone=NO_VALUE):
         return F('toISOWeek', d, timezone) if timezone else F('toISOWeek', d)
 
     @staticmethod
@@ -483,7 +483,7 @@ class F(Cond, FunctionOperatorsMixin, metaclass=FMeta):
         return F('toStartOfDay', d)
 
     @staticmethod
-    def toTime(d, timezone=''):
+    def toTime(d, timezone=NO_VALUE):
         return F('toTime', d, timezone)
 
     @staticmethod
@@ -491,47 +491,47 @@ class F(Cond, FunctionOperatorsMixin, metaclass=FMeta):
         return F('toTimeZone', dt, timezone)
 
     @staticmethod
-    def toUnixTimestamp(dt, timezone=''):
+    def toUnixTimestamp(dt, timezone=NO_VALUE):
         return F('toUnixTimestamp', dt, timezone)
 
     @staticmethod
-    def toYYYYMM(dt, timezone=''):
+    def toYYYYMM(dt, timezone=NO_VALUE):
         return F('toYYYYMM', dt, timezone) if timezone else F('toYYYYMM', dt)
 
     @staticmethod
-    def toYYYYMMDD(dt, timezone=''):
+    def toYYYYMMDD(dt, timezone=NO_VALUE):
         return F('toYYYYMMDD', dt, timezone) if timezone else F('toYYYYMMDD', dt)
 
     @staticmethod
-    def toYYYYMMDDhhmmss(dt, timezone=''):
+    def toYYYYMMDDhhmmss(dt, timezone=NO_VALUE):
         return F('toYYYYMMDDhhmmss', dt, timezone) if timezone else F('toYYYYMMDDhhmmss', dt)
 
     @staticmethod
-    def toRelativeYearNum(d, timezone=''):
+    def toRelativeYearNum(d, timezone=NO_VALUE):
         return F('toRelativeYearNum', d, timezone)
 
     @staticmethod
-    def toRelativeMonthNum(d, timezone=''):
+    def toRelativeMonthNum(d, timezone=NO_VALUE):
         return F('toRelativeMonthNum', d, timezone)
 
     @staticmethod
-    def toRelativeWeekNum(d, timezone=''):
+    def toRelativeWeekNum(d, timezone=NO_VALUE):
         return F('toRelativeWeekNum', d, timezone)
 
     @staticmethod
-    def toRelativeDayNum(d, timezone=''):
+    def toRelativeDayNum(d, timezone=NO_VALUE):
         return F('toRelativeDayNum', d, timezone)
 
     @staticmethod
-    def toRelativeHourNum(d, timezone=''):
+    def toRelativeHourNum(d, timezone=NO_VALUE):
         return F('toRelativeHourNum', d, timezone)
 
     @staticmethod
-    def toRelativeMinuteNum(d, timezone=''):
+    def toRelativeMinuteNum(d, timezone=NO_VALUE):
         return F('toRelativeMinuteNum', d, timezone)
 
     @staticmethod
-    def toRelativeSecondNum(d, timezone=''):
+    def toRelativeSecondNum(d, timezone=NO_VALUE):
         return F('toRelativeSecondNum', d, timezone)
 
     @staticmethod
@@ -555,7 +555,7 @@ class F(Cond, FunctionOperatorsMixin, metaclass=FMeta):
         return F('timeSlots', start_time, F.toUInt32(duration))
 
     @staticmethod
-    def formatDateTime(d, format, timezone=''):
+    def formatDateTime(d, format, timezone=NO_VALUE):
         return F('formatDateTime', d, format, timezone)
 
     @staticmethod

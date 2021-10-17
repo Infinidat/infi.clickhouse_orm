@@ -106,7 +106,7 @@ class CompressedFieldsTestCase(unittest.TestCase):
                                     ('nullable_field', 'CODEC(ZSTD(1))'),
                                     ('array_field', 'CODEC(Delta(2), LZ4HC(0))'),
                                     ('float_field', 'CODEC(NONE)'),
-                                    ('alias_field', 'CODEC(ZSTD(4))')])
+                                    ('alias_field', '')])
 
 
 class CompressedModel(Model):
