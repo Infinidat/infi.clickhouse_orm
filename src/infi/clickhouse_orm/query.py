@@ -209,10 +209,10 @@ class Q(object):
 
     @classmethod
     def _construct_from(cls, l_child, r_child, mode):
-        if mode == l_child._mode:
+        if mode == l_child._mode and not l_child._negate:
             q = deepcopy(l_child)
             q._children.append(deepcopy(r_child))
-        elif mode == r_child._mode:
+        elif mode == r_child._mode and not r_child._negate:
             q = deepcopy(r_child)
             q._children.append(deepcopy(l_child))
         else:
