@@ -1,6 +1,14 @@
 Change Log
 ==========
 
+v2.1.1
+------
+- Improve support of ClickHouse v21.9 (mangototango)
+- Ignore non-numeric parts in ClickHouse version (mangototango)
+- Fix precedence of ~ operator in Q objects	(mangototango)
+- Support for adding a column to the beginning of a table (meanmail)
+- Add stddevPop and stddevSamp functions (k.peskov)
+
 v2.1.0
 ------
 - Support for model constraints

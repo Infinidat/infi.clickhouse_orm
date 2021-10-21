@@ -302,6 +302,18 @@ class QuerySetTestCase(TestCaseWithData):
         self.assertEqual(qs.conditions_as_sql(),
                          "(first_name = 'a') AND (greater(`height`, 1.7)) AND (last_name = 'b')")
 
+    def test_precedence_of_negation(self):
+        p = ~Q(first_name='a')
+        q = Q(last_name='b')
+        r = p & q
+        self.assertEqual(r.to_sql(Person), "(last_name = 'b') AND (NOT (first_name = 'a'))")
+        r = q & p
+        self.assertEqual(r.to_sql(Person), "(last_name = 'b') AND (NOT (first_name = 'a'))")
+        r = q | p
+        self.assertEqual(r.to_sql(Person), "(last_name = 'b') OR (NOT (first_name = 'a'))")
+        r = ~q & p
+        self.assertEqual(r.to_sql(Person), "(NOT (last_name = 'b')) AND (NOT (first_name = 'a'))")
+
     def test_invalid_filter(self):
         qs = Person.objects_in(self.database)
         with self.assertRaises(TypeError):

@@ -51,6 +51,11 @@ class ServerError(DatabaseException):
             Code:\ (?P<code>\d+),
             \ e\.displayText\(\)\ =\ (?P<type1>[^ \n]+):\ (?P<msg>.+)
         ''', re.VERBOSE | re.DOTALL),
+        # ClickHouse v21+
+        re.compile(r'''
+            Code:\ (?P<code>\d+).
+            \ (?P<type1>[^ \n]+):\ (?P<msg>.+)
+        ''', re.VERBOSE | re.DOTALL),
     )
 
     @classmethod
@@ -408,7 +413,7 @@ class Database(object):
         except ServerError as e:
             logger.exception('Cannot determine server version (%s), assuming 1.1.0', e)
             ver = '1.1.0'
-        return tuple(int(n) for n in ver.split('.')) if as_tuple else ver
+        return tuple(int(n) for n in ver.split('.') if n.isdigit()) if as_tuple else ver
 
     def _is_existing_database(self):
         r = self._send("SELECT count() FROM system.databases WHERE name = '%s'" % self.db_name)
