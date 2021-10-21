@@ -11,5 +11,5 @@ MarkupSafe==1.1.1
 pygal==2.4.0
 pytz==2020.1
 requests==2.23.0
-urllib3==1.25.9
+urllib3==1.26.5
 Werkzeug==1.0.1
