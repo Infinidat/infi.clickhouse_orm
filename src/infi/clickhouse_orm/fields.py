@@ -6,7 +6,7 @@ from calendar import timegm
 from decimal import Decimal, localcontext
 from uuid import UUID
 from logging import getLogger
-from pytz import BaseTzInfo
+from pytz.tzinfo import BaseTzInfo
 from .utils import escape, parse_array, comma_join, string_or_func, get_subclass_names
 from .funcs import F, FunctionOperatorsMixin
 from ipaddress import IPv4Address, IPv6Address
