@@ -245,7 +245,7 @@ class Database(object):
             # Return any remaining lines in partial batch
             if lines:
                 yield buf.getvalue()
-        self._send(gen())
+        return self._send(gen())
 
     def count(self, model_class, conditions=None):
         '''

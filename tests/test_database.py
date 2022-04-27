@@ -46,6 +46,11 @@ class DatabaseTestCase(TestCaseWithData):
         self.assertEqual(str(t.b), '2020-01-01')
         self.assertEqual(t.d, 35)
 
+    def test_insert__response(self):
+        from requests import Response
+        response = self.database.insert(next(self._sample_data()))
+        self.assertTrue(isinstance(response, Response))
+
     def test_count(self):
         self.database.insert(self._sample_data())
         self.assertEqual(self.database.count(Person), 100)
