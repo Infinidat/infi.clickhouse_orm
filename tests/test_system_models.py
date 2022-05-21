@@ -3,11 +3,11 @@ from datetime import date
 
 import os
 
-from infi.clickhouse_orm.database import Database, DatabaseException
-from infi.clickhouse_orm.engines import *
-from infi.clickhouse_orm.fields import *
-from infi.clickhouse_orm.models import Model
-from infi.clickhouse_orm.system_models import SystemPart
+from clickhouse_orm.database import Database, DatabaseException
+from clickhouse_orm.engines import *
+from clickhouse_orm.fields import *
+from clickhouse_orm.models import Model
+from clickhouse_orm.system_models import SystemPart
 
 
 class SystemTest(unittest.TestCase):

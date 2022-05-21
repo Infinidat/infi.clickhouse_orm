@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "clickhouse-orm"
+description = "A Python library for working with the ClickHouse database"
+readme = "README.md"
+keywords = ["ClickHouse", "ORM", 'DB', 'DATABASE', 'OLAP']
+license = {text = "BSD License"}
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Database"
+]
+dependencies = [
+    "requests",
+    "pytz",
+    "iso8601 >= 0.1.12",
+    "setuptools"
+]
+version = "0.0.1"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[project.optional-dependencies]
+pkg = ["setuptools", "requests", "pytz", "iso8601>=0.1.12"]

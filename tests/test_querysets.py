@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 import unittest
-from infi.clickhouse_orm.database import Database
-from infi.clickhouse_orm.query import Q
-from infi.clickhouse_orm.funcs import F
+from clickhouse_orm.database import Database
+from clickhouse_orm.query import Q
+from clickhouse_orm.funcs import F
 from .base_test_with_data import *
 from datetime import date, datetime
 from enum import Enum

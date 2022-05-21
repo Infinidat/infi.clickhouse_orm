@@ -8,7 +8,7 @@ Let's jump right in with a simple example of monitoring CPU usage. First we need
 connect to the database and create a table for the model:
 
 ```python
-from infi.clickhouse_orm import Database, Model, DateTimeField, UInt16Field, Float32Field, Memory, F
+from clickhouse_orm import Database, Model, DateTimeField, UInt16Field, Float32Field, Memory, F
 
 class CPUStats(Model):
 

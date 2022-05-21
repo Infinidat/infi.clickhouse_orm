@@ -1,10 +1,10 @@
 import unittest
 from datetime import date
 
-from infi.clickhouse_orm.database import Database
-from infi.clickhouse_orm.models import Model
-from infi.clickhouse_orm.fields import *
-from infi.clickhouse_orm.engines import *
+from clickhouse_orm.database import Database
+from clickhouse_orm.models import Model
+from clickhouse_orm.fields import *
+from clickhouse_orm.engines import *
 
 
 class ArrayFieldsTest(unittest.TestCase):
@@ -47,7 +47,7 @@ class ArrayFieldsTest(unittest.TestCase):
                 instance.arr_int = value
 
     def test_parse_array(self):
-        from infi.clickhouse_orm.utils import parse_array, unescape
+        from clickhouse_orm.utils import parse_array, unescape
         self.assertEqual(parse_array("[]"), [])
         self.assertEqual(parse_array("[1, 2, 395, -44]"), ["1", "2", "395", "-44"])
         self.assertEqual(parse_array("['big','mouse','','!']"), ["big", "mouse", "", "!"])

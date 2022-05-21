@@ -63,3 +63,5 @@ cover/
 
 # tox
 .tox/
+.idea/
+venv/

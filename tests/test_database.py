@@ -2,12 +2,12 @@
 import unittest
 import datetime
 
-from infi.clickhouse_orm.database import ServerError, DatabaseException
-from infi.clickhouse_orm.models import Model
-from infi.clickhouse_orm.engines import Memory
-from infi.clickhouse_orm.fields import *
-from infi.clickhouse_orm.funcs import F
-from infi.clickhouse_orm.query import Q
+from clickhouse_orm.database import ServerError, DatabaseException
+from clickhouse_orm.models import Model
+from clickhouse_orm.engines import Memory
+from clickhouse_orm.fields import *
+from clickhouse_orm.funcs import F
+from clickhouse_orm.query import Q
 from .base_test_with_data import *
 
 
@@ -249,7 +249,7 @@ class DatabaseTestCase(TestCaseWithData):
 
     def test_create_ad_hoc_field(self):
         # Tests that create_ad_hoc_field works for all column types in the database
-        from infi.clickhouse_orm.models import ModelBase
+        from clickhouse_orm.models import ModelBase
         query = "SELECT DISTINCT type FROM system.columns"
         for row in self.database.select(query):
             if row.type.startswith('Map'):

@@ -1,8 +1,8 @@
 import unittest
-from infi.clickhouse_orm.database import Database
-from infi.clickhouse_orm.fields import Field, Int16Field
-from infi.clickhouse_orm.models import Model
-from infi.clickhouse_orm.engines import Memory
+from clickhouse_orm.database import Database
+from clickhouse_orm.fields import Field, Int16Field
+from clickhouse_orm.models import Model
+from clickhouse_orm.engines import Memory
 
 
 class CustomFieldsTest(unittest.TestCase):
