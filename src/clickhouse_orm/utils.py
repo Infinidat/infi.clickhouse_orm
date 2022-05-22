@@ -2,28 +2,29 @@ import codecs
 import re
 from datetime import date, datetime, tzinfo, timedelta
 
-
 SPECIAL_CHARS = {
-    "\b" : "\\b",
-    "\f" : "\\f",
-    "\r" : "\\r",
-    "\n" : "\\n",
-    "\t" : "\\t",
-    "\0" : "\\0",
-    "\\" : "\\\\",
-    "'"  : "\\'"
+    "\b": "\\b",
+    "\f": "\\f",
+    "\r": "\\r",
+    "\n": "\\n",
+    "\t": "\\t",
+    "\0": "\\0",
+    "\\": "\\\\",
+    "'": "\\'"
 }
 
 SPECIAL_CHARS_REGEX = re.compile("[" + ''.join(SPECIAL_CHARS.values()) + "]")
-
+POINT_REGEX = re.compile(r"\((?P<x>\d+(\.\d+)?),(?P<y>\d+(\.\d+)?)\)")
+RING_VALID_REGEX = re.compile(r"\[((\(\d+(\.\d+)?,\d+(\.\d+)?\)),)*\(\d+(\.\d+)?,\d+(\.\d+)?\)\]")
 
 
 def escape(value, quote=True):
-    '''
+    """
     If the value is a string, escapes any special characters and optionally
     surrounds it with single quotes. If the value is not a string (e.g. a number),
     converts it to one.
-    '''
+    """
+
     def escape_one(match):
         return SPECIAL_CHARS[match.group(0)]
 
@@ -48,7 +49,7 @@ def arg_to_sql(arg):
     Supports functions, model fields, strings, dates, datetimes, timedeltas, booleans,
     None, numbers, timezones, arrays/iterables.
     """
-    from infi.clickhouse_orm import Field, StringField, DateTimeField, DateField, F, QuerySet
+    from clickhouse_orm import Field, StringField, DateTimeField, DateField, F, QuerySet
     if isinstance(arg, F):
         return arg.to_sql()
     if isinstance(arg, Field):
@@ -109,12 +110,12 @@ def parse_array(array_string):
             match = re.search(r"[^\\]'", array_string)
             if match is None:
                 raise ValueError('Missing closing quote: "%s"' % array_string)
-            values.append(array_string[1 : match.start() + 1])
+            values.append(array_string[1: match.start() + 1])
             array_string = array_string[match.end():]
         else:
             # Start of non-quoted value, find its end
             match = re.search(r",|\]", array_string)
-            values.append(array_string[0 : match.start()])
+            values.append(array_string[0: match.start()])
             array_string = array_string[match.end() - 1:]
 
 
@@ -157,11 +158,13 @@ def get_subclass_names(locals, base_class):
 
 
 class NoValue:
-    '''
+    """
     A sentinel for fields with an expression for a default value,
     that were not assigned a value yet.
-    '''
+    """
+
     def __repr__(self):
         return 'NO_VALUE'
+
 
 NO_VALUE = NoValue()

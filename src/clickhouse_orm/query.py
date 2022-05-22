@@ -20,10 +20,10 @@ class Operator(object):
         Subclasses should implement this method. It returns an SQL string
         that applies this operator on the given field and value.
         """
-        raise NotImplementedError   # pragma: no cover
+        raise NotImplementedError  # pragma: no cover
 
     def _value_to_sql(self, field, value, quote=True):
-        from infi.clickhouse_orm.funcs import F
+        from clickhouse_orm.funcs import F
         if isinstance(value, F):
             return value.to_sql()
         return field.to_db_string(field.to_python(value, pytz.utc), quote)
@@ -123,8 +123,10 @@ class BetweenOperator(Operator):
 
     def to_sql(self, model_cls, field_name, value):
         field = getattr(model_cls, field_name)
-        value0 = self._value_to_sql(field, value[0]) if value[0] is not None or len(str(value[0])) > 0 else None
-        value1 = self._value_to_sql(field, value[1]) if value[1] is not None or len(str(value[1])) > 0 else None
+        value0 = self._value_to_sql(field, value[0]) if value[0] is not None or len(
+            str(value[0])) > 0 else None
+        value1 = self._value_to_sql(field, value[1]) if value[1] is not None or len(
+            str(value[1])) > 0 else None
         if value0 and value1:
             return '%s BETWEEN %s AND %s' % (field_name, value0, value1)
         if value0 and not value1:
@@ -132,29 +134,32 @@ class BetweenOperator(Operator):
         if value1 and not value0:
             return ' '.join([field_name, '<=', value1])
 
+
 # Define the set of builtin operators
 
 _operators = {}
 
+
 def register_operator(name, sql):
     _operators[name] = sql
 
-register_operator('eq',          SimpleOperator('=', 'IS NULL'))
-register_operator('ne',          SimpleOperator('!=', 'IS NOT NULL'))
-register_operator('gt',          SimpleOperator('>'))
-register_operator('gte',         SimpleOperator('>='))
-register_operator('lt',          SimpleOperator('<'))
-register_operator('lte',         SimpleOperator('<='))
-register_operator('between',     BetweenOperator())
-register_operator('in',          InOperator())
-register_operator('not_in',      NotOperator(InOperator()))
-register_operator('contains',    LikeOperator('%{}%'))
-register_operator('startswith',  LikeOperator('{}%'))
-register_operator('endswith',    LikeOperator('%{}'))
-register_operator('icontains',   LikeOperator('%{}%', False))
+
+register_operator('eq', SimpleOperator('=', 'IS NULL'))
+register_operator('ne', SimpleOperator('!=', 'IS NOT NULL'))
+register_operator('gt', SimpleOperator('>'))
+register_operator('gte', SimpleOperator('>='))
+register_operator('lt', SimpleOperator('<'))
+register_operator('lte', SimpleOperator('<='))
+register_operator('between', BetweenOperator())
+register_operator('in', InOperator())
+register_operator('not_in', NotOperator(InOperator()))
+register_operator('contains', LikeOperator('%{}%'))
+register_operator('startswith', LikeOperator('{}%'))
+register_operator('endswith', LikeOperator('%{}'))
+register_operator('icontains', LikeOperator('%{}%', False))
 register_operator('istartswith', LikeOperator('{}%', False))
-register_operator('iendswith',   LikeOperator('%{}', False))
-register_operator('iexact',      IExactOperator())
+register_operator('iendswith', LikeOperator('%{}', False))
+register_operator('iexact', IExactOperator())
 
 
 class Cond(object):
@@ -170,6 +175,7 @@ class FieldCond(Cond):
     """
     A single query condition made up of Field + Operator + Value.
     """
+
     def __init__(self, field_name, operator, value):
         self._field_name = field_name
         self._operator = _operators.get(operator)
@@ -189,12 +195,12 @@ class FieldCond(Cond):
 
 
 class Q(object):
-
     AND_MODE = 'AND'
     OR_MODE = 'OR'
 
     def __init__(self, *filter_funcs, **filter_fields):
-        self._conds = list(filter_funcs) + [self._build_cond(k, v) for k, v in filter_fields.items()]
+        self._conds = list(filter_funcs) + [self._build_cond(k, v) for k, v in
+                                            filter_fields.items()]
         self._children = []
         self._negate = False
         self._mode = self.AND_MODE
@@ -318,7 +324,7 @@ class QuerySet(object):
         """
         return bool(self.count())
 
-    def __nonzero__(self):      # Python 2 compatibility
+    def __nonzero__(self):  # Python 2 compatibility
         return type(self).__bool__(self)
 
     def __str__(self):
@@ -335,7 +341,7 @@ class QuerySet(object):
             # Slice
             assert s.step in (None, 1), 'step is not supported in slices'
             start = s.start or 0
-            stop = s.stop or 2**63 - 1
+            stop = s.stop or 2 ** 63 - 1
             assert start >= 0 and stop >= 0, 'negative indexes are not supported'
             assert start <= stop, 'start of slice cannot be smaller than its end'
             qs = copy(self)
@@ -518,7 +524,7 @@ class QuerySet(object):
             raise ValueError('Invalid page number: %d' % page_num)
         offset = (page_num - 1) * page_size
         return Page(
-            objects=list(self[offset : offset + page_size]),
+            objects=list(self[offset: offset + page_size]),
             number_of_objects=count,
             pages_total=pages_total,
             number=page_num,
@@ -541,7 +547,8 @@ class QuerySet(object):
         """
         from .engines import CollapsingMergeTree, ReplacingMergeTree
         if not isinstance(self._model_cls.engine, (CollapsingMergeTree, ReplacingMergeTree)):
-            raise TypeError('final() method can be used only with the CollapsingMergeTree and ReplacingMergeTree engines')
+            raise TypeError(
+                'final() method can be used only with the CollapsingMergeTree and ReplacingMergeTree engines')
 
         qs = copy(self)
         qs._final = True
@@ -568,7 +575,8 @@ class QuerySet(object):
         self._verify_mutation_allowed()
         fields = comma_join('`%s` = %s' % (name, arg_to_sql(expr)) for name, expr in kwargs.items())
         conditions = (self._where_q & self._prewhere_q).to_sql(self._model_cls)
-        sql = 'ALTER TABLE $db.`%s` UPDATE %s WHERE %s' % (self._model_cls.table_name(), fields, conditions)
+        sql = 'ALTER TABLE $db.`%s` UPDATE %s WHERE %s' % (
+        self._model_cls.table_name(), fields, conditions)
         self._database.raw(sql)
         return self
 
@@ -637,7 +645,7 @@ class AggregateQuerySet(QuerySet):
         """
         for name in args:
             assert name in self._fields or name in self._calculated_fields, \
-                   'Cannot group by `%s` since it is not included in the query' % name
+                'Cannot group by `%s` since it is not included in the query' % name
         qs = copy(self)
         qs._grouping_fields = args
         return qs
@@ -658,10 +666,11 @@ class AggregateQuerySet(QuerySet):
         """
         Returns the selected fields or expressions as a SQL string.
         """
-        return comma_join([str(f) for f in self._fields] + ['%s AS %s' % (v, k) for k, v in self._calculated_fields.items()])
+        return comma_join([str(f) for f in self._fields] + ['%s AS %s' % (v, k) for k, v in
+                                                            self._calculated_fields.items()])
 
     def __iter__(self):
-        return self._database.select(self.as_sql()) # using an ad-hoc model
+        return self._database.select(self.as_sql())  # using an ad-hoc model
 
     def count(self):
         """

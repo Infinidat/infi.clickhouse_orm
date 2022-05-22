@@ -20,10 +20,7 @@ dependencies = [
     "iso8601 >= 0.1.12",
     "setuptools"
 ]
-version = "0.0.1"
+version = "0.0.2"
 
 [tool.setuptools.packages.find]
 where = ["src"]
-
-[project.optional-dependencies]
-pkg = ["setuptools", "requests", "pytz", "iso8601>=0.1.12"]

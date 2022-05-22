@@ -200,7 +200,7 @@ class ModelBase(type):
 
     @classmethod
     def create_ad_hoc_field(cls, db_type):
-        import infi.clickhouse_orm.fields as orm_fields
+        import clickhouse_orm.fields as orm_fields
         # Enums
         if db_type.startswith('Enum'):
             return orm_fields.BaseEnumField.create_ad_hoc_field(db_type)
