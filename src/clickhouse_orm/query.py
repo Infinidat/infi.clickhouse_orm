@@ -66,6 +66,20 @@ class InOperator(Operator):
         return '%s IN (%s)' % (field_name, value)
 
 
+class GlobalInOperator(Operator):
+    """An operator that implements Group IN."""
+
+    def to_sql(self, model_cls, field_name, value):
+        field = getattr(model_cls, field_name)
+        if isinstance(value, QuerySet):
+            value = value.as_sql()
+        elif isinstance(value, str):
+            pass
+        else:
+            value = comma_join([self._value_to_sql(field, v) for v in value])
+        return '%s GLOBAL IN (%s)' % (field_name, value)
+
+
 class LikeOperator(Operator):
     """
     A LIKE operator that matches the field to a given pattern. Can be
@@ -152,7 +166,9 @@ register_operator('lt', SimpleOperator('<'))
 register_operator('lte', SimpleOperator('<='))
 register_operator('between', BetweenOperator())
 register_operator('in', InOperator())
+register_operator('gin', GlobalInOperator())
 register_operator('not_in', NotOperator(InOperator()))
+register_operator('not_gin', NotOperator(GlobalInOperator()))
 register_operator('contains', LikeOperator('%{}%'))
 register_operator('startswith', LikeOperator('{}%'))
 register_operator('endswith', LikeOperator('%{}'))
