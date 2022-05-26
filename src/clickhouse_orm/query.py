@@ -1,9 +1,9 @@
 from __future__ import unicode_literals
+from math import ceil
+from copy import copy, deepcopy
 
 import pytz
-from copy import copy, deepcopy
-from math import ceil
-from datetime import date, datetime
+
 from .utils import comma_join, string_or_func, arg_to_sql
 
 
@@ -393,7 +393,7 @@ class QuerySet(object):
             sql += '\nWHERE ' + self.conditions_as_sql(prewhere=False)
 
         if self._grouping_fields:
-            sql += '\nGROUP BY %s' % comma_join('`%s`' % field for field in self._grouping_fields)
+            sql += '\nGROUP BY %s' % comma_join('%s' % field for field in self._grouping_fields)
 
             if self._grouping_with_totals:
                 sql += ' WITH TOTALS'
@@ -548,7 +548,9 @@ class QuerySet(object):
         from .engines import CollapsingMergeTree, ReplacingMergeTree
         if not isinstance(self._model_cls.engine, (CollapsingMergeTree, ReplacingMergeTree)):
             raise TypeError(
-                'final() method can be used only with the CollapsingMergeTree and ReplacingMergeTree engines')
+                'final() method can be used only with the CollapsingMergeTree'
+                ' and ReplacingMergeTree engines'
+            )
 
         qs = copy(self)
         qs._final = True
@@ -576,14 +578,15 @@ class QuerySet(object):
         fields = comma_join('`%s` = %s' % (name, arg_to_sql(expr)) for name, expr in kwargs.items())
         conditions = (self._where_q & self._prewhere_q).to_sql(self._model_cls)
         sql = 'ALTER TABLE $db.`%s` UPDATE %s WHERE %s' % (
-        self._model_cls.table_name(), fields, conditions)
+            self._model_cls.table_name(), fields, conditions
+        )
         self._database.raw(sql)
         return self
 
     def _verify_mutation_allowed(self):
-        '''
+        """
         Checks that the queryset's state allows mutations. Raises an AssertionError if not.
-        '''
+        """
         assert not self._limits, 'Mutations are not allowed after slicing the queryset'
         assert not self._limit_by, 'Mutations are not allowed after calling limit_by(...)'
         assert not self._distinct, 'Mutations are not allowed after calling distinct()'

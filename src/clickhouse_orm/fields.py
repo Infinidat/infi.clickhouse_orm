@@ -17,23 +17,25 @@ logger = getLogger('clickhouse_orm')
 
 
 class Field(FunctionOperatorsMixin):
-    '''
+    """
     Abstract base class for all field types.
-    '''
-    name             = None # this is set by the parent model
-    parent           = None # this is set by the parent model
-    creation_counter = 0    # used for keeping the model fields ordered
-    class_default    = 0    # should be overridden by concrete subclasses
-    db_type          = None # should be overridden by concrete subclasses
+    """
+    name = None  # this is set by the parent model
+    parent = None  # this is set by the parent model
+    creation_counter = 0  # used for keeping the model fields ordered
+    class_default = 0  # should be overridden by concrete subclasses
+    db_type = None  # should be overridden by concrete subclasses
 
     def __init__(self, default=None, alias=None, materialized=None, readonly=None, codec=None):
         assert [default, alias, materialized].count(None) >= 2, \
             "Only one of default, alias and materialized parameters can be given"
-        assert alias is None or isinstance(alias, F) or isinstance(alias, str) and alias != "",\
+        assert alias is None or isinstance(alias, F) or isinstance(alias, str) and alias != "", \
             "Alias parameter must be a string or function object, if given"
-        assert materialized is None or isinstance(materialized, F) or isinstance(materialized, str) and materialized != "",\
+        assert materialized is None or isinstance(materialized, F) or isinstance(materialized,
+                                                                                 str) and materialized != "", \
             "Materialized parameter must be a string or function object, if given"
-        assert readonly is None or type(readonly) is bool, "readonly parameter must be bool if given"
+        assert readonly is None or type(
+            readonly) is bool, "readonly parameter must be bool if given"
         assert codec is None or isinstance(codec, str) and codec != "", \
             "Codec field must be string, if given"
 
@@ -52,42 +54,43 @@ class Field(FunctionOperatorsMixin):
         return '<%s>' % self.__class__.__name__
 
     def to_python(self, value, timezone_in_use):
-        '''
+        """
         Converts the input value into the expected Python data type, raising ValueError if the
         data can't be converted. Returns the converted value. Subclasses should override this.
         The timezone_in_use parameter should be consulted when parsing datetime fields.
-        '''
-        return value   # pragma: no cover
+        """
+        return value  # pragma: no cover
 
     def validate(self, value):
-        '''
+        """
         Called after to_python to validate that the value is suitable for the field's database type.
         Subclasses should override this.
-        '''
+        """
         pass
 
     def _range_check(self, value, min_value, max_value):
-        '''
+        """
         Utility method to check that the given value is between min_value and max_value.
-        '''
+        """
         if value < min_value or value > max_value:
-            raise ValueError('%s out of range - %s is not between %s and %s' % (self.__class__.__name__, value, min_value, max_value))
+            raise ValueError('%s out of range - %s is not between %s and %s' % (
+            self.__class__.__name__, value, min_value, max_value))
 
     def to_db_string(self, value, quote=True):
-        '''
+        """
         Returns the field's value prepared for writing to the database.
         When quote is true, strings are surrounded by single quotes.
-        '''
+        """
         return escape(value, quote)
 
     def get_sql(self, with_default_expression=True, db=None):
-        '''
+        """
         Returns an SQL expression describing the field (e.g. for CREATE TABLE).
 
         - `with_default_expression`: If True, adds default value to sql.
             It doesn't affect fields with alias and materialized values.
         - `db`: Database, used for checking supported features.
-        '''
+        """
         sql = self.db_type
         args = self.get_db_type_args()
         if args:
@@ -135,7 +138,6 @@ class Field(FunctionOperatorsMixin):
 
 
 class StringField(Field):
-
     class_default = ''
     db_type = 'String'
 
@@ -162,11 +164,11 @@ class FixedStringField(StringField):
         if isinstance(value, str):
             value = value.encode('UTF-8')
         if len(value) > self._length:
-            raise ValueError('Value of %d bytes is too long for FixedStringField(%d)' % (len(value), self._length))
+            raise ValueError('Value of %d bytes is too long for FixedStringField(%d)' % (
+            len(value), self._length))
 
 
 class DateField(Field):
-
     min_value = datetime.date(1970, 1, 1)
     max_value = datetime.date(2105, 12, 31)
     class_default = min_value
@@ -193,7 +195,6 @@ class DateField(Field):
 
 
 class DateTimeField(Field):
-
     class_default = datetime.datetime.fromtimestamp(0, pytz.utc)
     db_type = 'DateTime'
 
@@ -292,9 +293,10 @@ class DateTime64Field(DateTimeField):
 
 
 class BaseIntField(Field):
-    '''
+    """
     Abstract base class for all integer-type fields.
-    '''
+    """
+
     def to_python(self, value, timezone_in_use):
         try:
             return int(value)
@@ -311,58 +313,50 @@ class BaseIntField(Field):
 
 
 class UInt8Field(BaseIntField):
-
     min_value = 0
-    max_value = 2**8 - 1
+    max_value = 2 ** 8 - 1
     db_type = 'UInt8'
 
 
 class UInt16Field(BaseIntField):
-
     min_value = 0
-    max_value = 2**16 - 1
+    max_value = 2 ** 16 - 1
     db_type = 'UInt16'
 
 
 class UInt32Field(BaseIntField):
-
     min_value = 0
-    max_value = 2**32 - 1
+    max_value = 2 ** 32 - 1
     db_type = 'UInt32'
 
 
 class UInt64Field(BaseIntField):
-
     min_value = 0
-    max_value = 2**64 - 1
+    max_value = 2 ** 64 - 1
     db_type = 'UInt64'
 
 
 class Int8Field(BaseIntField):
-
-    min_value = -2**7
-    max_value = 2**7 - 1
+    min_value = -2 ** 7
+    max_value = 2 ** 7 - 1
     db_type = 'Int8'
 
 
 class Int16Field(BaseIntField):
-
-    min_value = -2**15
-    max_value = 2**15 - 1
+    min_value = -2 ** 15
+    max_value = 2 ** 15 - 1
     db_type = 'Int16'
 
 
 class Int32Field(BaseIntField):
-
-    min_value = -2**31
-    max_value = 2**31 - 1
+    min_value = -2 ** 31
+    max_value = 2 ** 31 - 1
     db_type = 'Int32'
 
 
 class Int64Field(BaseIntField):
-
-    min_value = -2**63
-    max_value = 2**63 - 1
+    min_value = -2 ** 63
+    max_value = 2 ** 63 - 1
     db_type = 'Int64'
 
 
@@ -384,21 +378,20 @@ class BaseFloatField(Field):
 
 
 class Float32Field(BaseFloatField):
-
     db_type = 'Float32'
 
 
 class Float64Field(BaseFloatField):
-
     db_type = 'Float64'
 
 
 class DecimalField(Field):
-    '''
+    """
     Base class for all decimal fields. Can also be used directly.
-    '''
+    """
 
-    def __init__(self, precision, scale, default=None, alias=None, materialized=None, readonly=None):
+    def __init__(self, precision, scale, default=None, alias=None, materialized=None,
+                 readonly=None):
         assert 1 <= precision <= 38, 'Precision must be between 1 and 38'
         assert 0 <= scale <= precision, 'Scale must be between 0 and the given precision'
         self.precision = precision
@@ -406,7 +399,7 @@ class DecimalField(Field):
         self.db_type = 'Decimal(%d,%d)' % (self.precision, self.scale)
         with localcontext() as ctx:
             ctx.prec = 38
-            self.exp = Decimal(10) ** -self.scale # for rounding to the required scale
+            self.exp = Decimal(10) ** -self.scale  # for rounding to the required scale
             self.max_value = Decimal(10 ** (self.precision - self.scale)) - self.exp
             self.min_value = -self.max_value
         super(DecimalField, self).__init__(default, alias, materialized, readonly)
@@ -418,7 +411,7 @@ class DecimalField(Field):
             except:
                 raise ValueError('Invalid value for %s - %r' % (self.__class__.__name__, value))
         if not value.is_finite():
-                raise ValueError('Non-finite value for %s - %r' % (self.__class__.__name__, value))
+            raise ValueError('Non-finite value for %s - %r' % (self.__class__.__name__, value))
         return self._round(value)
 
     def to_db_string(self, value, quote=True):
@@ -455,11 +448,12 @@ class Decimal128Field(DecimalField):
 
 
 class BaseEnumField(Field):
-    '''
+    """
     Abstract base class for all enum-type fields.
-    '''
+    """
 
-    def __init__(self, enum_cls, default=None, alias=None, materialized=None, readonly=None, codec=None):
+    def __init__(self, enum_cls, default=None, alias=None, materialized=None, readonly=None,
+                 codec=None):
         self.enum_cls = enum_cls
         if default is None:
             default = list(enum_cls)[0]
@@ -494,10 +488,10 @@ class BaseEnumField(Field):
 
     @classmethod
     def create_ad_hoc_field(cls, db_type):
-        '''
+        """
         Give an SQL column description such as "Enum8('apple' = 1, 'banana' = 2, 'orange' = 3)"
         this method returns a matching enum field.
-        '''
+        """
         import re
         from enum import Enum
         members = {}
@@ -509,22 +503,22 @@ class BaseEnumField(Field):
 
 
 class Enum8Field(BaseEnumField):
-
     db_type = 'Enum8'
 
 
 class Enum16Field(BaseEnumField):
-
     db_type = 'Enum16'
 
 
 class ArrayField(Field):
-
     class_default = []
 
-    def __init__(self, inner_field, default=None, alias=None, materialized=None, readonly=None, codec=None):
-        assert isinstance(inner_field, Field), "The first argument of ArrayField must be a Field instance"
-        assert not isinstance(inner_field, ArrayField), "Multidimensional array fields are not supported by the ORM"
+    def __init__(self, inner_field, default=None, alias=None, materialized=None, readonly=None,
+                 codec=None):
+        assert isinstance(inner_field, Field), \
+            "The first argument of ArrayField must be a Field instance"
+        assert not isinstance(inner_field, ArrayField), \
+            "Multidimensional array fields are not supported by the ORM"
         self.inner_field = inner_field
         super(ArrayField, self).__init__(default, alias, materialized, readonly, codec)
 
@@ -548,12 +542,11 @@ class ArrayField(Field):
     def get_sql(self, with_default_expression=True, db=None):
         sql = 'Array(%s)' % self.inner_field.get_sql(with_default_expression=False, db=db)
         if with_default_expression and self.codec and db and db.has_codec_support:
-            sql+= ' CODEC(%s)' % self.codec
+            sql += ' CODEC(%s)' % self.codec
         return sql
 
 
 class UUIDField(Field):
-
     class_default = UUID(int=0)
     db_type = 'UUID'
 
@@ -576,7 +569,6 @@ class UUIDField(Field):
 
 
 class IPv4Field(Field):
-
     class_default = 0
     db_type = 'IPv4'
 
@@ -593,7 +585,6 @@ class IPv4Field(Field):
 
 
 class IPv6Field(Field):
-
     class_default = 0
     db_type = 'IPv6'
 
@@ -610,17 +601,19 @@ class IPv6Field(Field):
 
 
 class NullableField(Field):
-
     class_default = None
 
     def __init__(self, inner_field, default=None, alias=None, materialized=None,
                  extra_null_values=None, codec=None):
-        assert isinstance(inner_field, Field), "The first argument of NullableField must be a Field instance. Not: {}".format(inner_field)
+        assert isinstance(inner_field, Field), \
+            "The first argument of NullableField must be a Field instance." \
+            " Not: {}".format(inner_field)
         self.inner_field = inner_field
         self._null_values = [None]
         if extra_null_values:
             self._null_values.extend(extra_null_values)
-        super(NullableField, self).__init__(default, alias, materialized, readonly=None, codec=codec)
+        super(NullableField, self).__init__(default, alias, materialized, readonly=None,
+                                            codec=codec)
 
     def to_python(self, value, timezone_in_use):
         if value == '\\N' or value in self._null_values:
@@ -644,10 +637,16 @@ class NullableField(Field):
 
 class LowCardinalityField(Field):
 
-    def __init__(self, inner_field, default=None, alias=None, materialized=None, readonly=None, codec=None):
-        assert isinstance(inner_field, Field), "The first argument of LowCardinalityField must be a Field instance. Not: {}".format(inner_field)
-        assert not isinstance(inner_field, LowCardinalityField), "LowCardinality inner fields are not supported by the ORM"
-        assert not isinstance(inner_field, ArrayField), "Array field inside LowCardinality are not supported by the ORM. Use Array(LowCardinality) instead"
+    def __init__(self, inner_field, default=None, alias=None, materialized=None, readonly=None,
+                 codec=None):
+        assert isinstance(inner_field, Field), \
+            "The first argument of LowCardinalityField must be a Field instance." \
+            " Not: {}".format(inner_field)
+        assert not isinstance(inner_field, LowCardinalityField), \
+            "LowCardinality inner fields are not supported by the ORM"
+        assert not isinstance(inner_field, ArrayField), \
+            "Array field inside LowCardinality are not supported by the ORM." \
+            " Use Array(LowCardinality) instead"
         self.inner_field = inner_field
         self.class_default = self.inner_field.class_default
         super(LowCardinalityField, self).__init__(default, alias, materialized, readonly, codec)
@@ -666,7 +665,10 @@ class LowCardinalityField(Field):
             sql = 'LowCardinality(%s)' % self.inner_field.get_sql(with_default_expression=False)
         else:
             sql = self.inner_field.get_sql(with_default_expression=False)
-            logger.warning('LowCardinalityField not supported on clickhouse-server version < 19.0 using {} as fallback'.format(self.inner_field.__class__.__name__))
+            logger.warning(
+                'LowCardinalityField not supported on clickhouse-server version < 19.0'
+                ' using {} as fallback'.format(self.inner_field.__class__.__name__)
+            )
         if with_default_expression:
             sql += self._extra_params(db)
         return sql

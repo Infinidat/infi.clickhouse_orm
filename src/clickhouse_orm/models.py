@@ -3,11 +3,12 @@ import sys
 from collections import OrderedDict
 from itertools import chain
 from logging import getLogger
+from typing import TypeVar
 
 import pytz
 
 from .fields import Field, StringField
-from .utils import parse_tsv, NO_VALUE, get_subclass_names, arg_to_sql, unescape
+from .utils import parse_tsv, NO_VALUE, get_subclass_names, arg_to_sql
 from .query import QuerySet
 from .funcs import F
 from .engines import Merge, Distributed
@@ -15,75 +16,74 @@ from .engines import Merge, Distributed
 logger = getLogger('clickhouse_orm')
 
 
-
 class Constraint:
-    '''
+    """
     Defines a model constraint.
-    '''
+    """
 
-    name   = None # this is set by the parent model
-    parent = None # this is set by the parent model
+    name = None  # this is set by the parent model
+    parent = None  # this is set by the parent model
 
     def __init__(self, expr):
-        '''
+        """
         Initializer. Expects an expression that ClickHouse will verify when inserting data.
-        '''
+        """
         self.expr = expr
 
     def create_table_sql(self):
-        '''
+        """
         Returns the SQL statement for defining this constraint during table creation.
-        '''
+        """
         return 'CONSTRAINT `%s` CHECK %s' % (self.name, arg_to_sql(self.expr))
 
 
 class Index:
-    '''
+    """
     Defines a data-skipping index.
-    '''
+    """
 
-    name   = None # this is set by the parent model
-    parent = None # this is set by the parent model
+    name = None  # this is set by the parent model
+    parent = None  # this is set by the parent model
 
     def __init__(self, expr, type, granularity):
-        '''
+        """
         Initializer.
 
         - `expr` - a column, expression, or tuple of columns and expressions to index.
         - `type` - the index type. Use one of the following methods to specify the type:
           `Index.minmax`, `Index.set`, `Index.ngrambf_v1`, `Index.tokenbf_v1` or `Index.bloom_filter`.
         - `granularity` - index block size (number of multiples of the `index_granularity` defined by the engine).
-        '''
+        """
         self.expr = expr
         self.type = type
         self.granularity = granularity
 
     def create_table_sql(self):
-        '''
+        """
         Returns the SQL statement for defining this index during table creation.
-        '''
+        """
         return 'INDEX `%s` %s TYPE %s GRANULARITY %d' % (self.name, arg_to_sql(self.expr), self.type, self.granularity)
 
     @staticmethod
     def minmax():
-        '''
+        """
         An index that stores extremes of the specified expression (if the expression is tuple, then it stores
         extremes for each element of tuple). The stored info is used for skipping blocks of data like the primary key.
-        '''
+        """
         return 'minmax'
 
     @staticmethod
     def set(max_rows):
-        '''
+        """
         An index that stores unique values of the specified expression (no more than max_rows rows,
         or unlimited if max_rows=0). Uses the values to check if the WHERE expression is not satisfiable
         on a block of data.
-        '''
+        """
         return 'set(%d)' % max_rows
 
     @staticmethod
     def ngrambf_v1(n, size_of_bloom_filter_in_bytes, number_of_hash_functions, random_seed):
-        '''
+        """
         An index that stores a Bloom filter containing all ngrams from a block of data.
         Works only with strings. Can be used for optimization of equals, like and in expressions.
 
@@ -92,12 +92,12 @@ class Index:
            for example 256 or 512, because it can be compressed well).
         - `number_of_hash_functions` — The number of hash functions used in the Bloom filter.
         - `random_seed` — The seed for Bloom filter hash functions.
-        '''
+        """
         return 'ngrambf_v1(%d, %d, %d, %d)' % (n, size_of_bloom_filter_in_bytes, number_of_hash_functions, random_seed)
 
     @staticmethod
     def tokenbf_v1(size_of_bloom_filter_in_bytes, number_of_hash_functions, random_seed):
-        '''
+        """
         An index that stores a Bloom filter containing string tokens. Tokens are sequences
         separated by non-alphanumeric characters.
 
@@ -105,7 +105,7 @@ class Index:
            for example 256 or 512, because it can be compressed well).
         - `number_of_hash_functions` — The number of hash functions used in the Bloom filter.
         - `random_seed` — The seed for Bloom filter hash functions.
-        '''
+        """
         return 'tokenbf_v1(%d, %d, %d)' % (size_of_bloom_filter_in_bytes, number_of_hash_functions, random_seed)
 
     @staticmethod
@@ -253,7 +253,7 @@ class ModelBase(type):
 
 
 class Model(metaclass=ModelBase):
-    '''
+    """
     A base class for ORM models. Each model class represent a ClickHouse table. For example:
 
         class CPUStats(Model):
@@ -261,7 +261,7 @@ class Model(metaclass=ModelBase):
             cpu_id = UInt16Field()
             cpu_percent = Float32Field()
             engine = Memory()
-    '''
+    """
 
     engine = None
 
@@ -274,12 +274,12 @@ class Model(metaclass=ModelBase):
     _database = None
 
     def __init__(self, **kwargs):
-        '''
+        """
         Creates a model instance, using keyword arguments as field values.
         Since values are immediately converted to their Pythonic type,
         invalid values will cause a `ValueError` to be raised.
         Unrecognized field names will cause an `AttributeError`.
-        '''
+        """
         super(Model, self).__init__()
         # Assign default values
         self.__dict__.update(self._defaults)
@@ -292,10 +292,10 @@ class Model(metaclass=ModelBase):
                 raise AttributeError('%s does not have a field called %s' % (self.__class__.__name__, name))
 
     def __setattr__(self, name, value):
-        '''
+        """
         When setting a field value, converts the value to its Pythonic type and validates it.
         This may raise a `ValueError`.
-        '''
+        """
         field = self.get_field(name)
         if field and (value != NO_VALUE):
             try:
@@ -308,50 +308,50 @@ class Model(metaclass=ModelBase):
         super(Model, self).__setattr__(name, value)
 
     def set_database(self, db):
-        '''
+        """
         Sets the `Database` that this model instance belongs to.
         This is done automatically when the instance is read from the database or written to it.
-        '''
+        """
         # This can not be imported globally due to circular import
         from .database import Database
         assert isinstance(db, Database), "database must be database.Database instance"
         self._database = db
 
     def get_database(self):
-        '''
+        """
         Gets the `Database` that this model instance belongs to.
         Returns `None` unless the instance was read from the database or written to it.
-        '''
+        """
         return self._database
 
     def get_field(self, name):
-        '''
+        """
         Gets a `Field` instance given its name, or `None` if not found.
-        '''
+        """
         return self._fields.get(name)
 
     @classmethod
     def table_name(cls):
-        '''
+        """
         Returns the model's database table name. By default this is the
         class name converted to lowercase. Override this if you want to use
         a different table name.
-        '''
+        """
         return cls.__name__.lower()
 
     @classmethod
     def has_funcs_as_defaults(cls):
-        '''
+        """
         Return True if some of the model's fields use a function expression
         as a default value. This requires special handling when inserting instances.
-        '''
+        """
         return cls._has_funcs_as_defaults
 
     @classmethod
     def create_table_sql(cls, db):
-        '''
+        """
         Returns the SQL statement for creating a table for this model.
-        '''
+        """
         parts = ['CREATE TABLE IF NOT EXISTS `%s`.`%s` (' % (db.db_name, cls.table_name())]
         # Fields
         items = []
@@ -371,14 +371,14 @@ class Model(metaclass=ModelBase):
 
     @classmethod
     def drop_table_sql(cls, db):
-        '''
+        """
         Returns the SQL command for deleting this model's table.
-        '''
+        """
         return 'DROP TABLE IF EXISTS `%s`.`%s`' % (db.db_name, cls.table_name())
 
     @classmethod
     def from_tsv(cls, line, field_names, timezone_in_use=pytz.utc, database=None):
-        '''
+        """
         Create a model instance from a tab-separated line. The line may or may not include a newline.
         The `field_names` list must match the fields defined in the model, but does not have to include all of them.
 
@@ -386,7 +386,7 @@ class Model(metaclass=ModelBase):
         - `field_names`: names of the model fields in the data.
         - `timezone_in_use`: the timezone to use when parsing dates and datetimes. Some fields use their own timezones.
         - `database`: if given, sets the database that this instance belongs to.
-        '''
+        """
         values = iter(parse_tsv(line))
         kwargs = {}
         for name in field_names:
@@ -401,22 +401,22 @@ class Model(metaclass=ModelBase):
         return obj
 
     def to_tsv(self, include_readonly=True):
-        '''
+        """
         Returns the instance's column values as a tab-separated line. A newline is not included.
 
         - `include_readonly`: if false, returns only fields that can be inserted into database.
-        '''
+        """
         data = self.__dict__
         fields = self.fields(writable=not include_readonly)
         return '\t'.join(field.to_db_string(data[name], quote=False) for name, field in fields.items())
 
     def to_tskv(self, include_readonly=True):
-        '''
+        """
         Returns the instance's column keys and values as a tab-separated line. A newline is not included.
         Fields that were not assigned a value are omitted.
 
         - `include_readonly`: if false, returns only fields that can be inserted into database.
-        '''
+        """
         data = self.__dict__
         fields = self.fields(writable=not include_readonly)
         parts = []
@@ -426,20 +426,20 @@ class Model(metaclass=ModelBase):
         return '\t'.join(parts)
 
     def to_db_string(self):
-        '''
+        """
         Returns the instance as a bytestring ready to be inserted into the database.
-        '''
+        """
         s = self.to_tskv(False) if self._has_funcs_as_defaults else self.to_tsv(False)
         s += '\n'
         return s.encode('utf-8')
 
     def to_dict(self, include_readonly=True, field_names=None):
-        '''
+        """
         Returns the instance's column values as a dict.
 
         - `include_readonly`: if false, returns only fields that can be inserted into database.
         - `field_names`: an iterable of field names to return (optional)
-        '''
+        """
         fields = self.fields(writable=not include_readonly)
 
         if field_names is not None:
@@ -450,66 +450,68 @@ class Model(metaclass=ModelBase):
 
     @classmethod
     def objects_in(cls, database):
-        '''
+        """
         Returns a `QuerySet` for selecting instances of this model class.
-        '''
+        """
         return QuerySet(cls, database)
 
     @classmethod
     def fields(cls, writable=False):
-        '''
+        """
         Returns an `OrderedDict` of the model's fields (from name to `Field` instance).
         If `writable` is true, only writable fields are included.
         Callers should not modify the dictionary.
-        '''
+        """
         # noinspection PyProtectedMember,PyUnresolvedReferences
         return cls._writable_fields if writable else cls._fields
 
     @classmethod
     def is_read_only(cls):
-        '''
+        """
         Returns true if the model is marked as read only.
-        '''
+        """
         return cls._readonly
 
     @classmethod
     def is_system_model(cls):
-        '''
+        """
         Returns true if the model represents a system table.
-        '''
+        """
         return cls._system
 
 
 class BufferModel(Model):
 
     @classmethod
-    def create_table_sql(cls, db):
-        '''
+    def create_table_sql(cls, db) -> str:
+        """
         Returns the SQL statement for creating a table for this model.
-        '''
-        parts = ['CREATE TABLE IF NOT EXISTS `%s`.`%s` AS `%s`.`%s`' % (db.db_name, cls.table_name(), db.db_name,
-                                                                        cls.engine.main_model.table_name())]
+        """
+        parts = [
+            'CREATE TABLE IF NOT EXISTS `%s`.`%s` AS `%s`.`%s`' % (
+                db.db_name, cls.table_name(), db.db_name, cls.engine.main_model.table_name())
+        ]
         engine_str = cls.engine.create_table_sql(db)
         parts.append(engine_str)
         return ' '.join(parts)
 
 
 class MergeModel(Model):
-    '''
+    """
     Model for Merge engine
     Predefines virtual _table column an controls that rows can't be inserted to this table type
     https://clickhouse.tech/docs/en/single/index.html#document-table_engines/merge
-    '''
+    """
     readonly = True
 
     # Virtual fields can't be inserted into database
     _table = StringField(readonly=True)
 
     @classmethod
-    def create_table_sql(cls, db):
-        '''
+    def create_table_sql(cls, db) -> str:
+        """
         Returns the SQL statement for creating a table for this model.
-        '''
+        """
         assert isinstance(cls.engine, Merge), "engine must be an instance of engines.Merge"
         parts = ['CREATE TABLE IF NOT EXISTS `%s`.`%s` (' % (db.db_name, cls.table_name())]
         cols = []
@@ -530,11 +532,12 @@ class DistributedModel(Model):
     """
 
     def set_database(self, db):
-        '''
+        """
         Sets the `Database` that this model instance belongs to.
         This is done automatically when the instance is read from the database or written to it.
-        '''
-        assert isinstance(self.engine, Distributed), "engine must be an instance of engines.Distributed"
+        """
+        assert isinstance(self.engine, Distributed),\
+            "engine must be an instance of engines.Distributed"
         res = super(DistributedModel, self).set_database(db)
         return res
 
@@ -590,10 +593,10 @@ class DistributedModel(Model):
         cls.engine.table = storage_models[0]
 
     @classmethod
-    def create_table_sql(cls, db):
-        '''
+    def create_table_sql(cls, db) -> str:
+        """
         Returns the SQL statement for creating a table for this model.
-        '''
+        """
         assert isinstance(cls.engine, Distributed), "engine must be engines.Distributed instance"
 
         cls.fix_engine_table()
@@ -606,4 +609,5 @@ class DistributedModel(Model):
 
 
 # Expose only relevant classes in import *
+MODEL = TypeVar('MODEL', bound=Model)
 __all__ = get_subclass_names(locals(), (Model, Constraint, Index))

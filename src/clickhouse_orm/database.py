@@ -1,26 +1,28 @@
 from __future__ import unicode_literals
-
 import re
-import requests
-from collections import namedtuple
-from .models import ModelBase
-from .utils import escape, parse_tsv, import_submodules
-from math import ceil
-import datetime
-from string import Template
-import pytz
-
 import logging
+import datetime
+from math import ceil
+from string import Template
+from collections import namedtuple
+from typing import Type, Optional, Generator, Union, Any
+
+import pytz
+import requests
+
+from .models import ModelBase, MODEL
+from .utils import parse_tsv, import_submodules
+from .query import Q
+
+
 logger = logging.getLogger('clickhouse_orm')
-
-
 Page = namedtuple('Page', 'objects number_of_objects pages_total number page_size')
 
 
 class DatabaseException(Exception):
-    '''
+    """
     Raised when a database operation fails.
-    '''
+    """
     pass
 
 
@@ -80,15 +82,15 @@ class ServerError(DatabaseException):
 
 
 class Database(object):
-    '''
+    """
     Database instances connect to a specific ClickHouse database for running queries,
     inserting data and other operations.
-    '''
+    """
 
     def __init__(self, db_name, db_url='http://localhost:8123/',
                  username=None, password=None, readonly=False, autocreate=True,
                  timeout=60, verify_ssl_cert=True, log_statements=False):
-        '''
+        """
         Initializes a database instance. Unless it's readonly, the database will be
         created on the ClickHouse server if it does not already exist.
 
@@ -101,7 +103,7 @@ class Database(object):
         - `timeout`: the connection timeout in seconds.
         - `verify_ssl_cert`: whether to verify the server's certificate when connecting via HTTPS.
         - `log_statements`: when True, all database statements are logged.
-        '''
+        """
         self.db_name = db_name
         self.db_url = db_url
         self.readonly = False
@@ -130,55 +132,59 @@ class Database(object):
         self.has_low_cardinality_support = self.server_version >= (19, 0)
 
     def create_database(self):
-        '''
+        """
         Creates the database on the ClickHouse server if it does not already exist.
-        '''
+        """
         self._send('CREATE DATABASE IF NOT EXISTS `%s`' % self.db_name)
         self.db_exists = True
 
     def drop_database(self):
-        '''
+        """
         Deletes the database on the ClickHouse server.
-        '''
+        """
         self._send('DROP DATABASE `%s`' % self.db_name)
         self.db_exists = False
 
-    def create_table(self, model_class):
-        '''
+    def create_table(self, model_class: Type[MODEL]) -> None:
+        """
         Creates a table for the given model class, if it does not exist already.
-        '''
+        """
         if model_class.is_system_model():
             raise DatabaseException("You can't create system table")
         if getattr(model_class, 'engine') is None:
             raise DatabaseException("%s class must define an engine" % model_class.__name__)
         self._send(model_class.create_table_sql(self))
 
-    def drop_table(self, model_class):
-        '''
+    def drop_table(self, model_class: Type[MODEL]) -> None:
+        """
         Drops the database table of the given model class, if it exists.
-        '''
+        """
         if model_class.is_system_model():
             raise DatabaseException("You can't drop system table")
         self._send(model_class.drop_table_sql(self))
 
-    def does_table_exist(self, model_class):
-        '''
+    def does_table_exist(self, model_class: Type[MODEL]) -> bool:
+        """
         Checks whether a table for the given model class already exists.
         Note that this only checks for existence of a table with the expected name.
-        '''
+        """
         sql = "SELECT count() FROM system.tables WHERE database = '%s' AND name = '%s'"
         r = self._send(sql % (self.db_name, model_class.table_name()))
         return r.text.strip() == '1'
 
-    def get_model_for_table(self, table_name, system_table=False):
-        '''
+    def get_model_for_table(
+        self,
+        table_name: str,
+        system_table: bool = False
+    ):
+        """
         Generates a model class from an existing table in the database.
         This can be used for querying tables which don't have a corresponding model class,
         for example system tables.
 
         - `table_name`: the table to create a model for
         - `system_table`: whether the table is a system table, or belongs to the current database
-        '''
+        """
         db_name = 'system' if system_table else self.db_name
         sql = "DESCRIBE `%s`.`%s` FORMAT TSV" % (db_name, table_name)
         lines = self._send(sql).iter_lines()
@@ -188,14 +194,14 @@ class Database(object):
             model._system = model._readonly = True
         return model
 
-    def add_setting(self, name, value):
-        '''
+    def add_setting(self, name: str, value: Any):
+        """
         Adds a database setting that will be sent with every request.
         For example, `db.add_setting("max_execution_time", 10)` will
         limit query execution time to 10 seconds.
         The name must be string, and the value is converted to string in case
         it isn't. To remove a setting, pass `None` as the value.
-        '''
+        """
         assert isinstance(name, str), 'Setting name must be a string'
         if value is None:
             self.settings.pop(name, None)
@@ -203,12 +209,12 @@ class Database(object):
             self.settings[name] = str(value)
 
     def insert(self, model_instances, batch_size=1000):
-        '''
+        """
         Insert records into the database.
 
         - `model_instances`: any iterable containing instances of a single model class.
         - `batch_size`: number of records to send per chunk (use a lower number if your records are very large).
-        '''
+        """
         from io import BytesIO
         i = iter(model_instances)
         try:
@@ -247,13 +253,17 @@ class Database(object):
                 yield buf.getvalue()
         self._send(gen())
 
-    def count(self, model_class, conditions=None):
-        '''
+    def count(
+        self,
+        model_class: Optional[Type[MODEL]],
+        conditions: Optional[Union[str, Q]] = None
+    ) -> int:
+        """
         Counts the number of records in the model's table.
 
         - `model_class`: the model to count.
         - `conditions`: optional SQL conditions (contents of the WHERE clause).
-        '''
+        """
         from clickhouse_orm.query import Q
         query = 'SELECT count() FROM $table'
         if conditions:
@@ -264,15 +274,20 @@ class Database(object):
         r = self._send(query)
         return int(r.text) if r.text else 0
 
-    def select(self, query, model_class=None, settings=None):
-        '''
+    def select(
+        self,
+        query: str,
+        model_class: Optional[Type[MODEL]] = None,
+        settings: Optional[dict] = None
+    ) -> Generator[MODEL, None, None]:
+        """
         Performs a query and returns a generator of model instances.
 
         - `query`: the SQL query to execute.
         - `model_class`: the model class matching the query's table,
           or `None` for getting back instances of an ad-hoc model.
         - `settings`: query settings to send as HTTP GET parameters
-        '''
+        """
         query += ' FORMAT TabSeparatedWithNamesAndTypes'
         query = self._substitute(query, model_class)
         r = self._send(query, settings, True)
@@ -285,19 +300,27 @@ class Database(object):
             if line:
                 yield model_class.from_tsv(line, field_names, self.server_timezone, self)
 
-    def raw(self, query, settings=None, stream=False):
-        '''
+    def raw(self, query: str, settings: Optional[dict] = None, stream: bool = False) -> str:
+        """
         Performs a query and returns its output as text.
 
         - `query`: the SQL query to execute.
         - `settings`: query settings to send as HTTP GET parameters
         - `stream`: if true, the HTTP response from ClickHouse will be streamed.
-        '''
+        """
         query = self._substitute(query, None)
         return self._send(query, settings=settings, stream=stream).text
 
-    def paginate(self, model_class, order_by, page_num=1, page_size=100, conditions=None, settings=None):
-        '''
+    def paginate(
+        self,
+        model_class: Type[MODEL],
+        order_by: str,
+        page_num: int = 1,
+        page_size: int = 100,
+        conditions=None,
+        settings: Optional[dict] = None
+    ):
+        """
         Selects records and returns a single page of model instances.
 
         - `model_class`: the model class matching the query's table,
@@ -310,7 +333,7 @@ class Database(object):
 
         The result is a namedtuple containing `objects` (list), `number_of_objects`,
         `pages_total`, `number` (of the current page), and `page_size`.
-        '''
+        """
         from clickhouse_orm.query import Q
         count = self.count(model_class, conditions)
         pages_total = int(ceil(count / float(page_size)))
@@ -336,13 +359,13 @@ class Database(object):
         )
 
     def migrate(self, migrations_package_name, up_to=9999):
-        '''
+        """
         Executes schema migrations.
 
         - `migrations_package_name` - fully qualified name of the Python package
           containing the migrations.
         - `up_to` - number of the last migration to apply.
-        '''
+        """
         from .migrations import MigrationHistory
         logger = logging.getLogger('migrations')
         applied_migrations = self._get_applied_migrations(migrations_package_name)

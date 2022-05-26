@@ -74,6 +74,9 @@ class PointField(Field):
     def to_db_string(self, value, quote=True):
         return value.to_db_string()
 
+    def __getitem__(self, item):
+        return
+
 
 class RingField(Field):
     class_default = [Point(0, 0)]

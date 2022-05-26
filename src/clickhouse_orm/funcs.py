@@ -1122,6 +1122,10 @@ class F(Cond, FunctionOperatorsMixin, metaclass=FMeta):
         return F('arrayElement', arr, n)
 
     @staticmethod
+    def tupleElement(arr, n):
+        return F('tupleElement', arr, n)
+
+    @staticmethod
     def has(arr, x):
         return F('has', arr, x)
 
@@ -1132,6 +1136,10 @@ class F(Cond, FunctionOperatorsMixin, metaclass=FMeta):
     @staticmethod
     def hasAny(arr, x):
         return F('hasAny', arr, x)
+
+    @staticmethod
+    def geohashEncode(x, y, precision=12):
+        return F('geohashEncode', x, y, precision)
 
     @staticmethod
     def indexOf(arr, x):
