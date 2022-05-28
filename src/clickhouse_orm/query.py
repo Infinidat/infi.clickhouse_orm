@@ -43,7 +43,7 @@ class SimpleOperator(Operator):
         value = self._value_to_sql(field, value)
         if value == '\\N' and self._sql_for_null is not None:
             return ' '.join([field_name, self._sql_for_null])
-        return ' '.join([field_name, self._sql_operator, value])
+        return ' '.join([field.name, self._sql_operator, value])
 
 
 class InOperator(Operator):
@@ -63,7 +63,7 @@ class InOperator(Operator):
             pass
         else:
             value = comma_join([self._value_to_sql(field, v) for v in value])
-        return '%s IN (%s)' % (field_name, value)
+        return '%s IN (%s)' % (field.name, value)
 
 
 class GlobalInOperator(Operator):
@@ -77,7 +77,7 @@ class GlobalInOperator(Operator):
             pass
         else:
             value = comma_join([self._value_to_sql(field, v) for v in value])
-        return '%s GLOBAL IN (%s)' % (field_name, value)
+        return '%s GLOBAL IN (%s)' % (field.name, value)
 
 
 class LikeOperator(Operator):
@@ -96,9 +96,9 @@ class LikeOperator(Operator):
         value = value.replace('\\', '\\\\').replace('%', '\\\\%').replace('_', '\\\\_')
         pattern = self._pattern.format(value)
         if self._case_sensitive:
-            return '%s LIKE \'%s\'' % (field_name, pattern)
+            return '%s LIKE \'%s\'' % (field.name, pattern)
         else:
-            return 'lowerUTF8(%s) LIKE lowerUTF8(\'%s\')' % (field_name, pattern)
+            return 'lowerUTF8(%s) LIKE lowerUTF8(\'%s\')' % (field.name, pattern)
 
 
 class IExactOperator(Operator):
@@ -109,7 +109,7 @@ class IExactOperator(Operator):
     def to_sql(self, model_cls, field_name, value):
         field = getattr(model_cls, field_name)
         value = self._value_to_sql(field, value)
-        return 'lowerUTF8(%s) = lowerUTF8(%s)' % (field_name, value)
+        return 'lowerUTF8(%s) = lowerUTF8(%s)' % (field.name, value)
 
 
 class NotOperator(Operator):
@@ -142,11 +142,11 @@ class BetweenOperator(Operator):
         value1 = self._value_to_sql(field, value[1]) if value[1] is not None or len(
             str(value[1])) > 0 else None
         if value0 and value1:
-            return '%s BETWEEN %s AND %s' % (field_name, value0, value1)
+            return '%s BETWEEN %s AND %s' % (field.name, value0, value1)
         if value0 and not value1:
-            return ' '.join([field_name, '>=', value0])
+            return ' '.join([field.name, '>=', value0])
         if value1 and not value0:
-            return ' '.join([field_name, '<=', value1])
+            return ' '.join([field.name, '<=', value1])
 
 
 # Define the set of builtin operators

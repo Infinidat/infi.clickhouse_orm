@@ -3,7 +3,7 @@ import sys
 from collections import OrderedDict
 from itertools import chain
 from logging import getLogger
-from typing import TypeVar
+from typing import TypeVar, Dict
 
 import pytz
 
@@ -120,9 +120,9 @@ class Index:
 
 
 class ModelBase(type):
-    '''
+    """
     A metaclass for ORM models. It adds the _fields list to model classes.
-    '''
+    """
 
     ad_hoc_model_cache = {}
 
@@ -141,7 +141,7 @@ class ModelBase(type):
         # Add fields, constraints and indexes from this class
         for n, obj in attrs.items():
             if isinstance(obj, Field):
-                fields[n] = obj
+                fields[obj.db_column or n] = obj
             elif isinstance(obj, Constraint):
                 constraints[n] = obj
             elif isinstance(obj, Index):
@@ -201,6 +201,8 @@ class ModelBase(type):
     @classmethod
     def create_ad_hoc_field(cls, db_type):
         import clickhouse_orm.fields as orm_fields
+        import clickhouse_orm.contrib.geo.fields as geo_fields
+
         # Enums
         if db_type.startswith('Enum'):
             return orm_fields.BaseEnumField.create_ad_hoc_field(db_type)
@@ -229,7 +231,7 @@ class ModelBase(type):
             return orm_fields.ArrayField(inner_field)
         # FixedString
         if db_type.startswith('FixedString'):
-            length = int(db_type[12 : -1])
+            length = int(db_type[12:-1])
             return orm_fields.FixedStringField(length)
         # Decimal / Decimal32 / Decimal64 / Decimal128
         if db_type.startswith('Decimal'):
@@ -247,9 +249,9 @@ class ModelBase(type):
             return orm_fields.LowCardinalityField(inner_field)
         # Simple fields
         name = db_type + 'Field'
-        if not hasattr(orm_fields, name):
+        if not (hasattr(orm_fields, name) or hasattr(geo_fields, name)):
             raise NotImplementedError('No field class for %s' % db_type)
-        return getattr(orm_fields, name)()
+        return getattr(orm_fields, name, getattr(geo_fields, name))()
 
 
 class Model(metaclass=ModelBase):
@@ -272,6 +274,8 @@ class Model(metaclass=ModelBase):
     _system = False
 
     _database = None
+
+    _fields: Dict[str, Field]
 
     def __init__(self, **kwargs):
         """

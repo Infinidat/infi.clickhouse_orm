@@ -53,8 +53,9 @@ class PointField(Field):
     class_default = Point(0, 0)
     db_type = 'Point'
 
-    def __init__(self, default=None, alias=None, materialized=None, readonly=None, codec=None):
-        super().__init__(default, alias, materialized, readonly, codec)
+    def __init__(self, default=None, alias=None, materialized=None, readonly=None, codec=None,
+                 db_column=None):
+        super().__init__(default, alias, materialized, readonly, codec, db_column)
         self.inner_field = Float64Field()
 
     def to_python(self, value, timezone_in_use):

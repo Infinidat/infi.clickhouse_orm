@@ -26,7 +26,8 @@ class Field(FunctionOperatorsMixin):
     class_default = 0  # should be overridden by concrete subclasses
     db_type = None  # should be overridden by concrete subclasses
 
-    def __init__(self, default=None, alias=None, materialized=None, readonly=None, codec=None):
+    def __init__(self, default=None, alias=None, materialized=None, readonly=None, codec=None,
+                 db_column=None):
         assert [default, alias, materialized].count(None) >= 2, \
             "Only one of default, alias and materialized parameters can be given"
         assert alias is None or isinstance(alias, F) or isinstance(alias, str) and alias != "", \
@@ -38,6 +39,8 @@ class Field(FunctionOperatorsMixin):
             readonly) is bool, "readonly parameter must be bool if given"
         assert codec is None or isinstance(codec, str) and codec != "", \
             "Codec field must be string, if given"
+        assert db_column is None or isinstance(db_column, str) and db_column != "", \
+            "db_column field must be string, if given"
 
         self.creation_counter = Field.creation_counter
         Field.creation_counter += 1
@@ -46,6 +49,7 @@ class Field(FunctionOperatorsMixin):
         self.materialized = materialized
         self.readonly = bool(self.alias or self.materialized or readonly)
         self.codec = codec
+        self.db_column = db_column
 
     def __str__(self):
         return self.name
@@ -151,10 +155,11 @@ class StringField(Field):
 
 class FixedStringField(StringField):
 
-    def __init__(self, length, default=None, alias=None, materialized=None, readonly=None):
+    def __init__(self, length, default=None, alias=None, materialized=None, readonly=None,
+                 db_column=None):
         self._length = length
         self.db_type = 'FixedString(%d)' % length
-        super(FixedStringField, self).__init__(default, alias, materialized, readonly)
+        super(FixedStringField, self).__init__(default, alias, materialized, readonly, db_column)
 
     def to_python(self, value, timezone_in_use):
         value = super(FixedStringField, self).to_python(value, timezone_in_use)
@@ -199,8 +204,8 @@ class DateTimeField(Field):
     db_type = 'DateTime'
 
     def __init__(self, default=None, alias=None, materialized=None, readonly=None, codec=None,
-                 timezone=None):
-        super().__init__(default, alias, materialized, readonly, codec)
+                 db_column=None, timezone=None):
+        super().__init__(default, alias, materialized, readonly, codec, db_column)
         # assert not timezone, 'Temporarily field timezone is not supported'
         if timezone:
             timezone = timezone if isinstance(timezone, BaseTzInfo) else pytz.timezone(timezone)
@@ -248,8 +253,8 @@ class DateTime64Field(DateTimeField):
     db_type = 'DateTime64'
 
     def __init__(self, default=None, alias=None, materialized=None, readonly=None, codec=None,
-                 timezone=None, precision=6):
-        super().__init__(default, alias, materialized, readonly, codec, timezone)
+                 db_column=None, timezone=None, precision=6):
+        super().__init__(default, alias, materialized, readonly, codec, timezone, db_column)
         assert precision is None or isinstance(precision, int), 'Precision must be int type'
         self.precision = precision
 
@@ -361,9 +366,9 @@ class Int64Field(BaseIntField):
 
 
 class BaseFloatField(Field):
-    '''
+    """
     Abstract base class for all float-type fields.
-    '''
+    """
 
     def to_python(self, value, timezone_in_use):
         try:
@@ -391,7 +396,7 @@ class DecimalField(Field):
     """
 
     def __init__(self, precision, scale, default=None, alias=None, materialized=None,
-                 readonly=None):
+                 readonly=None, db_column=None):
         assert 1 <= precision <= 38, 'Precision must be between 1 and 38'
         assert 0 <= scale <= precision, 'Scale must be between 0 and the given precision'
         self.precision = precision
@@ -402,7 +407,7 @@ class DecimalField(Field):
             self.exp = Decimal(10) ** -self.scale  # for rounding to the required scale
             self.max_value = Decimal(10 ** (self.precision - self.scale)) - self.exp
             self.min_value = -self.max_value
-        super(DecimalField, self).__init__(default, alias, materialized, readonly)
+        super(DecimalField, self).__init__(default, alias, materialized, readonly, db_column)
 
     def to_python(self, value, timezone_in_use):
         if not isinstance(value, Decimal):
@@ -428,22 +433,25 @@ class DecimalField(Field):
 
 class Decimal32Field(DecimalField):
 
-    def __init__(self, scale, default=None, alias=None, materialized=None, readonly=None):
-        super(Decimal32Field, self).__init__(9, scale, default, alias, materialized, readonly)
+    def __init__(self, scale, default=None, alias=None, materialized=None, readonly=None,
+                 db_column=None):
+        super().__init__(9, scale, default, alias, materialized, readonly, db_column)
         self.db_type = 'Decimal32(%d)' % scale
 
 
 class Decimal64Field(DecimalField):
 
-    def __init__(self, scale, default=None, alias=None, materialized=None, readonly=None):
-        super(Decimal64Field, self).__init__(18, scale, default, alias, materialized, readonly)
+    def __init__(self, scale, default=None, alias=None, materialized=None, readonly=None,
+                 db_column=None):
+        super().__init__(18, scale, default, alias, materialized, readonly, db_column)
         self.db_type = 'Decimal64(%d)' % scale
 
 
 class Decimal128Field(DecimalField):
 
-    def __init__(self, scale, default=None, alias=None, materialized=None, readonly=None):
-        super(Decimal128Field, self).__init__(38, scale, default, alias, materialized, readonly)
+    def __init__(self, scale, default=None, alias=None, materialized=None,
+                 readonly=None, db_column=None):
+        super().__init__(38, scale, default, alias, materialized, readonly, db_column)
         self.db_type = 'Decimal128(%d)' % scale
 
 
@@ -453,11 +461,11 @@ class BaseEnumField(Field):
     """
 
     def __init__(self, enum_cls, default=None, alias=None, materialized=None, readonly=None,
-                 codec=None):
+                 codec=None, db_column=None):
         self.enum_cls = enum_cls
         if default is None:
             default = list(enum_cls)[0]
-        super(BaseEnumField, self).__init__(default, alias, materialized, readonly, codec)
+        super().__init__(default, alias, materialized, readonly, codec, db_column)
 
     def to_python(self, value, timezone_in_use):
         if isinstance(value, self.enum_cls):
@@ -514,13 +522,13 @@ class ArrayField(Field):
     class_default = []
 
     def __init__(self, inner_field, default=None, alias=None, materialized=None, readonly=None,
-                 codec=None):
+                 codec=None, db_column=None):
         assert isinstance(inner_field, Field), \
             "The first argument of ArrayField must be a Field instance"
         assert not isinstance(inner_field, ArrayField), \
             "Multidimensional array fields are not supported by the ORM"
         self.inner_field = inner_field
-        super(ArrayField, self).__init__(default, alias, materialized, readonly, codec)
+        super(ArrayField, self).__init__(default, alias, materialized, readonly, codec, db_column)
 
     def to_python(self, value, timezone_in_use):
         if isinstance(value, str):
