@@ -13,6 +13,7 @@ import requests
 from .models import ModelBase, MODEL
 from .utils import parse_tsv, import_submodules
 from .query import Q
+from .session import ctx_session_id, ctx_session_timeout
 
 
 logger = logging.getLogger('clickhouse_orm')
@@ -114,11 +115,13 @@ class Database(object):
             self.request_session.auth = (username, password or '')
         self.log_statements = log_statements
         self.settings = {}
-        self.db_exists = False # this is required before running _is_existing_database
+        self.db_exists = False  # this is required before running _is_existing_database
         self.db_exists = self._is_existing_database()
         if readonly:
             if not self.db_exists:
-                raise DatabaseException('Database does not exist, and cannot be created under readonly connection')
+                raise DatabaseException(
+                    'Database does not exist, and cannot be created under readonly connection'
+                )
             self.connection_readonly = self._is_connection_readonly()
             self.readonly = True
         elif autocreate and not self.db_exists:
@@ -379,6 +382,19 @@ class Database(object):
             if int(name[:4]) >= up_to:
                 break
 
+    @property
+    def session_id(self):
+        """return current client session_id"""
+        return ctx_session_id.get(None)
+
+    @property
+    def _context_params(self):
+        """return context params"""
+        params = {}
+        if ctx_session_id.get(None):
+            params.update(session_id=self.session_id, session_timeout=ctx_session_timeout.get(60))
+        return params
+
     def _get_applied_migrations(self, migrations_package_name):
         from .migrations import MigrationHistory
         self.create_table(MigrationHistory)
@@ -392,7 +408,9 @@ class Database(object):
             if self.log_statements:
                 logger.info(data)
         params = self._build_params(settings)
-        r = self.request_session.post(self.db_url, params=params, data=data, stream=stream, timeout=self.timeout)
+        r = self.request_session.post(
+            self.db_url, params=params, data=data, stream=stream, timeout=self.timeout
+        )
         if r.status_code != 200:
             raise ServerError(r.text)
         return r
@@ -400,6 +418,7 @@ class Database(object):
     def _build_params(self, settings):
         params = dict(settings or {})
         params.update(self.settings)
+        params.update(self._context_params)
         if self.db_exists:
             params['database'] = self.db_name
         # Send the readonly flag, unless the connection is already readonly (to prevent db error)
@@ -408,9 +427,9 @@ class Database(object):
         return params
 
     def _substitute(self, query, model_class=None):
-        '''
+        """
         Replaces $db and $table placeholders in the query.
-        '''
+        """
         if '$' in query:
             mapping = dict(db="`%s`" % self.db_name)
             if model_class:
