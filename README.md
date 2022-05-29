@@ -1,8 +1,18 @@
+A fork of [infi.clikchouse_orm](https://github.com/Infinidat/infi.clickhouse_orm) aimed at more frequent maintenance and bugfixes.
+
+This repository expects to use more type hints, and will drop support for Python 2.x.
+
 Introduction
 ============
 
 This project is simple ORM for working with the [ClickHouse database](https://clickhouse.yandex/).
 It allows you to define model classes whose instances can be written to the database and read from it.
+
+First you have to install like this:
+
+```
+pip install ch-orm
+```
 
 Let's jump right in with a simple example of monitoring CPU usage. First we need to define the model class,
 connect to the database and create a table for the model:

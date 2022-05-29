@@ -3,7 +3,7 @@ requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "clickhouse-orm"
+name = "ch-orm"
 description = "A Python library for working with the ClickHouse database"
 readme = "README.md"
 keywords = ["ClickHouse", "ORM", 'DB', 'DATABASE', 'OLAP']
@@ -20,7 +20,7 @@ dependencies = [
     "iso8601 >= 0.1.12",
     "setuptools"
 ]
-version = "0.0.2"
+version = "0.0.3"
 
 [tool.setuptools.packages.find]
 where = ["src"]
