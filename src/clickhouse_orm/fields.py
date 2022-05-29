@@ -254,7 +254,7 @@ class DateTime64Field(DateTimeField):
 
     def __init__(self, default=None, alias=None, materialized=None, readonly=None, codec=None,
                  db_column=None, timezone=None, precision=6):
-        super().__init__(default, alias, materialized, readonly, codec, timezone, db_column)
+        super().__init__(default, alias, materialized, readonly, codec, db_column, timezone)
         assert precision is None or isinstance(precision, int), 'Precision must be int type'
         self.precision = precision
 

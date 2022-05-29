@@ -251,7 +251,8 @@ class ModelBase(type):
         name = db_type + 'Field'
         if not (hasattr(orm_fields, name) or hasattr(geo_fields, name)):
             raise NotImplementedError('No field class for %s' % db_type)
-        return getattr(orm_fields, name, getattr(geo_fields, name))()
+        field_class = getattr(orm_fields, name, None) or getattr(geo_fields, name, None)
+        return field_class()
 
 
 class Model(metaclass=ModelBase):
