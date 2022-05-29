@@ -156,6 +156,7 @@ class Database(object):
             raise DatabaseException("You can't create system table")
         if getattr(model_class, 'engine') is None:
             raise DatabaseException("%s class must define an engine" % model_class.__name__)
+        print(model_class.create_table_sql(self))
         self._send(model_class.create_table_sql(self))
 
     def drop_table(self, model_class: Type[MODEL]) -> None:
@@ -435,6 +436,8 @@ class Database(object):
             if model_class:
                 if model_class.is_system_model():
                     mapping['table'] = "`system`.`%s`" % model_class.table_name()
+                elif model_class.is_temporary_model():
+                    mapping['table'] = "`%s`" % model_class.table_name()
                 else:
                     mapping['table'] = "`%s`.`%s`" % (self.db_name, model_class.table_name())
             query = Template(query).safe_substitute(mapping)

@@ -11,7 +11,7 @@ from .fields import Field, StringField
 from .utils import parse_tsv, NO_VALUE, get_subclass_names, arg_to_sql
 from .query import QuerySet
 from .funcs import F
-from .engines import Merge, Distributed
+from .engines import Merge, Distributed, Memory
 
 logger = getLogger('clickhouse_orm')
 
@@ -273,6 +273,8 @@ class Model(metaclass=ModelBase):
     # Create table, drop table, insert operations are restricted for system models
     _system = False
 
+    _temporary = False
+
     _database = None
 
     _fields: Dict[str, Field]
@@ -483,6 +485,13 @@ class Model(metaclass=ModelBase):
         """
         return cls._system
 
+    @classmethod
+    def is_temporary_model(cls):
+        """
+        Returns true if the model represents a temporary table.
+        """
+        return cls._temporary
+
 
 class BufferModel(Model):
 
@@ -603,12 +612,48 @@ class DistributedModel(Model):
         """
         assert isinstance(cls.engine, Distributed), "engine must be engines.Distributed instance"
 
-        cls.fix_engine_table()
-
         parts = [
             'CREATE TABLE IF NOT EXISTS `{0}`.`{1}` AS `{0}`.`{2}`'.format(
                 db.db_name, cls.table_name(), cls.engine.table_name),
             'ENGINE = ' + cls.engine.create_table_sql(db)]
+        return '\n'.join(parts)
+
+
+class TemporaryModel(Model):
+    """Temporary Tables
+
+    Temporary tables disappear when the session ends, including if the connection is lost.
+    A temporary table uses the Memory engine only.
+    The DB can’t be specified for a temporary table. It is created outside of databases.
+    Impossible to create a temporary table with distributed DDL query on all cluster servers
+    (by using ON CLUSTER): this table exists only in the current session.
+    If a temporary table has the same name as another one and a query specifies the table name
+    without specifying the DB, the temporary table will be used.
+    For distributed query processing, temporary tables used in a query are passed to remote servers.
+
+    https://clickhouse.com/docs/en/sql-reference/statements/create/table/#temporary-tables
+    """
+    _temporary = True
+
+    @classmethod
+    def create_table_sql(cls, db) -> str:
+        assert isinstance(cls.engine, Memory), "engine must be engines.Memory instance"
+
+        parts = ['CREATE TEMPORARY TABLE IF NOT EXISTS `%s` (' % cls.table_name()]
+        # Fields
+        items = []
+        for name, field in cls.fields().items():
+            items.append('    %s %s' % (name, field.get_sql(db=db)))
+        # Constraints
+        for c in cls._constraints.values():
+            items.append('    %s' % c.create_table_sql())
+        # Indexes
+        for i in cls._indexes.values():
+            items.append('    %s' % i.create_table_sql())
+        parts.append(',\n'.join(items))
+        # Engine
+        parts.append(')')
+        parts.append('ENGINE = Memory')
         return '\n'.join(parts)
 
 

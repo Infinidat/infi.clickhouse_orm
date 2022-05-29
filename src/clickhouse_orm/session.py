@@ -13,9 +13,10 @@ class SessionContext:
         self.token1 = None
         self.token2 = None
 
-    def __enter__(self):
+    def __enter__(self) -> str:
         self.token1 = ctx_session_id.set(self.session)
         self.token2 = ctx_session_timeout.set(self.timeout)
+        return self.session
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         ctx_session_id.reset(self.token1)
