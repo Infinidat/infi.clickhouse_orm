@@ -328,6 +328,21 @@ class QuerySet(object):
         self._distinct = False
         self._final = False
 
+    def __deepcopy__(self, memodict={}):
+        obj = type(self)(self._model_cls, self._database)
+        obj._order_by = deepcopy(self._order_by)
+        obj._where_q = deepcopy(self._where_q)
+        obj._prewhere_q = deepcopy(self._prewhere_q)
+        obj._grouping_fields = deepcopy(self._grouping_fields)
+        obj._grouping_with_totals = deepcopy(self._grouping_with_totals)
+        obj._fields = deepcopy(self._fields)
+        obj._limits = deepcopy(self._limits)
+        obj._limit_by = deepcopy(self._limit_by)
+        obj._limit_by_fields = deepcopy(self._limit_by_fields)
+        obj._distinct = deepcopy(self._distinct)
+        obj._final = deepcopy(self._final)
+        return obj
+
     def __iter__(self):
         """
         Iterates over the model instances matching this queryset

@@ -109,7 +109,7 @@ class Database(object):
         self.db_url = db_url
         self.readonly = False
         self.timeout = timeout
-        self.request_session = httpx.Client(verify=verify_ssl_cert)
+        self.request_session = httpx.Client(verify=verify_ssl_cert, timeout=timeout)
         if username:
             self.request_session.auth = (username, password or '')
         self.log_statements = log_statements
