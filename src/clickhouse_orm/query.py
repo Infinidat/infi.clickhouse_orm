@@ -349,6 +349,10 @@ class QuerySet(object):
         """
         return self._database.select(self.as_sql(), self._model_cls)
 
+    async def __aiter__(self):
+        async for r in self._database.select(self.as_sql(), self._model_cls):
+            yield r
+
     def __bool__(self):
         """
         Returns true if this queryset matches any rows.
