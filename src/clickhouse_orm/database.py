@@ -8,7 +8,7 @@ from collections import namedtuple
 from typing import Type, Optional, Generator, Union, Any
 
 import pytz
-import requests
+import httpx
 
 from .models import ModelBase, MODEL
 from .utils import parse_tsv, import_submodules
@@ -88,7 +88,7 @@ class Database(object):
     inserting data and other operations.
     """
 
-    def __init__(self, db_name, db_url='http://localhost:8123/',
+    def __init__(self, db_name, db_url='http://localhost:18123/',
                  username=None, password=None, readonly=False, autocreate=True,
                  timeout=60, verify_ssl_cert=True, log_statements=False):
         """
@@ -109,8 +109,7 @@ class Database(object):
         self.db_url = db_url
         self.readonly = False
         self.timeout = timeout
-        self.request_session = requests.Session()
-        self.request_session.verify = verify_ssl_cert
+        self.request_session = httpx.Client(verify=verify_ssl_cert)
         if username:
             self.request_session.auth = (username, password or '')
         self.log_statements = log_statements
@@ -295,14 +294,17 @@ class Database(object):
         query += ' FORMAT TabSeparatedWithNamesAndTypes'
         query = self._substitute(query, model_class)
         r = self._send(query, settings, True)
-        lines = r.iter_lines()
-        field_names = parse_tsv(next(lines))
-        field_types = parse_tsv(next(lines))
-        model_class = model_class or ModelBase.create_ad_hoc_model(zip(field_names, field_types))
-        for line in lines:
-            # skip blank line left by WITH TOTALS modifier
-            if line:
-                yield model_class.from_tsv(line, field_names, self.server_timezone, self)
+        try:
+            lines = r.iter_lines()
+            field_names = parse_tsv(next(lines))
+            field_types = parse_tsv(next(lines))
+            model_class = model_class or ModelBase.create_ad_hoc_model(zip(field_names, field_types))
+            for line in lines:
+                # skip blank line left by WITH TOTALS modifier
+                if line:
+                    yield model_class.from_tsv(line, field_names, self.server_timezone, self)
+        finally:
+            r.close()
 
     def raw(self, query: str, settings: Optional[dict] = None, stream: bool = False) -> str:
         """
@@ -409,10 +411,11 @@ class Database(object):
             if self.log_statements:
                 logger.info(data)
         params = self._build_params(settings)
-        r = self.request_session.post(
-            self.db_url, params=params, data=data, stream=stream, timeout=self.timeout
+        request = self.request_session.build_request(
+            method='POST', url=self.db_url, data=data, params=params
         )
-        if r.status_code != 200:
+        r = self.request_session.send(request, stream=stream)
+        if isinstance(r, httpx.Response) and r.status_code != 200:
             raise ServerError(r.text)
         return r
 

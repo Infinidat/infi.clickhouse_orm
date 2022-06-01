@@ -1,7 +1,7 @@
 import unittest
 import datetime
 
-from infi.clickhouse_orm import *
+from clickhouse_orm import *
 
 import logging
 logging.getLogger("requests").setLevel(logging.WARNING)

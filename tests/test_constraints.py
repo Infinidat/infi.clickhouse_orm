@@ -1,7 +1,7 @@
 import unittest
 
-from infi.clickhouse_orm import *
-from .base_test_with_data import Person
+from clickhouse_orm import *
+from tests.base_test_with_data import Person
 
 
 class ConstraintsTest(unittest.TestCase):

@@ -1,6 +1,6 @@
 import unittest
 
-from infi.clickhouse_orm import *
+from clickhouse_orm import *
 
 
 class IndexesTest(unittest.TestCase):

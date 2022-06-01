@@ -15,12 +15,12 @@ classifiers = [
     "Topic :: Database"
 ]
 dependencies = [
-    "requests",
+    "httpx >= 0.18.0",
     "pytz",
     "iso8601 >= 0.1.12",
     "setuptools"
 ]
-version = "0.0.3"
+version = "0.0.4"
 
 [tool.setuptools.packages.find]
 where = ["src"]
