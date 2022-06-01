@@ -33,12 +33,15 @@ class Memory(Engine):
 
 class MergeTree(Engine):
 
-    def __init__(self, date_col=None, order_by=(), sampling_expr=None,
-                 index_granularity=8192, replica_table_path=None, replica_name=None, partition_key=None,
-                 primary_key=None):
+    def __init__(
+        self, date_col=None, order_by=(), sampling_expr=None,
+        index_granularity=8192, replica_table_path=None,
+        replica_name=None, partition_key=None, primary_key=None
+    ):
         assert type(order_by) in (list, tuple), 'order_by must be a list or tuple'
         assert date_col is None or isinstance(date_col, str), 'date_col must be string if present'
-        assert primary_key is None or type(primary_key) in (list, tuple), 'primary_key must be a list or tuple'
+        assert primary_key is None or type(primary_key) in (list, tuple), \
+            'primary_key must be a list or tuple'
         assert partition_key is None or type(partition_key) in (list, tuple),\
             'partition_key must be tuple or list if present'
         assert (replica_table_path is None) == (replica_name is None), \
@@ -60,12 +63,14 @@ class MergeTree(Engine):
     # I changed field name for new reality and syntax
     @property
     def key_cols(self):
-        logger.warning('`key_cols` attribute is deprecated and may be removed in future. Use `order_by` attribute instead')
+        logger.warning('`key_cols` attribute is deprecated and may be removed in future. '
+                       'Use `order_by` attribute instead')
         return self.order_by
 
     @key_cols.setter
     def key_cols(self, value):
-        logger.warning('`key_cols` attribute is deprecated and may be removed in future. Use `order_by` attribute instead')
+        logger.warning('`key_cols` attribute is deprecated and may be removed in future. '
+                       'Use `order_by` attribute instead')
         self.order_by = value
 
     def create_table_sql(self, db):
@@ -124,11 +129,15 @@ class MergeTree(Engine):
 
 class CollapsingMergeTree(MergeTree):
 
-    def __init__(self, date_col=None, order_by=(), sign_col='sign', sampling_expr=None,
-                 index_granularity=8192, replica_table_path=None, replica_name=None, partition_key=None,
-                 primary_key=None):
-        super(CollapsingMergeTree, self).__init__(date_col, order_by, sampling_expr, index_granularity,
-                                                  replica_table_path, replica_name, partition_key, primary_key)
+    def __init__(
+        self, date_col=None, order_by=(), sign_col='sign', sampling_expr=None,
+        index_granularity=8192, replica_table_path=None, replica_name=None,
+        partition_key=None, primary_key=None
+    ):
+        super(CollapsingMergeTree, self).__init__(
+            date_col, order_by, sampling_expr, index_granularity,
+            replica_table_path, replica_name, partition_key, primary_key
+        )
         self.sign_col = sign_col
 
     def _build_sql_params(self, db):
@@ -139,12 +148,17 @@ class CollapsingMergeTree(MergeTree):
 
 class SummingMergeTree(MergeTree):
 
-    def __init__(self, date_col=None, order_by=(), summing_cols=None, sampling_expr=None,
-                 index_granularity=8192, replica_table_path=None, replica_name=None, partition_key=None,
-                 primary_key=None):
-        super(SummingMergeTree, self).__init__(date_col, order_by, sampling_expr, index_granularity, replica_table_path,
-                                               replica_name, partition_key, primary_key)
-        assert type is None or type(summing_cols) in (list, tuple), 'summing_cols must be a list or tuple'
+    def __init__(
+        self, date_col=None, order_by=(), summing_cols=None, sampling_expr=None,
+        index_granularity=8192, replica_table_path=None, replica_name=None,
+        partition_key=None, primary_key=None
+    ):
+        super(SummingMergeTree, self).__init__(
+            date_col, order_by, sampling_expr, index_granularity,
+            replica_table_path, replica_name, partition_key, primary_key
+        )
+        assert type is None or type(summing_cols) in (list, tuple), \
+            'summing_cols must be a list or tuple'
         self.summing_cols = summing_cols
 
     def _build_sql_params(self, db):
@@ -156,11 +170,15 @@ class SummingMergeTree(MergeTree):
 
 class ReplacingMergeTree(MergeTree):
 
-    def __init__(self, date_col=None, order_by=(), ver_col=None, sampling_expr=None,
-                 index_granularity=8192, replica_table_path=None, replica_name=None, partition_key=None,
-                 primary_key=None):
-        super(ReplacingMergeTree, self).__init__(date_col, order_by, sampling_expr, index_granularity,
-                                                 replica_table_path, replica_name, partition_key, primary_key)
+    def __init__(
+        self, date_col=None, order_by=(), ver_col=None, sampling_expr=None,
+        index_granularity=8192, replica_table_path=None, replica_name=None,
+        partition_key=None, primary_key=None
+    ):
+        super(ReplacingMergeTree, self).__init__(
+            date_col, order_by, sampling_expr, index_granularity,
+            replica_table_path, replica_name, partition_key, primary_key
+        )
         self.ver_col = ver_col
 
     def _build_sql_params(self, db):
@@ -178,8 +196,8 @@ class Buffer(Engine):
     """
 
     #Buffer(database, table, num_layers, min_time, max_time, min_rows, max_rows, min_bytes, max_bytes)
-    def __init__(self, main_model, num_layers=16, min_time=10, max_time=100, min_rows=10000, max_rows=1000000,
-                 min_bytes=10000000, max_bytes=100000000):
+    def __init__(self, main_model, num_layers=16, min_time=10, max_time=100, min_rows=10000,
+                 max_rows=1000000, min_bytes=10000000, max_bytes=100000000):
         self.main_model = main_model
         self.num_layers = num_layers
         self.min_time = min_time

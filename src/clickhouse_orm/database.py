@@ -88,7 +88,7 @@ class Database(object):
     inserting data and other operations.
     """
 
-    def __init__(self, db_name, db_url='http://localhost:18123/',
+    def __init__(self, db_name, db_url='http://localhost:8123/',
                  username=None, password=None, readonly=False, autocreate=True,
                  timeout=60, verify_ssl_cert=True, log_statements=False):
         """
@@ -155,7 +155,6 @@ class Database(object):
             raise DatabaseException("You can't create system table")
         if getattr(model_class, 'engine') is None:
             raise DatabaseException("%s class must define an engine" % model_class.__name__)
-        print(model_class.create_table_sql(self))
         self._send(model_class.create_table_sql(self))
 
     def drop_table(self, model_class: Type[MODEL]) -> None:
@@ -416,6 +415,7 @@ class Database(object):
         )
         r = self.request_session.send(request, stream=stream)
         if isinstance(r, httpx.Response) and r.status_code != 200:
+            r.read()
             raise ServerError(r.text)
         return r
 
