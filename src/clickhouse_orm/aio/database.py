@@ -1,7 +1,8 @@
 import datetime
 import logging
+from io import BytesIO
 from math import ceil
-from typing import Type, Optional, Generator
+from typing import Optional, AsyncGenerator
 
 import httpx
 import pytz
@@ -11,29 +12,13 @@ from clickhouse_orm.utils import parse_tsv, import_submodules
 from clickhouse_orm.database import Database, ServerError, DatabaseException, logger, Page
 
 
+# pylint: disable=C0116
+
 class AioDatabase(Database):
+    _client_class = httpx.AsyncClient
 
-    def __init__(
-        self, db_name, db_url='http://localhost:18123/', username=None,
-        password=None, readonly=False, auto_create=True, timeout=60,
-        verify_ssl_cert=True, log_statements=False
-    ):
-        self.db_name = db_name
-        self.db_url = db_url
-        self.readonly = False
-        self._readonly = readonly
-        self.auto_create = auto_create
-        self.timeout = timeout
-        self.request_session = httpx.AsyncClient(verify=verify_ssl_cert, timeout=timeout)
-        if username:
-            self.request_session.auth = (username, password or '')
-        self.log_statements = log_statements
-        self.settings = {}
-        self._db_check = False
-        self.db_exists = False
-
-    async def db_check(self):
-        if self._db_check:
+    async def init(self):
+        if self._init:
             return
         self.db_exists = await self._is_existing_database()
         if self._readonly:
@@ -52,7 +37,7 @@ class AioDatabase(Database):
             self.server_timezone = pytz.utc
         self.has_codec_support = self.server_version >= (19, 1, 16)
         self.has_low_cardinality_support = self.server_version >= (19, 0)
-        self._db_check = True
+        self._init = True
 
     async def close(self):
         await self.request_session.aclose()
@@ -76,9 +61,9 @@ class AioDatabase(Database):
         """
         from clickhouse_orm.query import Q
 
-        if not self._db_check:
+        if not self._init:
             raise DatabaseException(
-                'The AioDatabase object must execute the `db_check` method before it can be used'
+                'The AioDatabase object must execute the init method before it can be used'
             )
 
         query = 'SELECT count() FROM $table'
@@ -94,9 +79,9 @@ class AioDatabase(Database):
         """
         Creates the database on the ClickHouse server if it does not already exist.
         """
-        if not self._db_check:
+        if not self._init:
             raise DatabaseException(
-                'The AioDatabase object must execute the `db_check` method before it can be used'
+                'The AioDatabase object must execute the init method before it can be used'
             )
 
         await self._send('CREATE DATABASE IF NOT EXISTS `%s`' % self.db_name)
@@ -106,50 +91,65 @@ class AioDatabase(Database):
         """
         Deletes the database on the ClickHouse server.
         """
-        if not self._db_check:
+        if not self._init:
             raise DatabaseException(
-                'The AioDatabase object must execute the `db_check` method before it can be used'
+                'The AioDatabase object must execute the init method before it can be used'
             )
 
         await self._send('DROP DATABASE `%s`' % self.db_name)
         self.db_exists = False
 
-    async def create_table(self, model_class: Type[MODEL]) -> None:
+    async def create_table(self, model_class: type[MODEL]) -> None:
         """
         Creates a table for the given model class, if it does not exist already.
         """
-        if not self._db_check:
+        if not self._init:
             raise DatabaseException(
-                'The AioDatabase object must execute the `db_check` method before it can be used'
+                'The AioDatabase object must execute the init method before it can be used'
             )
-
         if model_class.is_system_model():
             raise DatabaseException("You can't create system table")
+        if model_class.is_temporary_model() and self.session_id is None:
+            raise DatabaseException(
+                "Creating a temporary table must be within the lifetime of a session "
+            )
         if getattr(model_class, 'engine') is None:
-            raise DatabaseException("%s class must define an engine" % model_class.__name__)
+            raise DatabaseException(f"%s class must define an engine" % model_class.__name__)
         await self._send(model_class.create_table_sql(self))
 
-    async def drop_table(self, model_class: Type[MODEL]) -> None:
+    async def create_temporary_table(self, model_class: type[MODEL], table_name: str = None):
+        """
+        Creates a temporary table for the given model class, if it does not exist already.
+        And you can specify the temporary table name explicitly.
+        """
+        if not self._init:
+            raise DatabaseException(
+                'The AioDatabase object must execute the init method before it can be used'
+            )
+
+        await self._send(model_class.create_temporary_table_sql(self, table_name))
+
+    async def drop_table(self, model_class: type[MODEL]) -> None:
         """
         Drops the database table of the given model class, if it exists.
         """
-        if not self._db_check:
+        if not self._init:
             raise DatabaseException(
-                'The AioDatabase object must execute the `db_check` method before it can be used'
+                'The AioDatabase object must execute the init method before it can be used'
             )
 
         if model_class.is_system_model():
             raise DatabaseException("You can't drop system table")
         await self._send(model_class.drop_table_sql(self))
 
-    async def does_table_exist(self, model_class: Type[MODEL]) -> bool:
+    async def does_table_exist(self, model_class: type[MODEL]) -> bool:
         """
         Checks whether a table for the given model class already exists.
         Note that this only checks for existence of a table with the expected name.
         """
-        if not self._db_check:
+        if not self._init:
             raise DatabaseException(
-                'The AioDatabase object must execute the `db_check` method before it can be used'
+                'The AioDatabase object must execute the init method before it can be used'
             )
 
         sql = "SELECT count() FROM system.tables WHERE database = '%s' AND name = '%s'"
@@ -185,8 +185,6 @@ class AioDatabase(Database):
         - `model_instances`: any iterable containing instances of a single model class.
         - `batch_size`: number of records to send per chunk (use a lower number if your records are very large).
         """
-        from io import BytesIO
-
         i = iter(model_instances)
         try:
             first_instance = next(i)
@@ -202,7 +200,7 @@ class AioDatabase(Database):
         fmt = 'TSKV' if model_class.has_funcs_as_defaults() else 'TabSeparated'
         query = 'INSERT INTO $table (%s) FORMAT %s\n' % (fields_list, fmt)
 
-        def gen():
+        async def gen():
             buf = BytesIO()
             buf.write(self._substitute(query, model_class).encode('utf-8'))
             first_instance.set_database(self)
@@ -227,9 +225,9 @@ class AioDatabase(Database):
     async def select(
         self,
         query: str,
-        model_class: Optional[Type[MODEL]] = None,
+        model_class: Optional[type[MODEL]] = None,
         settings: Optional[dict] = None
-    ) -> Generator[MODEL, None, None]:
+    ) -> AsyncGenerator[MODEL, None]:
         """
         Performs a query and returns a generator of model instances.
 
@@ -269,7 +267,7 @@ class AioDatabase(Database):
 
     async def paginate(
         self,
-        model_class: Type[MODEL],
+        model_class: type[MODEL],
         order_by: str,
         page_num: int = 1,
         page_size: int = 100,
@@ -355,16 +353,16 @@ class AioDatabase(Database):
         try:
             r = await self._send('SELECT timezone()')
             return pytz.timezone(r.text.strip())
-        except ServerError as e:
-            logger.exception('Cannot determine server timezone (%s), assuming UTC', e)
+        except ServerError as err:
+            logger.exception('Cannot determine server timezone (%s), assuming UTC', err)
             return pytz.utc
 
     async def _get_server_version(self, as_tuple=True):
         try:
             r = await self._send('SELECT version();')
             ver = r.text
-        except ServerError as e:
-            logger.exception('Cannot determine server version (%s), assuming 1.1.0', e)
+        except ServerError as err:
+            logger.exception('Cannot determine server version (%s), assuming 1.1.0', err)
             ver = '1.1.0'
         return tuple(int(n) for n in ver.split('.') if n.isdigit()) if as_tuple else ver
 
@@ -375,3 +373,6 @@ class AioDatabase(Database):
         query = "SELECT module_name from $table WHERE package_name = '%s'" % migrations_package_name
         query = self._substitute(query, MigrationHistory)
         return set(obj.module_name async for obj in self.select(query))
+
+
+__all__ = [AioDatabase]

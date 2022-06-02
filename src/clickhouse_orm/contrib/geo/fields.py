@@ -1,3 +1,6 @@
+from typing import Any, Optional, Union
+
+from clickhouse_orm import F
 from clickhouse_orm.fields import Field, Float64Field
 from clickhouse_orm.utils import POINT_REGEX, RING_VALID_REGEX
 
@@ -53,8 +56,15 @@ class PointField(Field):
     class_default = Point(0, 0)
     db_type = 'Point'
 
-    def __init__(self, default=None, alias=None, materialized=None, readonly=None, codec=None,
-                 db_column=None):
+    def __init__(
+        self,
+        default: Any = None,
+        alias: Optional[Union[F, str]] = None,
+        materialized: Optional[Union[F, str]] = None,
+        readonly: bool = None,
+        codec: Optional[str] = None,
+        db_column: Optional[str] = None
+    ):
         super().__init__(default, alias, materialized, readonly, codec, db_column)
         self.inner_field = Float64Field()
 

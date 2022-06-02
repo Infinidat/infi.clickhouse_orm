@@ -1,15 +1,22 @@
-from __future__ import unicode_literals
+from __future__ import unicode_literals, annotations
 
 import logging
+from typing import TYPE_CHECKING, Optional, Union
 
 from .utils import comma_join, get_subclass_names
+
+
+if TYPE_CHECKING:
+    from clickhouse_orm.database import Database
+    from clickhouse_orm.models import Model
+    from clickhouse_orm.funcs import F
 
 logger = logging.getLogger('clickhouse_orm')
 
 
-class Engine(object):
+class Engine:
 
-    def create_table_sql(self, db):
+    def create_table_sql(self, db: Database) -> str:
         raise NotImplementedError()   # pragma: no cover
 
 
@@ -34,9 +41,15 @@ class Memory(Engine):
 class MergeTree(Engine):
 
     def __init__(
-        self, date_col=None, order_by=(), sampling_expr=None,
-        index_granularity=8192, replica_table_path=None,
-        replica_name=None, partition_key=None, primary_key=None
+        self,
+        date_col: Optional[str] = None,
+        order_by: Union[list, tuple] = (),
+        sampling_expr: Optional[F] = None,
+        index_granularity: int = 8192,
+        replica_table_path: Optional[str] = None,
+        replica_name: Optional[str] = None,
+        partition_key: Optional[Union[list, tuple]] = None,
+        primary_key: Optional[Union[list, tuple]] = None
     ):
         assert type(order_by) in (list, tuple), 'order_by must be a list or tuple'
         assert date_col is None or isinstance(date_col, str), 'date_col must be string if present'
@@ -73,7 +86,7 @@ class MergeTree(Engine):
                        'Use `order_by` attribute instead')
         self.order_by = value
 
-    def create_table_sql(self, db):
+    def create_table_sql(self, db: Database) -> str:
         name = self.__class__.__name__
         if self.replica_name:
             name = 'Replicated' + name
@@ -108,7 +121,7 @@ class MergeTree(Engine):
         params = self._build_sql_params(db)
         return '%s(%s) %s' % (name, comma_join(params), partition_sql)
 
-    def _build_sql_params(self, db):
+    def _build_sql_params(self, db: Database) -> list[str]:
         params = []
         if self.replica_name:
             params += ["'%s'" % self.replica_table_path, "'%s'" % self.replica_name]
@@ -140,8 +153,8 @@ class CollapsingMergeTree(MergeTree):
         )
         self.sign_col = sign_col
 
-    def _build_sql_params(self, db):
-        params = super(CollapsingMergeTree, self)._build_sql_params(db)
+    def _build_sql_params(self, db: Database) -> list[str]:
+        params = super()._build_sql_params(db)
         params.append(self.sign_col)
         return params
 
@@ -161,7 +174,7 @@ class SummingMergeTree(MergeTree):
             'summing_cols must be a list or tuple'
         self.summing_cols = summing_cols
 
-    def _build_sql_params(self, db):
+    def _build_sql_params(self, db: Database) -> list[str]:
         params = super(SummingMergeTree, self)._build_sql_params(db)
         if self.summing_cols:
             params.append('(%s)' % comma_join(self.summing_cols))
@@ -181,7 +194,7 @@ class ReplacingMergeTree(MergeTree):
         )
         self.ver_col = ver_col
 
-    def _build_sql_params(self, db):
+    def _build_sql_params(self, db: Database) -> list[str]:
         params = super(ReplacingMergeTree, self)._build_sql_params(db)
         if self.ver_col:
             params.append(self.ver_col)
@@ -195,9 +208,17 @@ class Buffer(Engine):
     Read more [here](https://clickhouse.tech/docs/en/engines/table-engines/special/buffer/).
     """
 
-    #Buffer(database, table, num_layers, min_time, max_time, min_rows, max_rows, min_bytes, max_bytes)
-    def __init__(self, main_model, num_layers=16, min_time=10, max_time=100, min_rows=10000,
-                 max_rows=1000000, min_bytes=10000000, max_bytes=100000000):
+    def __init__(
+        self,
+        main_model: type[Model],
+        num_layers: int = 16,
+        min_time: int = 10,
+        max_time: int = 100,
+        min_rows: int = 10000,
+        max_rows: int = 1000000,
+        min_bytes: int = 10000000,
+        max_bytes: int = 100000000
+    ):
         self.main_model = main_model
         self.num_layers = num_layers
         self.min_time = min_time
@@ -207,7 +228,7 @@ class Buffer(Engine):
         self.min_bytes = min_bytes
         self.max_bytes = max_bytes
 
-    def create_table_sql(self, db):
+    def create_table_sql(self, db: Database) -> str:
         # Overriden create_table_sql example:
         # sql = 'ENGINE = Buffer(merge, hits, 16, 10, 100, 10000, 1000000, 10000000, 100000000)'
         sql = 'ENGINE = Buffer(`%s`, `%s`, %d, %d, %d, %d, %d, %d, %d)' % (
@@ -226,11 +247,11 @@ class Merge(Engine):
     https://clickhouse.tech/docs/en/engines/table-engines/special/merge/
     """
 
-    def __init__(self, table_regex):
+    def __init__(self, table_regex: str):
         assert isinstance(table_regex, str), "'table_regex' parameter must be string"
         self.table_regex = table_regex
 
-    def create_table_sql(self, db):
+    def create_table_sql(self, db: Database) -> str:
         return "Merge(`%s`, '%s')" % (db.db_name, self.table_regex)
 
 
@@ -258,23 +279,22 @@ class Distributed(Engine):
         self.sharding_key = sharding_key
 
     @property
-    def table_name(self):
-        # TODO: circular import is bad
-        from .models import ModelBase
+    def table_name(self) -> str:
+        from clickhouse_orm.models import Model
 
         table = self.table
 
-        if isinstance(table, ModelBase):
+        if isinstance(table, Model):
             return table.table_name()
 
         return table
 
-    def create_table_sql(self, db):
+    def create_table_sql(self, db: Database) -> str:
         name = self.__class__.__name__
         params = self._build_sql_params(db)
         return '%s(%s)' % (name, ', '.join(params))
 
-    def _build_sql_params(self, db):
+    def _build_sql_params(self, db: Database) -> list[str]:
         if self.table_name is None:
             raise ValueError("Cannot create {} engine: specify an underlying table".format(
                 self.__class__.__name__))

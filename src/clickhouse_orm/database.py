@@ -1,18 +1,18 @@
-from __future__ import unicode_literals
+from __future__ import unicode_literals, annotations
 import re
 import logging
 import datetime
+from io import BytesIO
 from math import ceil
 from string import Template
 from collections import namedtuple
-from typing import Type, Optional, Generator, Union, Any
+from typing import Optional, Generator, Union, Any
 
 import pytz
 import httpx
 
 from .models import ModelBase, MODEL
 from .utils import parse_tsv, import_submodules
-from .query import Q
 from .session import ctx_session_id, ctx_session_timeout
 
 
@@ -24,7 +24,6 @@ class DatabaseException(Exception):
     """
     Raised when a database operation fails.
     """
-    pass
 
 
 class ServerError(DatabaseException):
@@ -40,7 +39,7 @@ class ServerError(DatabaseException):
             # just skip custom init
             # if non-standard message format
             self.message = message
-            super(ServerError, self).__init__(message)
+            super().__init__(message)
 
     ERROR_PATTERNS = (
         # ClickHouse prior to v19.3.3
@@ -82,14 +81,15 @@ class ServerError(DatabaseException):
             return "{} ({})".format(self.message, self.code)
 
 
-class Database(object):
+class Database:
     """
     Database instances connect to a specific ClickHouse database for running queries,
     inserting data and other operations.
     """
+    _client_class = httpx.Client
 
     def __init__(self, db_name, db_url='http://localhost:8123/',
-                 username=None, password=None, readonly=False, autocreate=True,
+                 username=None, password=None, readonly=False, auto_create=True,
                  timeout=60, verify_ssl_cert=True, log_statements=False):
         """
         Initializes a database instance. Unless it's readonly, the database will be
@@ -100,7 +100,8 @@ class Database(object):
         - `username`: optional connection credentials.
         - `password`: optional connection credentials.
         - `readonly`: use a read-only connection.
-        - `autocreate`: automatically create the database if it does not exist (unless in readonly mode).
+        - `autocreate`: automatically create the database
+                        if it does not exist (unless in readonly mode).
         - `timeout`: the connection timeout in seconds.
         - `verify_ssl_cert`: whether to verify the server's certificate when connecting via HTTPS.
         - `log_statements`: when True, all database statements are logged.
@@ -108,26 +109,43 @@ class Database(object):
         self.db_name = db_name
         self.db_url = db_url
         self.readonly = False
+        self._readonly = readonly
+        self.auto_create = auto_create
         self.timeout = timeout
-        self.request_session = httpx.Client(verify=verify_ssl_cert, timeout=timeout)
+        self.request_session = self._client_class(verify=verify_ssl_cert, timeout=timeout)
         if username:
             self.request_session.auth = (username, password or '')
         self.log_statements = log_statements
         self.settings = {}
         self.db_exists = False  # this is required before running _is_existing_database
+        self.connection_readonly = False
+        self.server_version = None
+        self.server_timezone = None
+        self.has_codec_support = None
+        self.has_low_cardinality_support = None
+        self._init = False
+        if self._client_class is httpx.Client:
+            self.init()
+
+    def init(self):
+        if self._init:
+            return
         self.db_exists = self._is_existing_database()
-        if readonly:
+        if self._readonly:
             if not self.db_exists:
                 raise DatabaseException(
                     'Database does not exist, and cannot be created under readonly connection'
                 )
             self.connection_readonly = self._is_connection_readonly()
             self.readonly = True
-        elif autocreate and not self.db_exists:
+        elif self.auto_create and not self.db_exists:
             self.create_database()
         self.server_version = self._get_server_version()
         # Versions 1.1.53981 and below don't have timezone function
-        self.server_timezone = self._get_server_timezone() if self.server_version > (1, 1, 53981) else pytz.utc
+        if self.server_version > (1, 1, 53981):
+            self.server_timezone = self._get_server_timezone()
+        else:
+            self.server_timezone = pytz.utc
         # Versions 19.1.16 and above support codec compression
         self.has_codec_support = self.server_version >= (19, 1, 16)
         # Version 19.0 and above support LowCardinality
@@ -147,7 +165,7 @@ class Database(object):
         self._send('DROP DATABASE `%s`' % self.db_name)
         self.db_exists = False
 
-    def create_table(self, model_class: Type[MODEL]) -> None:
+    def create_table(self, model_class: type[MODEL]) -> None:
         """
         Creates a table for the given model class, if it does not exist already.
         """
@@ -157,7 +175,7 @@ class Database(object):
             raise DatabaseException("%s class must define an engine" % model_class.__name__)
         self._send(model_class.create_table_sql(self))
 
-    def drop_table(self, model_class: Type[MODEL]) -> None:
+    def drop_table(self, model_class: type[MODEL]) -> None:
         """
         Drops the database table of the given model class, if it exists.
         """
@@ -165,7 +183,7 @@ class Database(object):
             raise DatabaseException("You can't drop system table")
         self._send(model_class.drop_table_sql(self))
 
-    def does_table_exist(self, model_class: Type[MODEL]) -> bool:
+    def does_table_exist(self, model_class: type[MODEL]) -> bool:
         """
         Checks whether a table for the given model class already exists.
         Note that this only checks for existence of a table with the expected name.
@@ -215,9 +233,9 @@ class Database(object):
         Insert records into the database.
 
         - `model_instances`: any iterable containing instances of a single model class.
-        - `batch_size`: number of records to send per chunk (use a lower number if your records are very large).
+        - `batch_size`: number of records to send per chunk
+                        (use a lower number if your records are very large).
         """
-        from io import BytesIO
         i = iter(model_instances)
         try:
             first_instance = next(i)
@@ -257,8 +275,8 @@ class Database(object):
 
     def count(
         self,
-        model_class: Optional[Type[MODEL]],
-        conditions: Optional[Union[str, Q]] = None
+        model_class: Optional[type[MODEL]],
+        conditions: Optional[Union[str, 'Q']] = None
     ) -> int:
         """
         Counts the number of records in the model's table.
@@ -267,6 +285,7 @@ class Database(object):
         - `conditions`: optional SQL conditions (contents of the WHERE clause).
         """
         from clickhouse_orm.query import Q
+
         query = 'SELECT count() FROM $table'
         if conditions:
             if isinstance(conditions, Q):
@@ -279,7 +298,7 @@ class Database(object):
     def select(
         self,
         query: str,
-        model_class: Optional[Type[MODEL]] = None,
+        model_class: Optional[type[MODEL]] = None,
         settings: Optional[dict] = None
     ) -> Generator[MODEL, None, None]:
         """
@@ -297,7 +316,8 @@ class Database(object):
             lines = r.iter_lines()
             field_names = parse_tsv(next(lines))
             field_types = parse_tsv(next(lines))
-            model_class = model_class or ModelBase.create_ad_hoc_model(zip(field_names, field_types))
+            if not model_class:
+                model_class = ModelBase.create_ad_hoc_model(zip(field_names, field_types))
             for line in lines:
                 # skip blank line left by WITH TOTALS modifier
                 if line:
@@ -318,7 +338,7 @@ class Database(object):
 
     def paginate(
         self,
-        model_class: Type[MODEL],
+        model_class: type[MODEL],
         order_by: str,
         page_num: int = 1,
         page_size: int = 100,
@@ -371,7 +391,8 @@ class Database(object):
           containing the migrations.
         - `up_to` - number of the last migration to apply.
         """
-        from .migrations import MigrationHistory
+        from .migrations import MigrationHistory  # pylint: disable=C0415
+
         logger = logging.getLogger('migrations')
         applied_migrations = self._get_applied_migrations(migrations_package_name)
         modules = import_submodules(migrations_package_name)
@@ -380,7 +401,11 @@ class Database(object):
             logger.info('Applying migration %s...', name)
             for operation in modules[name].operations:
                 operation.apply(self)
-            self.insert([MigrationHistory(package_name=migrations_package_name, module_name=name, applied=datetime.date.today())])
+            self.insert([MigrationHistory(
+                package_name=migrations_package_name,
+                module_name=name,
+                applied=datetime.date.today())
+            ])
             if int(name[:4]) >= up_to:
                 break
 
@@ -398,7 +423,8 @@ class Database(object):
         return params
 
     def _get_applied_migrations(self, migrations_package_name):
-        from .migrations import MigrationHistory
+        from .migrations import MigrationHistory  # pylint: disable=C0415
+
         self.create_table(MigrationHistory)
         query = "SELECT module_name from $table WHERE package_name = '%s'" % migrations_package_name
         query = self._substitute(query, MigrationHistory)
@@ -450,16 +476,16 @@ class Database(object):
         try:
             r = self._send('SELECT timezone()')
             return pytz.timezone(r.text.strip())
-        except ServerError as e:
-            logger.exception('Cannot determine server timezone (%s), assuming UTC', e)
+        except ServerError as err:
+            logger.exception('Cannot determine server timezone (%s), assuming UTC', err)
             return pytz.utc
 
     def _get_server_version(self, as_tuple=True):
         try:
             r = self._send('SELECT version();')
             ver = r.text
-        except ServerError as e:
-            logger.exception('Cannot determine server version (%s), assuming 1.1.0', e)
+        except ServerError as err:
+            logger.exception('Cannot determine server version (%s), assuming 1.1.0', err)
             ver = '1.1.0'
         return tuple(int(n) for n in ver.split('.') if n.isdigit()) if as_tuple else ver
 

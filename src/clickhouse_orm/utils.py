@@ -114,7 +114,7 @@ def parse_array(array_string):
             array_string = array_string[match.end():]
         else:
             # Start of non-quoted value, find its end
-            match = re.search(r",|\]", array_string)
+            match = re.search(r",|\]|\)", array_string)
             values.append(array_string[0: match.start()])
             array_string = array_string[match.end() - 1:]
 

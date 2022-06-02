@@ -1,30 +1,31 @@
 from .models import Model, BufferModel
 from .fields import DateField, StringField
 from .engines import MergeTree
-from .utils import escape, get_subclass_names
+from .utils import get_subclass_names
 
 import logging
+
 logger = logging.getLogger('migrations')
 
 
-class Operation():
-    '''
+class Operation:
+    """
     Base class for migration operations.
-    '''
+    """
 
     def apply(self, database):
         raise NotImplementedError()   # pragma: no cover
 
 
 class ModelOperation(Operation):
-    '''
+    """
     Base class for migration operations that work on a specific model.
-    '''
+    """
 
     def __init__(self, model_class):
-        '''
+        """
         Initializer.
-        '''
+        """
         self.model_class = model_class
         self.table_name = model_class.table_name()
 
@@ -38,9 +39,9 @@ class ModelOperation(Operation):
 
 
 class CreateTable(ModelOperation):
-    '''
+    """
     A migration operation that creates a table for a given model class.
-    '''
+    """
 
     def apply(self, database):
         logger.info('    Create table %s', self.table_name)
@@ -50,14 +51,14 @@ class CreateTable(ModelOperation):
 
 
 class AlterTable(ModelOperation):
-    '''
+    """
     A migration operation that compares the table of a given model class to
     the model's fields, and alters the table to match the model. The operation can:
       - add new columns
       - drop obsolete columns
       - modify column types
     Default values are not altered by this operation.
-    '''
+    """
 
     def _get_table_fields(self, database):
         query = "DESC `%s`.`%s`" % (database.db_name, self.table_name)
@@ -113,11 +114,11 @@ class AlterTable(ModelOperation):
 
 
 class AlterTableWithBuffer(ModelOperation):
-    '''
+    """
     A migration operation for altering a buffer table and its underlying on-disk table.
     The buffer table is dropped, the on-disk table is altered, and then the buffer table
     is re-created.
-    '''
+    """
 
     def apply(self, database):
         if issubclass(self.model_class, BufferModel):
@@ -129,9 +130,9 @@ class AlterTableWithBuffer(ModelOperation):
 
 
 class DropTable(ModelOperation):
-    '''
+    """
     A migration operation that drops the table of a given model class.
-    '''
+    """
 
     def apply(self, database):
         logger.info('    Drop table %s', self.table_name)
@@ -139,12 +140,12 @@ class DropTable(ModelOperation):
 
 
 class AlterConstraints(ModelOperation):
-    '''
+    """
     A migration operation that adds new constraints from the model to the database
     table, and drops obsolete ones. Constraints are identified by their names, so
     a change in an existing constraint will not be detected unless its name was changed too.
     ClickHouse does not check that the constraints hold for existing data in the table.
-    '''
+    """
 
     def apply(self, database):
         logger.info('    Alter constraints for %s', self.table_name)
@@ -163,9 +164,9 @@ class AlterConstraints(ModelOperation):
             self._alter_table(database, 'DROP CONSTRAINT `%s`' % name)
 
     def _get_constraint_names(self, database):
-        '''
+        """
         Returns a set containing the names of existing constraints in the table.
-        '''
+        """
         import re
         table_def = database.raw('SHOW CREATE TABLE $db.`%s`' % self.table_name)
         matches = re.findall(r'\sCONSTRAINT\s+`?(.+?)`?\s+CHECK\s', table_def)
@@ -173,19 +174,19 @@ class AlterConstraints(ModelOperation):
 
 
 class AlterIndexes(ModelOperation):
-    '''
+    """
     A migration operation that adds new indexes from the model to the database
     table, and drops obsolete ones. Indexes are identified by their names, so
     a change in an existing index will not be detected unless its name was changed too.
-    '''
+    """
 
     def __init__(self, model_class, reindex=False):
-        '''
+        """
         Initializer.
         By default ClickHouse does not build indexes over existing data, only for
         new data. Passing `reindex=True` will run `OPTIMIZE TABLE` in order to build
         the indexes over the existing data.
-        '''
+        """
         super().__init__(model_class)
         self.reindex = reindex
 
@@ -211,9 +212,9 @@ class AlterIndexes(ModelOperation):
             database.raw('OPTIMIZE TABLE $db.`%s` FINAL' % self.table_name)
 
     def _get_index_names(self, database):
-        '''
+        """
         Returns a set containing the names of existing indexes in the table.
-        '''
+        """
         import re
         table_def = database.raw('SHOW CREATE TABLE $db.`%s`' % self.table_name)
         matches = re.findall(r'\sINDEX\s+`?(.+?)`?\s+', table_def)
@@ -221,9 +222,9 @@ class AlterIndexes(ModelOperation):
 
 
 class RunPython(Operation):
-    '''
+    """
     A migration operation that executes a Python function.
-    '''
+    """
     def __init__(self, func):
         '''
         Initializer. The given Python function will be called with a single
@@ -238,9 +239,9 @@ class RunPython(Operation):
 
 
 class RunSQL(Operation):
-    '''
+    """
     A migration operation that executes arbitrary SQL statements.
-    '''
+    """
 
     def __init__(self, sql):
         '''
@@ -259,9 +260,9 @@ class RunSQL(Operation):
 
 
 class MigrationHistory(Model):
-    '''
+    """
     A model for storing which migrations were already applied to the containing database.
-    '''
+    """
 
     package_name = StringField()
     module_name = StringField()

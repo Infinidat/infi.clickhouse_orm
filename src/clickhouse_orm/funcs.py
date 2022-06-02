@@ -75,7 +75,7 @@ def parametric(func):
     return wrapper
 
 
-class FunctionOperatorsMixin(object):
+class FunctionOperatorsMixin:
     """
     A mixin for implementing Python operators using F objects.
     """
@@ -248,7 +248,7 @@ class F(Cond, FunctionOperatorsMixin, metaclass=FMeta):
     def __repr__(self):
         return self.to_sql()
 
-    def to_sql(self, *args):
+    def to_sql(self, *args) -> str:
         """
         Generates an SQL string for this function and its arguments.
         For example if the function name is a symbol of a binary operator:
@@ -898,7 +898,6 @@ class F(Cond, FunctionOperatorsMixin, metaclass=FMeta):
     @staticmethod
     def replace(haystack, pattern, replacement):
         return F('replace', haystack, pattern, replacement)
-    replaceAll = replace
 
     @staticmethod
     def replaceAll(haystack, pattern, replacement):
