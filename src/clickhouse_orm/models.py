@@ -313,7 +313,9 @@ class Model(metaclass=ModelBase):
             if field:
                 setattr(self, name, value)
             else:
-                raise AttributeError('%s does not have a field called %s' % (self.__class__.__name__, name))
+                raise AttributeError(
+                    '%s does not have a field called %s' % (self.__class__.__name__, name)
+                )
 
     def __setattr__(self, name, value):
         """
@@ -474,7 +476,7 @@ class Model(metaclass=ModelBase):
         return {name: data[name] for name in fields}
 
     @classmethod
-    def objects_in(cls, database: Database) -> QuerySet:
+    def objects_in(cls: type[MODEL], database: Database) -> QuerySet[MODEL]:
         """
         Returns a `QuerySet` for selecting instances of this model class.
         """

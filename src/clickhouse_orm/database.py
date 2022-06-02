@@ -430,14 +430,19 @@ class Database:
         query = self._substitute(query, MigrationHistory)
         return set(obj.module_name for obj in self.select(query))
 
-    def _send(self, data, settings=None, stream=False):
+    def _send(
+        self,
+        data: str | bytes,
+        settings: dict = None,
+        stream: bool = False
+    ):
         if isinstance(data, str):
             data = data.encode('utf-8')
             if self.log_statements:
                 logger.info(data)
         params = self._build_params(settings)
         request = self.request_session.build_request(
-            method='POST', url=self.db_url, data=data, params=params
+            method='POST', url=self.db_url, content=data, params=params
         )
         r = self.request_session.send(request, stream=stream)
         if isinstance(r, httpx.Response) and r.status_code != 200:

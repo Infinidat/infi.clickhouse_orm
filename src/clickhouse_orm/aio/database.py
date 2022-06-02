@@ -1,3 +1,4 @@
+from __future__ import annotations
 import datetime
 import logging
 from io import BytesIO
@@ -42,7 +43,12 @@ class AioDatabase(Database):
     async def close(self):
         await self.request_session.aclose()
 
-    async def _send(self, data, settings=None, stream=False):
+    async def _send(
+        self,
+        data: str | bytes,
+        settings: dict = None,
+        stream: bool = False
+    ):
         r = await super()._send(data, settings, stream)
         if r.status_code != 200:
             raise ServerError(r.text)
@@ -50,7 +56,7 @@ class AioDatabase(Database):
 
     async def count(
         self,
-        model_class,
+        model_class: type[MODEL],
         conditions=None
     ) -> int:
         """
