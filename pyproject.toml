@@ -8,8 +8,13 @@ description = "A Python library for working with the ClickHouse database"
 readme = "README.md"
 keywords = ["ClickHouse", "ORM", 'DB', 'DATABASE', 'OLAP']
 license = {text = "BSD License"}
+homepage = "https://github.com/sswest/ch-orm"
 classifiers = [
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
     "Operating System :: OS Independent",
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Topic :: Database"
@@ -20,7 +25,7 @@ dependencies = [
     "iso8601 >= 0.1.12",
     "setuptools"
 ]
-version = "0.1.0"
+version = "0.1.1"
 
 [tool.setuptools.packages.find]
 where = ["src"]

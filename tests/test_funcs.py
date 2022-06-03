@@ -40,7 +40,7 @@ class FuncsTestCase(TestCaseWithData):
         except ServerError as e:
             if 'Unknown function' in e.message:
                 logging.warning(e.message)
-                return # ignore functions that don't exist in the used ClickHouse version
+                return  # ignore functions that don't exist in the used ClickHouse version
             raise
 
     def _test_aggr(self, func, expected_value=NO_VALUE):
@@ -615,14 +615,21 @@ class FuncsTestCase(TestCaseWithData):
         self._test_func(F.IPv4NumToString(F.toUInt32(1)), '0.0.0.1')
         self._test_func(F.IPv4NumToStringClassC(F.toUInt32(1)), '0.0.0.xxx')
         self._test_func(F.IPv4StringToNum('0.0.0.17'), 17)
-        self._test_func(F.IPv6NumToString(F.IPv4ToIPv6(F.IPv4StringToNum('192.168.0.1'))), '::ffff:192.168.0.1')
+        self._test_func(
+            F.IPv6NumToString(F.IPv4ToIPv6(F.IPv4StringToNum('192.168.0.1'))),
+            '::ffff:192.168.0.1'
+        )
         self._test_func(F.IPv6NumToString(F.IPv6StringToNum('2a02:6b8::11')), '2a02:6b8::11')
         self._test_func(F.toIPv4('10.20.30.40'), IPv4Address('10.20.30.40'))
-        self._test_func(F.toIPv6('2001:438:ffff::407d:1bc1'), IPv6Address('2001:438:ffff::407d:1bc1'))
+        self._test_func(
+            F.toIPv6('2001:438:ffff::407d:1bc1'), IPv6Address('2001:438:ffff::407d:1bc1')
+        )
         self._test_func(F.IPv4CIDRToRange(F.toIPv4('192.168.5.2'), 16),
-                        [IPv4Address('192.168.0.0'), IPv4Address('192.168.255.255')])
-        self._test_func(F.IPv6CIDRToRange(F.toIPv6('2001:0db8:0000:85a3:0000:0000:ac1f:8001'), 32),
-                        [IPv6Address('2001:db8::'), IPv6Address('2001:db8:ffff:ffff:ffff:ffff:ffff:ffff')])
+                        (IPv4Address('192.168.0.0'), IPv4Address('192.168.255.255')))
+        self._test_func(
+            F.IPv6CIDRToRange(F.toIPv6('2001:0db8:0000:85a3:0000:0000:ac1f:8001'), 32),
+            (IPv6Address('2001:db8::'), IPv6Address('2001:db8:ffff:ffff:ffff:ffff:ffff:ffff'))
+        )
 
     def test_aggregate_funcs(self):
         self._test_aggr(F.any(Person.first_name))

@@ -3,10 +3,6 @@ import unittest
 import datetime
 
 from clickhouse_orm.database import ServerError, DatabaseException
-from clickhouse_orm.models import Model
-from clickhouse_orm.engines import Memory
-from clickhouse_orm.fields import *
-from clickhouse_orm.funcs import F
 from clickhouse_orm.query import Q
 from .base_test_with_data import *
 
@@ -190,7 +186,7 @@ class DatabaseTestCase(TestCaseWithData):
             raise Exception('Unexpected error code - %s %s' % (exc.code, exc.message))
 
     def test_nonexisting_db(self):
-        db = Database('db_not_here', autocreate=False)
+        db = Database('db_not_here', auto_create=False)
         with self.assertRaises(ServerError) as cm:
             db.create_table(Person)
         exc = cm.exception
@@ -207,7 +203,7 @@ class DatabaseTestCase(TestCaseWithData):
             self.assertFalse(db.db_exists)
 
     def test_preexisting_db(self):
-        db = Database(self.database.db_name, autocreate=False)
+        db = Database(self.database.db_name, auto_create=False)
         db.count(Person)
 
     def test_missing_engine(self):
@@ -288,6 +284,10 @@ class DatabaseTestCase(TestCaseWithData):
                 list(model.objects_in(self.database)[:10])
             except ServerError as e:
                 if 'Not enough privileges' in e.message:
+                    pass
+                elif 'no certificate file has been specified' in e.message:
+                    pass
+                elif 'table must contain condition' in e.message:
                     pass
                 else:
                     raise

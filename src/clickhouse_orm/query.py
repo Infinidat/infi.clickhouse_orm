@@ -360,6 +360,9 @@ class QuerySet(Generic[MODEL]):
         queryset._final = self._final
         return queryset
 
+    def __deepcopy__(self, memodict={}):
+        return self._clone()
+
     def __iter__(self) -> Iterator[MODEL]:
         """
         Iterates over the model instances matching this queryset
@@ -711,6 +714,18 @@ class AggregateQuerySet(QuerySet[MODEL]):
         self._prewhere_q = base_queryset._prewhere_q
         self._limits = base_queryset._limits
         self._distinct = base_queryset._distinct
+
+    def _clone(self) -> "AggregateQuerySet[MODEL]":
+        queryset = copy(self)
+        queryset._fields = copy(self._fields)
+        queryset._grouping_fields = copy(self._grouping_fields)
+        queryset._calculated_fields = copy(self._calculated_fields)
+        queryset._order_by = copy(self._order_by)
+        queryset._where_q = copy(self._where_q)
+        queryset._prewhere_q = copy(self._prewhere_q)
+        queryset._limits = copy(self._limits)
+        queryset._distinct = copy(self._distinct)
+        return queryset
 
     def group_by(self, *args) -> "AggregateQuerySet[MODEL]":
         """

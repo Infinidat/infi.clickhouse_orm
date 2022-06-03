@@ -280,11 +280,11 @@ class Distributed(Engine):
 
     @property
     def table_name(self) -> str:
-        from clickhouse_orm.models import Model
+        from clickhouse_orm.models import ModelBase
 
         table = self.table
 
-        if isinstance(table, Model):
+        if isinstance(table, ModelBase):
             return table.table_name()
 
         return table

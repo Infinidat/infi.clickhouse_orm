@@ -234,14 +234,14 @@ class ModelBase(type):
             )
         # Arrays
         if db_type.startswith('Array'):
-            inner_field = cls.create_ad_hoc_field(db_type[6 : -1])
+            inner_field = cls.create_ad_hoc_field(db_type[6:-1])
             return orm_fields.ArrayField(inner_field)
-        # Tuples (poor man's version - convert to array)
+        # Tuples
         if db_type.startswith('Tuple'):
-            types = [s.strip() for s in db_type[6 : -1].split(',')]
-            assert len(set(types)) == 1, 'No support for mixed types in tuples - ' + db_type
-            inner_field = cls.create_ad_hoc_field(types[0])
-            return orm_fields.ArrayField(inner_field)
+            types = [s.strip() for s in db_type[6:-1].split(',')]
+            return orm_fields.TupleField(name_fields=[
+                (str(i), cls.create_ad_hoc_field(type_name)) for i, type_name in enumerate(types)]
+            )
         # FixedString
         if db_type.startswith('FixedString'):
             length = int(db_type[12:-1])

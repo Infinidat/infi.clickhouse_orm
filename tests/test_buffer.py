@@ -2,7 +2,6 @@
 import unittest
 
 from clickhouse_orm.models import BufferModel
-from clickhouse_orm.engines import *
 from .base_test_with_data import *
 
 

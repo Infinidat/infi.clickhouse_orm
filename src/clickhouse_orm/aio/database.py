@@ -45,7 +45,7 @@ class AioDatabase(Database):
 
     async def _send(
         self,
-        data: str | bytes,
+        data: str | bytes | AsyncGenerator,
         settings: dict = None,
         stream: bool = False
     ):
@@ -255,8 +255,10 @@ class AioDatabase(Database):
                     field_types = parse_tsv(line)
                     model_class = model_class or ModelBase.create_ad_hoc_model(
                         zip(field_names, field_types))
-                elif line:
+                elif line.strip():
                     yield model_class.from_tsv(line, field_names, self.server_timezone, self)
+        except StopIteration:
+            return
         finally:
             await r.aclose()
 

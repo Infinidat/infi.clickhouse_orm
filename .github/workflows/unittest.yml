@@ -1,0 +1,42 @@
+name: Docker
+
+on:
+  push:
+    # Publish `master` as Docker `latest` image.
+    branches:
+      - master
+      - develop
+
+    # Publish `v1.2.3` tags as releases.
+    tags:
+      - v*
+
+  # Run tests for any PRs.
+  pull_request:
+
+env:
+  IMAGE_NAME: ch_orm
+
+jobs:
+  # Run tests.
+  # See also https://docs.docker.com/docker-hub/builds/automated-testing/
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Pull images
+        run: |
+          docker pull clickhouse/clickhouse-server
+          docker run -d --network=host --name some-clickhouse-server --ulimit nofile=262144:262144 clickhouse/clickhouse-server
+
+      - name: Build and Install
+        run: |
+          pip install build
+          python -m build 
+          pip install dist/*
+
+      - name: UnitTest
+        run: |
+          python -m unittest

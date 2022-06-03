@@ -320,8 +320,10 @@ class Database:
                 model_class = ModelBase.create_ad_hoc_model(zip(field_names, field_types))
             for line in lines:
                 # skip blank line left by WITH TOTALS modifier
-                if line:
+                if line.strip():
                     yield model_class.from_tsv(line, field_names, self.server_timezone, self)
+        except StopIteration:
+            return
         finally:
             r.close()
 
@@ -432,7 +434,7 @@ class Database:
 
     def _send(
         self,
-        data: str | bytes,
+        data: str | bytes | Generator,
         settings: dict = None,
         stream: bool = False
     ):
