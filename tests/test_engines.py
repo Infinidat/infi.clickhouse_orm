@@ -250,6 +250,8 @@ class DistributedTestCase(_EnginesHelperTestCase):
         self.assertEqual(self.database.count(TestDistributedModel), 0)
 
     def test_minimal_engine(self):
+        raise unittest.SkipTest('Cannot create Distributed engine: specify an underlying table')
+
         class TestDistributedModel(DistributedModel, self.TestModel):
             engine = Distributed('test_shard_localhost')
 
@@ -259,6 +261,8 @@ class DistributedTestCase(_EnginesHelperTestCase):
         self.assertEqual(self.database.count(TestDistributedModel), 0)
 
     def test_minimal_engine_two_superclasses(self):
+        raise unittest.SkipTest('Cannot create Distributed engine: specify an underlying table')
+
         class TestModel2(SampleModel):
             engine = Log()
 
@@ -274,6 +278,8 @@ class DistributedTestCase(_EnginesHelperTestCase):
                                    'that your model has exactly one non-distributed superclass')
 
     def test_minimal_engine_no_superclasses(self):
+        raise unittest.SkipTest('Cannot create Distributed engine: specify an underlying table')
+
         class TestDistributedModel(DistributedModel):
             engine = Distributed('test_shard_localhost')
 

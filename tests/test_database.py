@@ -4,6 +4,7 @@ import datetime
 
 from clickhouse_orm.database import ServerError, DatabaseException
 from clickhouse_orm.query import Q
+from clickhouse_orm.funcs import F
 from .base_test_with_data import *
 
 

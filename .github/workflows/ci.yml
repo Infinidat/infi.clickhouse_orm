@@ -39,7 +39,7 @@ jobs:
           pip install build
           python -m build 
           pip install dist/*
-          pip install coverage
+          pip install coveralls
       - name: UnitTest
         run: |
           coverage run --source=clickhouse_orm -m unittest

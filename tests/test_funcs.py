@@ -1,6 +1,6 @@
 import unittest
-from .base_test_with_data import *
-from .test_querysets import SampleModel
+from tests.base_test_with_data import *
+from tests.test_querysets import SampleModel
 from datetime import date, datetime, tzinfo, timedelta
 import pytz
 from ipaddress import IPv4Address, IPv6Address

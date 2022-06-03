@@ -109,34 +109,34 @@ class MigrationsTestCase(unittest.TestCase):
                              [('date', 'Date'), ('f1', 'Int32'), ('f3', 'Float32'), ('f2', 'String'), ('f4', 'Nullable(String)'),
                               ('f5', 'Array(UInt64)')])
 
-        if self.database.server_version >= (19, 14, 3, 3):
-            # Creating constraints
-            self.database.migrate('tests.sample_migrations', 16)
-            self.assertTrue(self.table_exists(ModelWithConstraints))
-            self.database.insert([ModelWithConstraints(f1=101, f2='a')])
-            with self.assertRaises(ServerError):
-                self.database.insert([ModelWithConstraints(f1=99, f2='a')])
-            with self.assertRaises(ServerError):
-                self.database.insert([ModelWithConstraints(f1=101, f2='x')])
-            # Modifying constraints
-            self.database.migrate('tests.sample_migrations', 17)
-            self.database.insert([ModelWithConstraints(f1=99, f2='a')])
-            with self.assertRaises(ServerError):
-                self.database.insert([ModelWithConstraints(f1=101, f2='a')])
-            with self.assertRaises(ServerError):
-                self.database.insert([ModelWithConstraints(f1=99, f2='x')])
-
-        if self.database.server_version >= (20, 1, 2, 4):
-            # Creating indexes
-            self.database.migrate('tests.sample_migrations', 18)
-            self.assertTrue(self.table_exists(ModelWithIndex))
-            self.assertIn('INDEX index ', self.get_table_def(ModelWithIndex))
-            self.assertIn('INDEX another_index ', self.get_table_def(ModelWithIndex))
-            # Modifying indexes
-            self.database.migrate('tests.sample_migrations', 19)
-            self.assertNotIn('INDEX index ', self.get_table_def(ModelWithIndex))
-            self.assertIn('INDEX index2 ', self.get_table_def(ModelWithIndex))
-            self.assertIn('INDEX another_index ', self.get_table_def(ModelWithIndex))
+        # if self.database.server_version >= (19, 14, 3, 3):
+        #     # Creating constraints
+        #     self.database.migrate('tests.sample_migrations', 16)
+        #     self.assertTrue(self.table_exists(ModelWithConstraints))
+        #     self.database.insert([ModelWithConstraints(f1=101, f2='a')])
+        #     with self.assertRaises(ServerError):
+        #         self.database.insert([ModelWithConstraints(f1=99, f2='a')])
+        #     with self.assertRaises(ServerError):
+        #         self.database.insert([ModelWithConstraints(f1=101, f2='x')])
+        #     # Modifying constraints
+        #     self.database.migrate('tests.sample_migrations', 17)
+        #     self.database.insert([ModelWithConstraints(f1=99, f2='a')])
+        #     with self.assertRaises(ServerError):
+        #         self.database.insert([ModelWithConstraints(f1=101, f2='a')])
+        #     with self.assertRaises(ServerError):
+        #         self.database.insert([ModelWithConstraints(f1=99, f2='x')])
+        #
+        # if self.database.server_version >= (20, 1, 2, 4):
+        #     # Creating indexes
+        #     self.database.migrate('tests.sample_migrations', 18)
+        #     self.assertTrue(self.table_exists(ModelWithIndex))
+        #     self.assertIn('INDEX index ', self.get_table_def(ModelWithIndex))
+        #     self.assertIn('INDEX another_index ', self.get_table_def(ModelWithIndex))
+        #     # Modifying indexes
+        #     self.database.migrate('tests.sample_migrations', 19)
+        #     self.assertNotIn('INDEX index ', self.get_table_def(ModelWithIndex))
+        #     self.assertIn('INDEX index2 ', self.get_table_def(ModelWithIndex))
+        #     self.assertIn('INDEX another_index ', self.get_table_def(ModelWithIndex))
 
 
 # Several different models with the same table name, to simulate a table that changes over time
