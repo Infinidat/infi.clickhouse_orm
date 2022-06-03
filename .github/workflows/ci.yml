@@ -1,0 +1,64 @@
+name: ci
+
+on:
+  push:
+    # Publish `master` as Docker `latest` image.
+    branches:
+      - master
+      - develop
+
+    # Publish `v1.2.3` tags as releases.
+    tags:
+      - v*
+
+  # Run tests for any PRs.
+  pull_request:
+
+env:
+  IMAGE_NAME: ch_orm
+
+jobs:
+  # Run tests.
+  # See also https://docs.docker.com/docker-hub/builds/automated-testing/
+  test:
+    runs-on: ubuntu-latest
+    services:
+      clickhouse:
+        image: clickhouse/clickhouse-server
+        ports:
+          - 8123:8123
+          - 9000:9000
+        options: --ulimit nofile=262144:262144
+    strategy:
+      matrix:
+        python-version: [ "3.7", "3.8", "3.9", "3.10" ]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build and Install
+        run: |
+          pip install build
+          python -m build 
+          pip install dist/*
+          pip install coverage
+      - name: UnitTest
+        run: |
+          coverage run --source=clickhouse_orm -m unittest
+      - name: Upload Coverage
+        run: coveralls --service=github
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          COVERALLS_FLAG_NAME: ${{ matrix.python-version }}
+          COVERALLS_PARALLEL: true
+
+  coveralls:
+    name: Finish Coveralls
+    needs: test
+    runs-on: ubuntu-latest
+    container: python:3-slim
+    steps:
+      - name: Finished
+        run: |
+          pip3 install --upgrade coveralls
+          coveralls --finish
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
