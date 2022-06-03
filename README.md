@@ -2,7 +2,10 @@ A fork of [infi.clikchouse_orm](https://github.com/Infinidat/infi.clickhouse_orm
 
 This repository expects to use more type hints, and will drop support for Python 2.x.
 
-[![Coverage Status](https://coveralls.io/repos/github/sswest/ch-orm/badge.svg?branch=develop)](https://coveralls.io/github/sswest/ch-orm?branch=develop)
+
+| Build   | [![Coverage Status](https://github.com/sswest/ch-orm/workflows/ci/badge.svg)](https://github.com/sswest/ch-orm/actions?query=workflow:ci)[![Coverage Status](https://coveralls.io/repos/github/sswest/ch-orm/badge.svg?branch=develop)](https://coveralls.io/github/sswest/ch-orm?branch=develop) |
+| ------- | ------------------------------------------------------------ |
+| Package | [![PyPI](https://img.shields.io/pypi/v/ch-orm.svg)](https://pypi.python.org/pypi/ch-orm)[![PyPI version](https://img.shields.io/pypi/pyversions/ch-orm.svg)](https://pypi.python.org/pypi/ch-orm)[![PyPI Wheel](https://img.shields.io/pypi/wheel/ch-orm.svg)](https://pypi.python.org/pypi/ch-orm) |
 
 Introduction
 ============
