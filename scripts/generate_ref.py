@@ -4,6 +4,7 @@ from collections import namedtuple
 
 DefaultArgSpec = namedtuple('DefaultArgSpec', 'has_default default_value')
 
+
 def _get_default_arg(args, defaults, arg_index):
     """ Method that determines if an argument has default value or not,
     and if yes what is the default value for the argument
