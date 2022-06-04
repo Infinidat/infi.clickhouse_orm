@@ -11,7 +11,7 @@ from typing import (
     Generic,
     TypeVar,
     AsyncIterator,
-    Iterator
+    Iterator,
 )
 
 import pytz
@@ -24,7 +24,7 @@ if TYPE_CHECKING:
     from clickhouse_orm.models import Model
     from clickhouse_orm.database import Database, Page
 
-MODEL = TypeVar('MODEL', bound='Model')
+MODEL = TypeVar("MODEL", bound="Model")
 
 
 class Operator:
@@ -59,9 +59,9 @@ class SimpleOperator(Operator):
     def to_sql(self, model_cls: type[Model], field_name: str, value: Any) -> str:
         field = getattr(model_cls, field_name)
         value = self._value_to_sql(field, value)
-        if value == '\\N' and self._sql_for_null is not None:
-            return ' '.join([field_name, self._sql_for_null])
-        return ' '.join([field.name, self._sql_operator, value])
+        if value == "\\N" and self._sql_for_null is not None:
+            return " ".join([field_name, self._sql_for_null])
+        return " ".join([field.name, self._sql_operator, value])
 
 
 class InOperator(Operator):
@@ -81,7 +81,7 @@ class InOperator(Operator):
             pass
         else:
             value = comma_join([self._value_to_sql(field, v) for v in value])
-        return '%s IN (%s)' % (field.name, value)
+        return "%s IN (%s)" % (field.name, value)
 
 
 class GlobalInOperator(Operator):
@@ -95,7 +95,7 @@ class GlobalInOperator(Operator):
             pass
         else:
             value = comma_join([self._value_to_sql(field, v) for v in value])
-        return '%s GLOBAL IN (%s)' % (field.name, value)
+        return "%s GLOBAL IN (%s)" % (field.name, value)
 
 
 class LikeOperator(Operator):
@@ -111,11 +111,11 @@ class LikeOperator(Operator):
     def to_sql(self, model_cls: type[Model], field_name: str, value: Any) -> str:
         field = getattr(model_cls, field_name)
         value = self._value_to_sql(field, value, quote=False)
-        value = value.replace('\\', '\\\\').replace('%', '\\\\%').replace('_', '\\\\_')
+        value = value.replace("\\", "\\\\").replace("%", "\\\\%").replace("_", "\\\\_")
         pattern = self._pattern.format(value)
         if self._case_sensitive:
-            return '%s LIKE \'%s\'' % (field.name, pattern)
-        return 'lowerUTF8(%s) LIKE lowerUTF8(\'%s\')' % (field.name, pattern)
+            return "%s LIKE '%s'" % (field.name, pattern)
+        return "lowerUTF8(%s) LIKE lowerUTF8('%s')" % (field.name, pattern)
 
 
 class IExactOperator(Operator):
@@ -126,7 +126,7 @@ class IExactOperator(Operator):
     def to_sql(self, model_cls: type[Model], field_name: str, value: Any) -> str:
         field = getattr(model_cls, field_name)
         value = self._value_to_sql(field, value)
-        return 'lowerUTF8(%s) = lowerUTF8(%s)' % (field.name, value)
+        return "lowerUTF8(%s) = lowerUTF8(%s)" % (field.name, value)
 
 
 class NotOperator(Operator):
@@ -139,7 +139,7 @@ class NotOperator(Operator):
 
     def to_sql(self, model_cls: type[Model], field_name: str, value: Any) -> str:
         # Negate the base operator
-        return 'NOT (%s)' % self._base_operator.to_sql(model_cls, field_name, value)
+        return "NOT (%s)" % self._base_operator.to_sql(model_cls, field_name, value)
 
 
 class BetweenOperator(Operator):
@@ -154,16 +154,22 @@ class BetweenOperator(Operator):
 
     def to_sql(self, model_cls: type[Model], field_name: str, value: Any) -> str:
         field = getattr(model_cls, field_name)
-        value0 = self._value_to_sql(field, value[0]) if value[0] is not None or len(
-            str(value[0])) > 0 else None
-        value1 = self._value_to_sql(field, value[1]) if value[1] is not None or len(
-            str(value[1])) > 0 else None
+        value0 = (
+            self._value_to_sql(field, value[0])
+            if value[0] is not None or len(str(value[0])) > 0
+            else None
+        )
+        value1 = (
+            self._value_to_sql(field, value[1])
+            if value[1] is not None or len(str(value[1])) > 0
+            else None
+        )
         if value0 and value1:
-            return '%s BETWEEN %s AND %s' % (field.name, value0, value1)
+            return "%s BETWEEN %s AND %s" % (field.name, value0, value1)
         if value0 and not value1:
-            return ' '.join([field.name, '>=', value0])
+            return " ".join([field.name, ">=", value0])
         if value1 and not value0:
-            return ' '.join([field.name, '<=', value1])
+            return " ".join([field.name, "<=", value1])
 
 
 # Define the set of builtin operators
@@ -175,24 +181,24 @@ def register_operator(name: str, sql: Operator):
     _operators[name] = sql
 
 
-register_operator('eq', SimpleOperator('=', 'IS NULL'))
-register_operator('ne', SimpleOperator('!=', 'IS NOT NULL'))
-register_operator('gt', SimpleOperator('>'))
-register_operator('gte', SimpleOperator('>='))
-register_operator('lt', SimpleOperator('<'))
-register_operator('lte', SimpleOperator('<='))
-register_operator('between', BetweenOperator())
-register_operator('in', InOperator())
-register_operator('gin', GlobalInOperator())
-register_operator('not_in', NotOperator(InOperator()))
-register_operator('not_gin', NotOperator(GlobalInOperator()))
-register_operator('contains', LikeOperator('%{}%'))
-register_operator('startswith', LikeOperator('{}%'))
-register_operator('endswith', LikeOperator('%{}'))
-register_operator('icontains', LikeOperator('%{}%', False))
-register_operator('istartswith', LikeOperator('{}%', False))
-register_operator('iendswith', LikeOperator('%{}', False))
-register_operator('iexact', IExactOperator())
+register_operator("eq", SimpleOperator("=", "IS NULL"))
+register_operator("ne", SimpleOperator("!=", "IS NOT NULL"))
+register_operator("gt", SimpleOperator(">"))
+register_operator("gte", SimpleOperator(">="))
+register_operator("lt", SimpleOperator("<"))
+register_operator("lte", SimpleOperator("<="))
+register_operator("between", BetweenOperator())
+register_operator("in", InOperator())
+register_operator("gin", GlobalInOperator())
+register_operator("not_in", NotOperator(InOperator()))
+register_operator("not_gin", NotOperator(GlobalInOperator()))
+register_operator("contains", LikeOperator("%{}%"))
+register_operator("startswith", LikeOperator("{}%"))
+register_operator("endswith", LikeOperator("%{}"))
+register_operator("icontains", LikeOperator("%{}%", False))
+register_operator("istartswith", LikeOperator("{}%", False))
+register_operator("iendswith", LikeOperator("%{}", False))
+register_operator("iexact", IExactOperator())
 
 
 class Cond:
@@ -214,8 +220,8 @@ class FieldCond(Cond):
         self._operator = _operators.get(operator)
         if self._operator is None:
             # The field name contains __ like my__field
-            self._field_name = field_name + '__' + operator
-            self._operator = _operators['eq']
+            self._field_name = field_name + "__" + operator
+            self._operator = _operators["eq"]
         self._value = value
 
     def to_sql(self, model_cls: type[Model]) -> str:
@@ -228,12 +234,13 @@ class FieldCond(Cond):
 
 
 class Q:
-    AND_MODE = 'AND'
-    OR_MODE = 'OR'
+    AND_MODE = "AND"
+    OR_MODE = "OR"
 
     def __init__(self, *filter_funcs, **filter_fields):
-        self._conds = list(filter_funcs) + [self._build_cond(k, v) for k, v in
-                                            filter_fields.items()]
+        self._conds = list(filter_funcs) + [
+            self._build_cond(k, v) for k, v in filter_fields.items()
+        ]
         self._children = []
         self._negate = False
         self._mode = self.AND_MODE
@@ -263,10 +270,10 @@ class Q:
         return q
 
     def _build_cond(self, key, value):
-        if '__' in key:
-            field_name, operator = key.rsplit('__', 1)
+        if "__" in key:
+            field_name, operator = key.rsplit("__", 1)
         else:
-            field_name, operator = key, 'eq'
+            field_name, operator = key, "eq"
         return FieldCond(field_name, operator, value)
 
     def to_sql(self, model_cls: type[Model]) -> str:
@@ -280,16 +287,16 @@ class Q:
 
         if not condition_sql:
             # Empty Q() object returns everything
-            sql = '1'
+            sql = "1"
         elif len(condition_sql) == 1:
             # Skip not needed brackets over single condition
             sql = condition_sql[0]
         else:
             # Each condition must be enclosed in brackets, or order of operations may be wrong
-            sql = '(%s)' % ') {} ('.format(self._mode).join(condition_sql)
+            sql = "(%s)" % ") {} (".format(self._mode).join(condition_sql)
 
         if self._negate:
-            sql = 'NOT (%s)' % sql
+            sql = "NOT (%s)" % sql
 
         return sql
 
@@ -400,16 +407,16 @@ class QuerySet(Generic[MODEL]):
     def __getitem__(self, s):
         if isinstance(s, int):
             # Single index
-            assert s >= 0, 'negative indexes are not supported'
+            assert s >= 0, "negative indexes are not supported"
             queryset = self._clone()
             queryset._limits = (s, 1)
             return next(iter(queryset))
         # Slice
-        assert s.step in (None, 1), 'step is not supported in slices'
+        assert s.step in (None, 1), "step is not supported in slices"
         start = s.start or 0
-        stop = s.stop or 2 ** 63 - 1
-        assert start >= 0 and stop >= 0, 'negative indexes are not supported'
-        assert start <= stop, 'start of slice cannot be smaller than its end'
+        stop = s.stop or 2**63 - 1
+        assert start >= 0 and stop >= 0, "negative indexes are not supported"
+        assert start <= stop, "start of slice cannot be smaller than its end"
         queryset = self._clone()
         queryset._limits = (start, stop - start)
         return queryset
@@ -425,7 +432,7 @@ class QuerySet(Generic[MODEL]):
             offset_limit = (0, offset_limit)
         offset = offset_limit[0]
         limit = offset_limit[1]
-        assert offset >= 0 and limit >= 0, 'negative limits are not supported'
+        assert offset >= 0 and limit >= 0, "negative limits are not supported"
         queryset = self._clone()
         queryset._limit_by = (offset, limit)
         queryset._limit_by_fields = fields_or_expr
@@ -435,44 +442,44 @@ class QuerySet(Generic[MODEL]):
         """
         Returns the selected fields or expressions as a SQL string.
         """
-        fields = '*'
+        fields = "*"
         if self._fields:
-            fields = comma_join('`%s`' % field for field in self._fields)
+            fields = comma_join("`%s`" % field for field in self._fields)
         return fields
 
     def as_sql(self) -> str:
         """
         Returns the whole query as a SQL string.
         """
-        distinct = 'DISTINCT ' if self._distinct else ''
-        final = ' FINAL' if self._final else ''
-        table_name = '`%s`' % self._model_cls.table_name()
+        distinct = "DISTINCT " if self._distinct else ""
+        final = " FINAL" if self._final else ""
+        table_name = "`%s`" % self._model_cls.table_name()
         if self._model_cls.is_system_model():
-            table_name = '`system`.' + table_name
+            table_name = "`system`." + table_name
         params = (distinct, self.select_fields_as_sql(), table_name, final)
-        sql = 'SELECT %s%s\nFROM %s%s' % params
+        sql = "SELECT %s%s\nFROM %s%s" % params
 
         if self._prewhere_q and not self._prewhere_q.is_empty:
-            sql += '\nPREWHERE ' + self.conditions_as_sql(prewhere=True)
+            sql += "\nPREWHERE " + self.conditions_as_sql(prewhere=True)
 
         if self._where_q and not self._where_q.is_empty:
-            sql += '\nWHERE ' + self.conditions_as_sql(prewhere=False)
+            sql += "\nWHERE " + self.conditions_as_sql(prewhere=False)
 
         if self._grouping_fields:
-            sql += '\nGROUP BY %s' % comma_join('%s' % field for field in self._grouping_fields)
+            sql += "\nGROUP BY %s" % comma_join("%s" % field for field in self._grouping_fields)
 
             if self._grouping_with_totals:
-                sql += ' WITH TOTALS'
+                sql += " WITH TOTALS"
 
         if self._order_by:
-            sql += '\nORDER BY ' + self.order_by_as_sql()
+            sql += "\nORDER BY " + self.order_by_as_sql()
 
         if self._limit_by:
-            sql += '\nLIMIT %d, %d' % self._limit_by
-            sql += ' BY %s' % comma_join(string_or_func(field) for field in self._limit_by_fields)
+            sql += "\nLIMIT %d, %d" % self._limit_by
+            sql += " BY %s" % comma_join(string_or_func(field) for field in self._limit_by_fields)
 
         if self._limits:
-            sql += '\nLIMIT %d, %d' % self._limits
+            sql += "\nLIMIT %d, %d" % self._limits
 
         return sql
 
@@ -480,10 +487,12 @@ class QuerySet(Generic[MODEL]):
         """
         Returns the contents of the query's `ORDER BY` clause as a string.
         """
-        return comma_join([
-            '%s DESC' % field[1:] if isinstance(field, str) and field[0] == '-' else str(field)
-            for field in self._order_by
-        ])
+        return comma_join(
+            [
+                "%s DESC" % field[1:] if isinstance(field, str) and field[0] == "-" else str(field)
+                for field in self._order_by
+            ]
+        )
 
     def conditions_as_sql(self, prewhere=False) -> str:
         """
@@ -498,7 +507,7 @@ class QuerySet(Generic[MODEL]):
         """
         if self._distinct or self._limits:
             # Use a subquery, since a simple count won't be accurate
-            sql = 'SELECT count() FROM (%s)' % self.as_sql()
+            sql = "SELECT count() FROM (%s)" % self.as_sql()
             raw = self._database.raw(sql)
             return int(raw) if raw else 0
 
@@ -527,8 +536,8 @@ class QuerySet(Generic[MODEL]):
     def _filter_or_exclude(self, *q, **kwargs) -> "QuerySet[MODEL]":
         from clickhouse_orm.funcs import F
 
-        inverse = kwargs.pop('_inverse', False)
-        prewhere = kwargs.pop('prewhere', False)
+        inverse = kwargs.pop("_inverse", False)
+        prewhere = kwargs.pop("prewhere", False)
 
         queryset = self._clone()
 
@@ -588,14 +597,14 @@ class QuerySet(Generic[MODEL]):
         if page_num == -1:
             page_num = pages_total
         elif page_num < 1:
-            raise ValueError('Invalid page number: %d' % page_num)
+            raise ValueError("Invalid page number: %d" % page_num)
         offset = (page_num - 1) * page_size
         return Page(
-            objects=list(self[offset: offset + page_size]),
+            objects=list(self[offset : offset + page_size]),
             number_of_objects=count,
             pages_total=pages_total,
             number=page_num,
-            page_size=page_size
+            page_size=page_size,
         )
 
     def distinct(self) -> "QuerySet[MODEL]":
@@ -616,8 +625,8 @@ class QuerySet(Generic[MODEL]):
 
         if not isinstance(self._model_cls.engine, (CollapsingMergeTree, ReplacingMergeTree)):
             raise TypeError(
-                'final() method can be used only with the CollapsingMergeTree'
-                ' and ReplacingMergeTree engines'
+                "final() method can be used only with the CollapsingMergeTree"
+                " and ReplacingMergeTree engines"
             )
 
         queryset = self._clone()
@@ -631,7 +640,7 @@ class QuerySet(Generic[MODEL]):
         """
         self._verify_mutation_allowed()
         conditions = (self._where_q & self._prewhere_q).to_sql(self._model_cls)
-        sql = 'ALTER TABLE $db.`%s` DELETE WHERE %s' % (self._model_cls.table_name(), conditions)
+        sql = "ALTER TABLE $db.`%s` DELETE WHERE %s" % (self._model_cls.table_name(), conditions)
         self._database.raw(sql)
         return self
 
@@ -641,12 +650,14 @@ class QuerySet(Generic[MODEL]):
         Keyword arguments specify the field names and expressions to use for the update.
         Note that ClickHouse performs updates in the background, so they are not immediate.
         """
-        assert kwargs, 'No fields specified for update'
+        assert kwargs, "No fields specified for update"
         self._verify_mutation_allowed()
-        fields = comma_join('`%s` = %s' % (name, arg_to_sql(expr)) for name, expr in kwargs.items())
+        fields = comma_join("`%s` = %s" % (name, arg_to_sql(expr)) for name, expr in kwargs.items())
         conditions = (self._where_q & self._prewhere_q).to_sql(self._model_cls)
-        sql = 'ALTER TABLE $db.`%s` UPDATE %s WHERE %s' % (
-            self._model_cls.table_name(), fields, conditions
+        sql = "ALTER TABLE $db.`%s` UPDATE %s WHERE %s" % (
+            self._model_cls.table_name(),
+            fields,
+            conditions,
         )
         self._database.raw(sql)
         return self
@@ -655,10 +666,10 @@ class QuerySet(Generic[MODEL]):
         """
         Checks that the queryset's state allows mutations. Raises an AssertionError if not.
         """
-        assert not self._limits, 'Mutations are not allowed after slicing the queryset'
-        assert not self._limit_by, 'Mutations are not allowed after calling limit_by(...)'
-        assert not self._distinct, 'Mutations are not allowed after calling distinct()'
-        assert not self._final, 'Mutations are not allowed after calling final()'
+        assert not self._limits, "Mutations are not allowed after slicing the queryset"
+        assert not self._limit_by, "Mutations are not allowed after calling limit_by(...)"
+        assert not self._distinct, "Mutations are not allowed after calling distinct()"
+        assert not self._final, "Mutations are not allowed after calling final()"
 
     def aggregate(self, *args, **kwargs) -> "AggregateQuerySet[MODEL]":
         """
@@ -687,7 +698,7 @@ class AggregateQuerySet(QuerySet[MODEL]):
         self,
         base_queryset: QuerySet,
         grouping_fields: tuple[Any],
-        calculated_fields: dict[str, str]
+        calculated_fields: dict[str, str],
     ):
         """
         Initializer. Normally you should not call this but rather use `QuerySet.aggregate()`.
@@ -705,7 +716,7 @@ class AggregateQuerySet(QuerySet[MODEL]):
         At least one calculated field is required.
         """
         super().__init__(base_queryset._model_cls, base_queryset._database)
-        assert calculated_fields, 'No calculated fields specified for aggregation'
+        assert calculated_fields, "No calculated fields specified for aggregation"
         self._fields = grouping_fields
         self._grouping_fields = grouping_fields
         self._calculated_fields = calculated_fields
@@ -734,8 +745,9 @@ class AggregateQuerySet(QuerySet[MODEL]):
         created with.
         """
         for name in args:
-            assert name in self._fields or name in self._calculated_fields, \
-                'Cannot group by `%s` since it is not included in the query' % name
+            assert name in self._fields or name in self._calculated_fields, (
+                "Cannot group by `%s` since it is not included in the query" % name
+            )
         queryset = copy(self)
         queryset._grouping_fields = args
         return queryset
@@ -750,14 +762,16 @@ class AggregateQuerySet(QuerySet[MODEL]):
         """
         This method is not supported on `AggregateQuerySet`.
         """
-        raise NotImplementedError('Cannot re-aggregate an AggregateQuerySet')
+        raise NotImplementedError("Cannot re-aggregate an AggregateQuerySet")
 
     def select_fields_as_sql(self) -> str:
         """
         Returns the selected fields or expressions as a SQL string.
         """
-        return comma_join([str(f) for f in self._fields] + ['%s AS %s' % (v, k) for k, v in
-                                                            self._calculated_fields.items()])
+        return comma_join(
+            [str(f) for f in self._fields]
+            + ["%s AS %s" % (v, k) for k, v in self._calculated_fields.items()]
+        )
 
     def __iter__(self) -> Iterator[Model]:
         """
@@ -778,7 +792,7 @@ class AggregateQuerySet(QuerySet[MODEL]):
         """
         Returns the number of rows after aggregation.
         """
-        sql = 'SELECT count() FROM (%s)' % self.as_sql()
+        sql = "SELECT count() FROM (%s)" % self.as_sql()
         raw = self._database.raw(sql)
         if isinstance(raw, CoroutineType):
             return raw
@@ -795,7 +809,7 @@ class AggregateQuerySet(QuerySet[MODEL]):
         return queryset
 
     def _verify_mutation_allowed(self):
-        raise AssertionError('Cannot mutate an AggregateQuerySet')
+        raise AssertionError("Cannot mutate an AggregateQuerySet")
 
 
 # Expose only relevant classes in import *

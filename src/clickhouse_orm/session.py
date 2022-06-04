@@ -2,8 +2,8 @@ import uuid
 from typing import Optional
 from contextvars import ContextVar, Token
 
-ctx_session_id: ContextVar[str] = ContextVar('ck.session_id')
-ctx_session_timeout: ContextVar[float] = ContextVar('ck.session_timeout')
+ctx_session_id: ContextVar[str] = ContextVar("ck.session_id")
+ctx_session_timeout: ContextVar[float] = ContextVar("ck.session_timeout")
 
 
 class SessionContext:

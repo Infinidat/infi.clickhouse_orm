@@ -17,7 +17,7 @@ from .engines import Merge, Distributed, Memory
 if TYPE_CHECKING:
     from clickhouse_orm.database import Database
 
-logger = getLogger('clickhouse_orm')
+logger = getLogger("clickhouse_orm")
 
 
 class Constraint:
@@ -38,7 +38,7 @@ class Constraint:
         """
         Returns the SQL statement for defining this constraint during table creation.
         """
-        return 'CONSTRAINT `%s` CHECK %s' % (self.name, arg_to_sql(self.expr))
+        return "CONSTRAINT `%s` CHECK %s" % (self.name, arg_to_sql(self.expr))
 
 
 class Index:
@@ -66,8 +66,11 @@ class Index:
         """
         Returns the SQL statement for defining this index during table creation.
         """
-        return 'INDEX `%s` %s TYPE %s GRANULARITY %d' % (
-            self.name, arg_to_sql(self.expr), self.type, self.granularity
+        return "INDEX `%s` %s TYPE %s GRANULARITY %d" % (
+            self.name,
+            arg_to_sql(self.expr),
+            self.type,
+            self.granularity,
         )
 
     @staticmethod
@@ -76,7 +79,7 @@ class Index:
         An index that stores extremes of the specified expression (if the expression is tuple, then it stores
         extremes for each element of tuple). The stored info is used for skipping blocks of data like the primary key.
         """
-        return 'minmax'
+        return "minmax"
 
     @staticmethod
     def set(max_rows: int) -> str:
@@ -85,11 +88,12 @@ class Index:
         or unlimited if max_rows=0). Uses the values to check if the WHERE expression is not satisfiable
         on a block of data.
         """
-        return 'set(%d)' % max_rows
+        return "set(%d)" % max_rows
 
     @staticmethod
-    def ngrambf_v1(n: int, size_of_bloom_filter_in_bytes: int,
-                   number_of_hash_functions: int, random_seed: int) -> str:
+    def ngrambf_v1(
+        n: int, size_of_bloom_filter_in_bytes: int, number_of_hash_functions: int, random_seed: int
+    ) -> str:
         """
         An index that stores a Bloom filter containing all ngrams from a block of data.
         Works only with strings. Can be used for optimization of equals, like and in expressions.
@@ -100,13 +104,17 @@ class Index:
         - `number_of_hash_functions` — The number of hash functions used in the Bloom filter.
         - `random_seed` — The seed for Bloom filter hash functions.
         """
-        return 'ngrambf_v1(%d, %d, %d, %d)' % (
-            n, size_of_bloom_filter_in_bytes, number_of_hash_functions, random_seed
+        return "ngrambf_v1(%d, %d, %d, %d)" % (
+            n,
+            size_of_bloom_filter_in_bytes,
+            number_of_hash_functions,
+            random_seed,
         )
 
     @staticmethod
-    def tokenbf_v1(size_of_bloom_filter_in_bytes: int, number_of_hash_functions: int,
-                   random_seed: int) -> str:
+    def tokenbf_v1(
+        size_of_bloom_filter_in_bytes: int, number_of_hash_functions: int, random_seed: int
+    ) -> str:
         """
         An index that stores a Bloom filter containing string tokens. Tokens are sequences
         separated by non-alphanumeric characters.
@@ -116,8 +124,10 @@ class Index:
         - `number_of_hash_functions` — The number of hash functions used in the Bloom filter.
         - `random_seed` — The seed for Bloom filter hash functions.
         """
-        return 'tokenbf_v1(%d, %d, %d)' % (
-            size_of_bloom_filter_in_bytes, number_of_hash_functions, random_seed
+        return "tokenbf_v1(%d, %d, %d)" % (
+            size_of_bloom_filter_in_bytes,
+            number_of_hash_functions,
+            random_seed,
         )
 
     @staticmethod
@@ -128,7 +138,7 @@ class Index:
         - `false_positive` - the probability (between 0 and 1) of receiving a false positive
           response from the filter
         """
-        return 'bloom_filter(%f)' % false_positive
+        return "bloom_filter(%f)" % false_positive
 
 
 class ModelBase(type):
@@ -183,23 +193,23 @@ class ModelBase(type):
             _indexes=indexes,
             _writable_fields=OrderedDict([f for f in fields if not f[1].readonly]),
             _defaults=defaults,
-            _has_funcs_as_defaults=has_funcs_as_defaults
+            _has_funcs_as_defaults=has_funcs_as_defaults,
         )
         model = super(ModelBase, mcs).__new__(mcs, str(name), bases, attrs)
 
         # Let each field, constraint and index know its parent and its own name
         for n, obj in chain(fields, constraints.items(), indexes.items()):
-            setattr(obj, 'parent', model)
-            setattr(obj, 'name', n)
+            setattr(obj, "parent", model)
+            setattr(obj, "name", n)
 
         return model
 
     @classmethod
-    def create_ad_hoc_model(cls, fields, model_name='AdHocModel'):
+    def create_ad_hoc_model(cls, fields, model_name="AdHocModel"):
         # fields is a list of tuples (name, db_type)
         # Check if model exists in cache
         fields = list(fields)
-        cache_key = model_name + ' ' + str(fields)
+        cache_key = model_name + " " + str(fields)
         if cache_key in cls.ad_hoc_model_cache:
             return cls.ad_hoc_model_cache[cache_key]
         # Create an ad hoc model class
@@ -217,28 +227,25 @@ class ModelBase(type):
         import clickhouse_orm.contrib.geo.fields as geo_fields
 
         # Enums
-        if db_type.startswith('Enum'):
+        if db_type.startswith("Enum"):
             return orm_fields.BaseEnumField.create_ad_hoc_field(db_type)
         # DateTime with timezone
-        if db_type.startswith('DateTime('):
+        if db_type.startswith("DateTime("):
             timezone = db_type[9:-1]
-            return orm_fields.DateTimeField(
-                timezone=timezone[1:-1] if timezone else None
-            )
+            return orm_fields.DateTimeField(timezone=timezone[1:-1] if timezone else None)
         # DateTime64
-        if db_type.startswith('DateTime64('):
-            precision, *timezone = [s.strip() for s in db_type[11:-1].split(',')]
+        if db_type.startswith("DateTime64("):
+            precision, *timezone = [s.strip() for s in db_type[11:-1].split(",")]
             return orm_fields.DateTime64Field(
-                precision=int(precision),
-                timezone=timezone[0][1:-1] if timezone else None
+                precision=int(precision), timezone=timezone[0][1:-1] if timezone else None
             )
         # Arrays
-        if db_type.startswith('Array'):
+        if db_type.startswith("Array"):
             inner_field = cls.create_ad_hoc_field(db_type[6:-1])
             return orm_fields.ArrayField(inner_field)
         # Tuples
-        if db_type.startswith('Tuple'):
-            types = [s.strip().split(' ') for s in db_type[6:-1].split(',')]
+        if db_type.startswith("Tuple"):
+            types = [s.strip().split(" ") for s in db_type[6:-1].split(",")]
             name_fields = []
             for i, tp in enumerate(types):
                 if len(tp) == 2:
@@ -247,27 +254,27 @@ class ModelBase(type):
                     name_fields.append((str(i), cls.create_ad_hoc_field(tp[0])))
             return orm_fields.TupleField(name_fields=name_fields)
         # FixedString
-        if db_type.startswith('FixedString'):
+        if db_type.startswith("FixedString"):
             length = int(db_type[12:-1])
             return orm_fields.FixedStringField(length)
         # Decimal / Decimal32 / Decimal64 / Decimal128
-        if db_type.startswith('Decimal'):
-            p = db_type.index('(')
-            args = [int(n.strip()) for n in db_type[p + 1 : -1].split(',')]
-            field_class = getattr(orm_fields, db_type[:p] + 'Field')
+        if db_type.startswith("Decimal"):
+            p = db_type.index("(")
+            args = [int(n.strip()) for n in db_type[p + 1 : -1].split(",")]
+            field_class = getattr(orm_fields, db_type[:p] + "Field")
             return field_class(*args)
         # Nullable
-        if db_type.startswith('Nullable'):
-            inner_field = cls.create_ad_hoc_field(db_type[9 : -1])
+        if db_type.startswith("Nullable"):
+            inner_field = cls.create_ad_hoc_field(db_type[9:-1])
             return orm_fields.NullableField(inner_field)
         # LowCardinality
-        if db_type.startswith('LowCardinality'):
-            inner_field = cls.create_ad_hoc_field(db_type[15 : -1])
+        if db_type.startswith("LowCardinality"):
+            inner_field = cls.create_ad_hoc_field(db_type[15:-1])
             return orm_fields.LowCardinalityField(inner_field)
         # Simple fields
-        name = db_type + 'Field'
+        name = db_type + "Field"
         if not (hasattr(orm_fields, name) or hasattr(geo_fields, name)):
-            raise NotImplementedError('No field class for %s' % db_type)
+            raise NotImplementedError("No field class for %s" % db_type)
         field_class = getattr(orm_fields, name, None) or getattr(geo_fields, name, None)
         return field_class()
 
@@ -282,6 +289,7 @@ class Model(metaclass=ModelBase):
             cpu_percent = Float32Field()
             engine = Memory()
     """
+
     _has_funcs_as_defaults: bool
     _constraints: dict[str, Constraint]
     _indexes: dict[str, Index]
@@ -318,7 +326,7 @@ class Model(metaclass=ModelBase):
                 setattr(self, name, value)
             else:
                 raise AttributeError(
-                    '%s does not have a field called %s' % (self.__class__.__name__, name)
+                    "%s does not have a field called %s" % (self.__class__.__name__, name)
                 )
 
     def __setattr__(self, name, value):
@@ -383,29 +391,29 @@ class Model(metaclass=ModelBase):
         """
         Returns the SQL statement for creating a table for this model.
         """
-        parts = ['CREATE TABLE IF NOT EXISTS `%s`.`%s` (' % (db.db_name, cls.table_name())]
+        parts = ["CREATE TABLE IF NOT EXISTS `%s`.`%s` (" % (db.db_name, cls.table_name())]
         # Fields
         items = []
         for name, field in cls.fields().items():
-            items.append('    %s %s' % (name, field.get_sql(db=db)))
+            items.append("    %s %s" % (name, field.get_sql(db=db)))
         # Constraints
         for c in cls._constraints.values():
-            items.append('    %s' % c.create_table_sql())
+            items.append("    %s" % c.create_table_sql())
         # Indexes
         for i in cls._indexes.values():
-            items.append('    %s' % i.create_table_sql())
-        parts.append(',\n'.join(items))
+            items.append("    %s" % i.create_table_sql())
+        parts.append(",\n".join(items))
         # Engine
-        parts.append(')')
-        parts.append('ENGINE = ' + cls.engine.create_table_sql(db))
-        return '\n'.join(parts)
+        parts.append(")")
+        parts.append("ENGINE = " + cls.engine.create_table_sql(db))
+        return "\n".join(parts)
 
     @classmethod
     def drop_table_sql(cls, db: Database) -> str:
         """
         Returns the SQL command for deleting this model's table.
         """
-        return 'DROP TABLE IF EXISTS `%s`.`%s`' % (db.db_name, cls.table_name())
+        return "DROP TABLE IF EXISTS `%s`.`%s`" % (db.db_name, cls.table_name())
 
     @classmethod
     def from_tsv(cls, line, field_names, timezone_in_use=pytz.utc, database=None):
@@ -422,7 +430,7 @@ class Model(metaclass=ModelBase):
         kwargs = {}
         for name in field_names:
             field = getattr(cls, name)
-            field_timezone = getattr(field, 'timezone', None) or timezone_in_use
+            field_timezone = getattr(field, "timezone", None) or timezone_in_use
             kwargs[name] = field.to_python(next(values), field_timezone)
 
         obj = cls(**kwargs)
@@ -439,7 +447,9 @@ class Model(metaclass=ModelBase):
         """
         data = self.__dict__
         fields = self.fields(writable=not include_readonly)
-        return '\t'.join(field.to_db_string(data[name], quote=False) for name, field in fields.items())
+        return "\t".join(
+            field.to_db_string(data[name], quote=False) for name, field in fields.items()
+        )
 
     def to_tskv(self, include_readonly=True):
         """
@@ -453,16 +463,16 @@ class Model(metaclass=ModelBase):
         parts = []
         for name, field in fields.items():
             if data[name] != NO_VALUE:
-                parts.append(name + '=' + field.to_db_string(data[name], quote=False))
-        return '\t'.join(parts)
+                parts.append(name + "=" + field.to_db_string(data[name], quote=False))
+        return "\t".join(parts)
 
     def to_db_string(self) -> bytes:
         """
         Returns the instance as a bytestring ready to be inserted into the database.
         """
         s = self.to_tskv(False) if self._has_funcs_as_defaults else self.to_tsv(False)
-        s += '\n'
-        return s.encode('utf-8')
+        s += "\n"
+        return s.encode("utf-8")
 
     def to_dict(self, include_readonly=True, field_names=None) -> dict[str, Any]:
         """
@@ -519,19 +529,18 @@ class Model(metaclass=ModelBase):
 
 
 class BufferModel(Model):
-
     @classmethod
     def create_table_sql(cls, db: Database) -> str:
         """
         Returns the SQL statement for creating a table for this model.
         """
         parts = [
-            'CREATE TABLE IF NOT EXISTS `%s`.`%s` AS `%s`.`%s`' % (
-                db.db_name, cls.table_name(), db.db_name, cls.engine.main_model.table_name())
+            "CREATE TABLE IF NOT EXISTS `%s`.`%s` AS `%s`.`%s`"
+            % (db.db_name, cls.table_name(), db.db_name, cls.engine.main_model.table_name())
         ]
         engine_str = cls.engine.create_table_sql(db)
         parts.append(engine_str)
-        return ' '.join(parts)
+        return " ".join(parts)
 
 
 class MergeModel(Model):
@@ -540,6 +549,7 @@ class MergeModel(Model):
     Predefines virtual _table column an controls that rows can't be inserted to this table type
     https://clickhouse.tech/docs/en/single/index.html#document-table_engines/merge
     """
+
     readonly = True
 
     # Virtual fields can't be inserted into database
@@ -551,15 +561,16 @@ class MergeModel(Model):
         Returns the SQL statement for creating a table for this model.
         """
         assert isinstance(cls.engine, Merge), "engine must be an instance of engines.Merge"
-        parts = ['CREATE TABLE IF NOT EXISTS `%s`.`%s` (' % (db.db_name, cls.table_name())]
+        parts = ["CREATE TABLE IF NOT EXISTS `%s`.`%s` (" % (db.db_name, cls.table_name())]
         cols = []
         for name, field in cls.fields().items():
-            if name != '_table':
-                cols.append('    %s %s' % (name, field.get_sql(db=db)))
-        parts.append(',\n'.join(cols))
-        parts.append(')')
-        parts.append('ENGINE = ' + cls.engine.create_table_sql(db))
-        return '\n'.join(parts)
+            if name != "_table":
+                cols.append("    %s %s" % (name, field.get_sql(db=db)))
+        parts.append(",\n".join(cols))
+        parts.append(")")
+        parts.append("ENGINE = " + cls.engine.create_table_sql(db))
+        return "\n".join(parts)
+
 
 # TODO: base class for models that require specific engine
 
@@ -574,8 +585,9 @@ class DistributedModel(Model):
         Sets the `Database` that this model instance belongs to.
         This is done automatically when the instance is read from the database or written to it.
         """
-        assert isinstance(self.engine, Distributed),\
-            "engine must be an instance of engines.Distributed"
+        assert isinstance(
+            self.engine, Distributed
+        ), "engine must be an instance of engines.Distributed"
         super().set_database(db)
 
     @classmethod
@@ -616,15 +628,20 @@ class DistributedModel(Model):
             return
 
         # find out all the superclasses of the Model that store any data
-        storage_models = [b for b in cls.__bases__ if issubclass(b, Model)
-                          and not issubclass(b, DistributedModel)]
+        storage_models = [
+            b for b in cls.__bases__ if issubclass(b, Model) and not issubclass(b, DistributedModel)
+        ]
         if not storage_models:
-            raise TypeError("When defining Distributed engine without the table_name "
-                            "ensure that your model has a parent model")
+            raise TypeError(
+                "When defining Distributed engine without the table_name "
+                "ensure that your model has a parent model"
+            )
 
         if len(storage_models) > 1:
-            raise TypeError("When defining Distributed engine without the table_name "
-                            "ensure that your model has exactly one non-distributed superclass")
+            raise TypeError(
+                "When defining Distributed engine without the table_name "
+                "ensure that your model has exactly one non-distributed superclass"
+            )
 
         # enable correct SQL for engine
         cls.engine.table = storage_models[0]
@@ -637,10 +654,12 @@ class DistributedModel(Model):
         assert isinstance(cls.engine, Distributed), "engine must be engines.Distributed instance"
 
         parts = [
-            'CREATE TABLE IF NOT EXISTS `{0}`.`{1}` AS `{0}`.`{2}`'.format(
-                db.db_name, cls.table_name(), cls.engine.table_name),
-            'ENGINE = ' + cls.engine.create_table_sql(db)]
-        return '\n'.join(parts)
+            "CREATE TABLE IF NOT EXISTS `{0}`.`{1}` AS `{0}`.`{2}`".format(
+                db.db_name, cls.table_name(), cls.engine.table_name
+            ),
+            "ENGINE = " + cls.engine.create_table_sql(db),
+        ]
+        return "\n".join(parts)
 
 
 class TemporaryModel(Model):
@@ -657,30 +676,31 @@ class TemporaryModel(Model):
 
     https://clickhouse.com/docs/en/sql-reference/statements/create/table/#temporary-tables
     """
+
     _temporary = True
 
     @classmethod
     def create_table_sql(cls, db: Database) -> str:
         assert isinstance(cls.engine, Memory), "engine must be engines.Memory instance"
 
-        parts = ['CREATE TEMPORARY TABLE IF NOT EXISTS `%s` (' % cls.table_name()]
+        parts = ["CREATE TEMPORARY TABLE IF NOT EXISTS `%s` (" % cls.table_name()]
         # Fields
         items = []
         for name, field in cls.fields().items():
-            items.append('    %s %s' % (name, field.get_sql(db=db)))
+            items.append("    %s %s" % (name, field.get_sql(db=db)))
         # Constraints
         for c in cls._constraints.values():
-            items.append('    %s' % c.create_table_sql())
+            items.append("    %s" % c.create_table_sql())
         # Indexes
         for i in cls._indexes.values():
-            items.append('    %s' % i.create_table_sql())
-        parts.append(',\n'.join(items))
+            items.append("    %s" % i.create_table_sql())
+        parts.append(",\n".join(items))
         # Engine
-        parts.append(')')
-        parts.append('ENGINE = Memory')
-        return '\n'.join(parts)
+        parts.append(")")
+        parts.append("ENGINE = Memory")
+        return "\n".join(parts)
 
 
 # Expose only relevant classes in import *
-MODEL = TypeVar('MODEL', bound=Model)
+MODEL = TypeVar("MODEL", bound=Model)
 __all__ = get_subclass_names(locals(), (Model, Constraint, Index))

@@ -15,6 +15,7 @@ from clickhouse_orm.database import Database, ServerError, DatabaseException, lo
 
 # pylint: disable=C0116
 
+
 class AioDatabase(Database):
     _client_class = httpx.AsyncClient
 
@@ -25,7 +26,7 @@ class AioDatabase(Database):
         if self._readonly:
             if not self.db_exists:
                 raise DatabaseException(
-                    'Database does not exist, and cannot be created under readonly connection'
+                    "Database does not exist, and cannot be created under readonly connection"
                 )
             self.connection_readonly = await self._is_connection_readonly()
             self.readonly = True
@@ -44,10 +45,7 @@ class AioDatabase(Database):
         await self.request_session.aclose()
 
     async def _send(
-        self,
-        data: str | bytes | AsyncGenerator,
-        settings: dict = None,
-        stream: bool = False
+        self, data: str | bytes | AsyncGenerator, settings: dict = None, stream: bool = False
     ):
         r = await super()._send(data, settings, stream)
         if r.status_code != 200:
@@ -55,11 +53,7 @@ class AioDatabase(Database):
             raise ServerError(r.text)
         return r
 
-    async def count(
-        self,
-        model_class: type[MODEL],
-        conditions=None
-    ) -> int:
+    async def count(self, model_class: type[MODEL], conditions=None) -> int:
         """
         Counts the number of records in the model's table.
 
@@ -70,14 +64,14 @@ class AioDatabase(Database):
 
         if not self._init:
             raise DatabaseException(
-                'The AioDatabase object must execute the init method before it can be used'
+                "The AioDatabase object must execute the init method before it can be used"
             )
 
-        query = 'SELECT count() FROM $table'
+        query = "SELECT count() FROM $table"
         if conditions:
             if isinstance(conditions, Q):
                 conditions = conditions.to_sql(model_class)
-            query += ' WHERE ' + str(conditions)
+            query += " WHERE " + str(conditions)
         query = self._substitute(query, model_class)
         r = await self._send(query)
         return int(r.text) if r.text else 0
@@ -86,14 +80,14 @@ class AioDatabase(Database):
         """
         Creates the database on the ClickHouse server if it does not already exist.
         """
-        await self._send('CREATE DATABASE IF NOT EXISTS `%s`' % self.db_name)
+        await self._send("CREATE DATABASE IF NOT EXISTS `%s`" % self.db_name)
         self.db_exists = True
 
     async def drop_database(self):
         """
         Deletes the database on the ClickHouse server.
         """
-        await self._send('DROP DATABASE `%s`' % self.db_name)
+        await self._send("DROP DATABASE `%s`" % self.db_name)
         self.db_exists = False
 
     async def create_table(self, model_class: type[MODEL]) -> None:
@@ -102,7 +96,7 @@ class AioDatabase(Database):
         """
         if not self._init:
             raise DatabaseException(
-                'The AioDatabase object must execute the init method before it can be used'
+                "The AioDatabase object must execute the init method before it can be used"
             )
         if model_class.is_system_model():
             raise DatabaseException("You can't create system table")
@@ -110,7 +104,7 @@ class AioDatabase(Database):
             raise DatabaseException(
                 "Creating a temporary table must be within the lifetime of a session "
             )
-        if getattr(model_class, 'engine') is None:
+        if getattr(model_class, "engine") is None:
             raise DatabaseException(f"%s class must define an engine" % model_class.__name__)
         await self._send(model_class.create_table_sql(self))
 
@@ -121,7 +115,7 @@ class AioDatabase(Database):
         """
         if not self._init:
             raise DatabaseException(
-                'The AioDatabase object must execute the init method before it can be used'
+                "The AioDatabase object must execute the init method before it can be used"
             )
 
         await self._send(model_class.create_temporary_table_sql(self, table_name))
@@ -132,7 +126,7 @@ class AioDatabase(Database):
         """
         if not self._init:
             raise DatabaseException(
-                'The AioDatabase object must execute the init method before it can be used'
+                "The AioDatabase object must execute the init method before it can be used"
             )
 
         if model_class.is_system_model():
@@ -146,18 +140,14 @@ class AioDatabase(Database):
         """
         if not self._init:
             raise DatabaseException(
-                'The AioDatabase object must execute the init method before it can be used'
+                "The AioDatabase object must execute the init method before it can be used"
             )
 
         sql = "SELECT count() FROM system.tables WHERE database = '%s' AND name = '%s'"
         r = await self._send(sql % (self.db_name, model_class.table_name()))
-        return r.text.strip() == '1'
+        return r.text.strip() == "1"
 
-    async def get_model_for_table(
-        self,
-        table_name: str,
-        system_table: bool = False
-    ):
+    async def get_model_for_table(self, table_name: str, system_table: bool = False):
         """
         Generates a model class from an existing table in the database.
         This can be used for querying tables which don't have a corresponding model class,
@@ -166,7 +156,7 @@ class AioDatabase(Database):
         - `table_name`: the table to create a model for
         - `system_table`: whether the table is a system table, or belongs to the current database
         """
-        db_name = 'system' if system_table else self.db_name
+        db_name = "system" if system_table else self.db_name
         sql = "DESCRIBE `%s`.`%s` FORMAT TSV" % (db_name, table_name)
         lines = await self._send(sql)
         fields = [parse_tsv(line)[:2] async for line in lines.aiter_lines()]
@@ -192,14 +182,13 @@ class AioDatabase(Database):
         if first_instance.is_read_only() or first_instance.is_system_model():
             raise DatabaseException("You can't insert into read only and system tables")
 
-        fields_list = ','.join(
-            ['`%s`' % name for name in first_instance.fields(writable=True)])
-        fmt = 'TSKV' if model_class.has_funcs_as_defaults() else 'TabSeparated'
-        query = 'INSERT INTO $table (%s) FORMAT %s\n' % (fields_list, fmt)
+        fields_list = ",".join(["`%s`" % name for name in first_instance.fields(writable=True)])
+        fmt = "TSKV" if model_class.has_funcs_as_defaults() else "TabSeparated"
+        query = "INSERT INTO $table (%s) FORMAT %s\n" % (fields_list, fmt)
 
         async def gen():
             buf = BytesIO()
-            buf.write(self._substitute(query, model_class).encode('utf-8'))
+            buf.write(self._substitute(query, model_class).encode("utf-8"))
             first_instance.set_database(self)
             buf.write(first_instance.to_db_string())
             # Collect lines in batches of batch_size
@@ -217,13 +206,11 @@ class AioDatabase(Database):
             # Return any remaining lines in partial batch
             if lines:
                 yield buf.getvalue()
+
         await self._send(gen())
 
     async def select(
-        self,
-        query: str,
-        model_class: Optional[type[MODEL]] = None,
-        settings: Optional[dict] = None
+        self, query: str, model_class: Optional[type[MODEL]] = None, settings: Optional[dict] = None
     ) -> AsyncGenerator[MODEL, None]:
         """
         Performs a query and returns a generator of model instances.
@@ -233,7 +220,7 @@ class AioDatabase(Database):
           or `None` for getting back instances of an ad-hoc model.
         - `settings`: query settings to send as HTTP GET parameters
         """
-        query += ' FORMAT TabSeparatedWithNamesAndTypes'
+        query += " FORMAT TabSeparatedWithNamesAndTypes"
         query = self._substitute(query, model_class)
         r = await self._send(query, settings, True)
         try:
@@ -245,7 +232,8 @@ class AioDatabase(Database):
                 elif not field_types:
                     field_types = parse_tsv(line)
                     model_class = model_class or ModelBase.create_ad_hoc_model(
-                        zip(field_names, field_types))
+                        zip(field_names, field_types)
+                    )
                 elif line.strip():
                     yield model_class.from_tsv(line, field_names, self.server_timezone, self)
         except StopIteration:
@@ -271,7 +259,7 @@ class AioDatabase(Database):
         page_num: int = 1,
         page_size: int = 100,
         conditions=None,
-        settings: Optional[dict] = None
+        settings: Optional[dict] = None,
     ):
         """
         Selects records and returns a single page of model instances.
@@ -294,22 +282,22 @@ class AioDatabase(Database):
         if page_num == -1:
             page_num = max(pages_total, 1)
         elif page_num < 1:
-            raise ValueError('Invalid page number: %d' % page_num)
+            raise ValueError("Invalid page number: %d" % page_num)
         offset = (page_num - 1) * page_size
-        query = 'SELECT * FROM $table'
+        query = "SELECT * FROM $table"
         if conditions:
             if isinstance(conditions, Q):
                 conditions = conditions.to_sql(model_class)
-            query += ' WHERE ' + str(conditions)
-        query += ' ORDER BY %s' % order_by
-        query += ' LIMIT %d, %d' % (offset, page_size)
+            query += " WHERE " + str(conditions)
+        query += " ORDER BY %s" % order_by
+        query += " LIMIT %d, %d" % (offset, page_size)
         query = self._substitute(query, model_class)
         return Page(
             objects=[r async for r in self.select(query, model_class, settings)] if count else [],
             number_of_objects=count,
             pages_total=pages_total,
             number=page_num,
-            page_size=page_size
+            page_size=page_size,
         )
 
     async def migrate(self, migrations_package_name, up_to=9999):
@@ -322,19 +310,23 @@ class AioDatabase(Database):
         """
         from ..migrations import MigrationHistory
 
-        logger = logging.getLogger('migrations')
+        logger = logging.getLogger("migrations")
         applied_migrations = await self._get_applied_migrations(migrations_package_name)
         modules = import_submodules(migrations_package_name)
         unapplied_migrations = set(modules.keys()) - applied_migrations
         for name in sorted(unapplied_migrations):
-            logger.info('Applying migration %s...', name)
+            logger.info("Applying migration %s...", name)
             for operation in modules[name].operations:
                 operation.apply(self)
-            await self.insert([MigrationHistory(
-                package_name=migrations_package_name,
-                module_name=name,
-                applied=datetime.date.today()
-            )])
+            await self.insert(
+                [
+                    MigrationHistory(
+                        package_name=migrations_package_name,
+                        module_name=name,
+                        applied=datetime.date.today(),
+                    )
+                ]
+            )
             if int(name[:4]) >= up_to:
                 break
 
@@ -342,28 +334,28 @@ class AioDatabase(Database):
         r = await self._send(
             "SELECT count() FROM system.databases WHERE name = '%s'" % self.db_name
         )
-        return r.text.strip() == '1'
+        return r.text.strip() == "1"
 
     async def _is_connection_readonly(self):
         r = await self._send("SELECT value FROM system.settings WHERE name = 'readonly'")
-        return r.text.strip() != '0'
+        return r.text.strip() != "0"
 
     async def _get_server_timezone(self):
         try:
-            r = await self._send('SELECT timezone()')
+            r = await self._send("SELECT timezone()")
             return pytz.timezone(r.text.strip())
         except ServerError as err:
-            logger.exception('Cannot determine server timezone (%s), assuming UTC', err)
+            logger.exception("Cannot determine server timezone (%s), assuming UTC", err)
             return pytz.utc
 
     async def _get_server_version(self, as_tuple=True):
         try:
-            r = await self._send('SELECT version();')
+            r = await self._send("SELECT version();")
             ver = r.text
         except ServerError as err:
-            logger.exception('Cannot determine server version (%s), assuming 1.1.0', err)
-            ver = '1.1.0'
-        return tuple(int(n) for n in ver.split('.') if n.isdigit()) if as_tuple else ver
+            logger.exception("Cannot determine server version (%s), assuming 1.1.0", err)
+            ver = "1.1.0"
+        return tuple(int(n) for n in ver.split(".") if n.isdigit()) if as_tuple else ver
 
     async def _get_applied_migrations(self, migrations_package_name):
         from ..migrations import MigrationHistory
