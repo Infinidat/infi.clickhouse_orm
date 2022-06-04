@@ -51,6 +51,7 @@ class AioDatabase(Database):
     ):
         r = await super()._send(data, settings, stream)
         if r.status_code != 200:
+            await r.aread()
             raise ServerError(r.text)
         return r
 
@@ -85,11 +86,6 @@ class AioDatabase(Database):
         """
         Creates the database on the ClickHouse server if it does not already exist.
         """
-        if not self._init:
-            raise DatabaseException(
-                'The AioDatabase object must execute the init method before it can be used'
-            )
-
         await self._send('CREATE DATABASE IF NOT EXISTS `%s`' % self.db_name)
         self.db_exists = True
 
@@ -97,11 +93,6 @@ class AioDatabase(Database):
         """
         Deletes the database on the ClickHouse server.
         """
-        if not self._init:
-            raise DatabaseException(
-                'The AioDatabase object must execute the init method before it can be used'
-            )
-
         await self._send('DROP DATABASE `%s`' % self.db_name)
         self.db_exists = False
 

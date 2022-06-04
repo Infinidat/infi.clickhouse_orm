@@ -11,6 +11,11 @@ This queryset matches all Person instances in the database. You can get these in
     for person in qs:
         print(person.first_name, person.last_name)
 
+For AioDatabase instances:
+
+    async for person in qs:
+        print(person.first_name, person.last_name)
+
 Filtering
 ---------
 
@@ -88,24 +93,26 @@ qs = qs.filter(x__gt=100, y__lt=20, terrain='water')
 ```
 Below are all the supported operators.
 
-| Operator       | Equivalent SQL                               | Comments                           |
-| --------       | -------------------------------------------- | ---------------------------------- |
-| `eq`           | `field = value`                              |                                    |
-| `ne`           | `field != value`                             |                                    |
-| `gt`           | `field > value`                              |                                    |
-| `gte`          | `field >= value`                             |                                    |
-| `lt`           | `field < value`                              |                                    |
-| `lte`          | `field <= value`                             |                                    |
-| `between`      | `field BETWEEN value1 AND value2`            |                                    |
-| `in`           | `field IN (values)`                          |                                    |
-| `not_in`       | `field NOT IN (values)`                      |                                    |
-| `contains`     | `field LIKE '%value%'`                       | For string fields only             |
-| `startswith`   | `field LIKE 'value%'`                        | For string fields only             |
-| `endswith`     | `field LIKE '%value'`                        | For string fields only             |
-| `icontains`    | `lowerUTF8(field) LIKE lowerUTF8('%value%')` | For string fields only             |
-| `istartswith`  | `lowerUTF8(field) LIKE lowerUTF8('value%')`  | For string fields only             |
-| `iendswith`    | `lowerUTF8(field) LIKE lowerUTF8('%value')`  | For string fields only             |
-| `iexact`       | `lowerUTF8(field) = lowerUTF8(value)`        | For string fields only             |
+| Operator      | Equivalent SQL                               | Comments                           |
+|---------------|----------------------------------------------| ---------------------------------- |
+| `eq`          | `field = value`                              |                                    |
+| `ne`          | `field != value`                             |                                    |
+| `gt`          | `field > value`                              |                                    |
+| `gte`         | `field >= value`                             |                                    |
+| `lt`          | `field < value`                              |                                    |
+| `lte`         | `field <= value`                             |                                    |
+| `between`     | `field BETWEEN value1 AND value2`            |                                    |
+| `in`          | `field IN (values)`                          |                                    |
+| `gin`         | `field GLOBAL IN (values)`                   |                                    |
+| `not_in`      | `field NOT IN (values)`                      |                                    |
+| `not_gin`     | `field NOT GLOBAL IN (values)`               |                                    |
+| `contains`    | `field LIKE '%value%'`                       | For string fields only             |
+| `startswith`  | `field LIKE 'value%'`                        | For string fields only             |
+| `endswith`    | `field LIKE '%value'`                        | For string fields only             |
+| `icontains`   | `lowerUTF8(field) LIKE lowerUTF8('%value%')` | For string fields only             |
+| `istartswith` | `lowerUTF8(field) LIKE lowerUTF8('value%')`  | For string fields only             |
+| `iendswith`   | `lowerUTF8(field) LIKE lowerUTF8('%value')`  | For string fields only             |
+| `iexact`      | `lowerUTF8(field) = lowerUTF8(value)`        | For string fields only             |
 
 Counting and Checking Existence
 -------------------------------
@@ -113,6 +120,9 @@ Counting and Checking Existence
 Use the `count` method to get the number of matches:
 
     Person.objects_in(database).count()
+
+    # aio
+    # await Person.objects_in(database).count()
 
 To check if there are any matches at all, you can use any of the following equivalent options:
 
@@ -164,7 +174,7 @@ Adds a FINAL modifier to the query, meaning that the selected data is fully "col
 Slicing
 -------
 
-It is possible to get a specific item from the queryset by index:
+It is possible to get a specific item from the queryset by index (**not applicable to AioDatabase)**:
 
       qs = Person.objects_in(database).order_by('last_name', 'first_name')
       first = qs[0]
@@ -174,6 +184,9 @@ It is also possible to get a range a instances using a slice. This returns a que
       qs = Person.objects_in(database).order_by('last_name', 'first_name')
       first_ten_people = list(qs[:10])
       next_ten_people  = list(qs[10:20])
+
+      # first_ten_people = [_ async for _ in qs[:10]]
+      # next_ten_people  = [_ async for _ in qs[10:20]]
 
 You should use `order_by` to ensure a consistent ordering of the results.
 

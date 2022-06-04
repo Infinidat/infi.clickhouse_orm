@@ -3,8 +3,8 @@ from datetime import date
 
 from clickhouse_orm.database import Database
 from clickhouse_orm.models import Model, NO_VALUE
-from clickhouse_orm.fields import *
-from clickhouse_orm.engines import *
+from clickhouse_orm.fields import Int32Field, StringField, DateField
+from clickhouse_orm.engines import MergeTree
 from clickhouse_orm.funcs import F
 
 
@@ -70,7 +70,7 @@ class ModelWithAliasFields(Model):
     date_field = DateField()
     str_field = StringField()
 
-    alias_str = StringField(alias=u'str_field')
+    alias_str = StringField(alias='str_field')
     alias_int = Int32Field(alias='int_field')
     alias_date = DateField(alias='date_field')
     alias_func = Int32Field(alias=F.toYYYYMM(date_field))

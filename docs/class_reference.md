@@ -1,8 +1,8 @@
 Class Reference
 ===============
 
-infi.clickhouse_orm.database
-----------------------------
+clickhouse_orm.database
+-----------------------
 
 ### Database
 
@@ -10,7 +10,7 @@ infi.clickhouse_orm.database
 Database instances connect to a specific ClickHouse database for running queries,
 inserting data and other operations.
 
-#### Database(db_name, db_url="http://localhost:8123/", username=None, password=None, readonly=False, autocreate=True, timeout=60, verify_ssl_cert=True, log_statements=False)
+#### Database(db_name, db_url="http://localhost:8123/", username=None, password=None, readonly=False, auto_create=True, timeout=60, verify_ssl_cert=True, log_statements=False)
 
 
 Initializes a database instance. Unless it's readonly, the database will be
@@ -21,7 +21,8 @@ created on the ClickHouse server if it does not already exist.
 - `username`: optional connection credentials.
 - `password`: optional connection credentials.
 - `readonly`: use a read-only connection.
-- `autocreate`: automatically create the database if it does not exist (unless in readonly mode).
+- `auto_create`: automatically create the database
+                if it does not exist (unless in readonly mode).
 - `timeout`: the connection timeout in seconds.
 - `verify_ssl_cert`: whether to verify the server's certificate when connecting via HTTPS.
 - `log_statements`: when True, all database statements are logged.
@@ -88,13 +89,17 @@ for example system tables.
 - `system_table`: whether the table is a system table, or belongs to the current database
 
 
+#### init()
+
+
 #### insert(model_instances, batch_size=1000)
 
 
 Insert records into the database.
 
 - `model_instances`: any iterable containing instances of a single model class.
-- `batch_size`: number of records to send per chunk (use a lower number if your records are very large).
+- `batch_size`: number of records to send per chunk
+                (use a lower number if your records are very large).
 
 
 #### migrate(migrations_package_name, up_to=9999)
@@ -152,8 +157,164 @@ Extends Exception
 
 Raised when a database operation fails.
 
-infi.clickhouse_orm.models
---------------------------
+clickhouse_orm.aio.database
+---------------------------
+
+### AioDatabase
+
+Extends Database
+
+#### AioDatabase(db_name, db_url="http://localhost:8123/", username=None, password=None, readonly=False, auto_create=True, timeout=60, verify_ssl_cert=True, log_statements=False)
+
+
+Initializes a database instance. Unless it's readonly, the database will be
+created on the ClickHouse server if it does not already exist.
+
+- `db_name`: name of the database to connect to.
+- `db_url`: URL of the ClickHouse server.
+- `username`: optional connection credentials.
+- `password`: optional connection credentials.
+- `readonly`: use a read-only connection.
+- `auto_create`: automatically create the database
+                if it does not exist (unless in readonly mode).
+- `timeout`: the connection timeout in seconds.
+- `verify_ssl_cert`: whether to verify the server's certificate when connecting via HTTPS.
+- `log_statements`: when True, all database statements are logged.
+
+
+#### add_setting(name, value)
+
+
+Adds a database setting that will be sent with every request.
+For example, `db.add_setting("max_execution_time", 10)` will
+limit query execution time to 10 seconds.
+The name must be string, and the value is converted to string in case
+it isn't. To remove a setting, pass `None` as the value.
+
+
+#### close()
+
+
+#### count(model_class, conditions=None)
+
+
+Counts the number of records in the model's table.
+
+- `model_class`: the model to count.
+- `conditions`: optional SQL conditions (contents of the WHERE clause).
+
+
+#### create_database()
+
+
+Creates the database on the ClickHouse server if it does not already exist.
+
+
+#### create_table(model_class)
+
+
+Creates a table for the given model class, if it does not exist already.
+
+
+#### create_temporary_table(model_class, table_name=None)
+
+
+Creates a temporary table for the given model class, if it does not exist already.
+And you can specify the temporary table name explicitly.
+
+
+#### does_table_exist(model_class)
+
+
+Checks whether a table for the given model class already exists.
+Note that this only checks for existence of a table with the expected name.
+
+
+#### drop_database()
+
+
+Deletes the database on the ClickHouse server.
+
+
+#### drop_table(model_class)
+
+
+Drops the database table of the given model class, if it exists.
+
+
+#### get_model_for_table(table_name, system_table=False)
+
+
+Generates a model class from an existing table in the database.
+This can be used for querying tables which don't have a corresponding model class,
+for example system tables.
+
+- `table_name`: the table to create a model for
+- `system_table`: whether the table is a system table, or belongs to the current database
+
+
+#### init()
+
+
+#### insert(model_instances, batch_size=1000)
+
+
+Insert records into the database.
+
+- `model_instances`: any iterable containing instances of a single model class.
+- `batch_size`: number of records to send per chunk (use a lower number if your records are very large).
+
+
+#### migrate(migrations_package_name, up_to=9999)
+
+
+Executes schema migrations.
+
+- `migrations_package_name` - fully qualified name of the Python package
+  containing the migrations.
+- `up_to` - number of the last migration to apply.
+
+
+#### paginate(model_class, order_by, page_num=1, page_size=100, conditions=None, settings=None)
+
+
+Selects records and returns a single page of model instances.
+
+- `model_class`: the model class matching the query's table,
+  or `None` for getting back instances of an ad-hoc model.
+- `order_by`: columns to use for sorting the query (contents of the ORDER BY clause).
+- `page_num`: the page number (1-based), or -1 to get the last page.
+- `page_size`: number of records to return per page.
+- `conditions`: optional SQL conditions (contents of the WHERE clause).
+- `settings`: query settings to send as HTTP GET parameters
+
+The result is a namedtuple containing `objects` (list), `number_of_objects`,
+`pages_total`, `number` (of the current page), and `page_size`.
+
+
+#### raw(query, settings=None, stream=False)
+
+
+Performs a query and returns its output as text.
+
+- `query`: the SQL query to execute.
+- `settings`: query settings to send as HTTP GET parameters
+- `stream`: if true, the HTTP response from ClickHouse will be streamed.
+
+
+#### select(query, model_class=None, settings=None)
+
+
+Performs a query and returns a generator of model instances.
+
+- `query`: the SQL query to execute.
+- `model_class`: the model class matching the query's table,
+  or `None` for getting back instances of an ad-hoc model.
+- `settings`: query settings to send as HTTP GET parameters
+
+
+clickhouse_orm.models
+---------------------
 
 ### Model
 
@@ -237,6 +398,12 @@ Returns true if the model is marked as read only.
 
 
 Returns true if the model represents a system table.
+
+
+#### Model.is_temporary_model()
+
+
+Returns true if the model represents a temporary table.
 
 
 #### Model.objects_in(database)
@@ -367,6 +534,12 @@ Returns true if the model is marked as read only.
 
 
 Returns true if the model represents a system table.
+
+
+#### BufferModel.is_temporary_model()
+
+
+Returns true if the model represents a temporary table.
 
 
 #### BufferModel.objects_in(database)
@@ -502,6 +675,12 @@ Returns true if the model is marked as read only.
 
 
 Returns true if the model represents a system table.
+
+
+#### MergeModel.is_temporary_model()
+
+
+Returns true if the model represents a temporary table.
 
 
 #### MergeModel.objects_in(database)
@@ -670,6 +849,12 @@ Returns true if the model is marked as read only.
 Returns true if the model represents a system table.
 
 
+#### DistributedModel.is_temporary_model()
+
+
+Returns true if the model represents a temporary table.
+
+
 #### DistributedModel.objects_in(database)
 
 
@@ -811,14 +996,14 @@ separated by non-alphanumeric characters.
 - `random_seed` — The seed for Bloom filter hash functions.
 
 
-infi.clickhouse_orm.fields
---------------------------
+clickhouse_orm.fields
+---------------------
 
 ### ArrayField
 
 Extends Field
 
-#### ArrayField(inner_field, default=None, alias=None, materialized=None, readonly=None, codec=None)
+#### ArrayField(inner_field, default=None, alias=None, materialized=None, readonly=None, codec=None, db_column=None)
 
 
 ### BaseEnumField
@@ -828,7 +1013,7 @@ Extends Field
 
 Abstract base class for all enum-type fields.
 
-#### BaseEnumField(enum_cls, default=None, alias=None, materialized=None, readonly=None, codec=None)
+#### BaseEnumField(enum_cls, default=None, alias=None, materialized=None, readonly=None, codec=None, db_column=None)
 
 
 ### BaseFloatField
@@ -838,7 +1023,7 @@ Extends Field
 
 Abstract base class for all float-type fields.
 
-#### BaseFloatField(default=None, alias=None, materialized=None, readonly=None, codec=None)
+#### BaseFloatField(default=None, alias=None, materialized=None, readonly=None, codec=None, db_column=None)
 
 
 ### BaseIntField
@@ -848,49 +1033,49 @@ Extends Field
 
 Abstract base class for all integer-type fields.
 
-#### BaseIntField(default=None, alias=None, materialized=None, readonly=None, codec=None)
+#### BaseIntField(default=None, alias=None, materialized=None, readonly=None, codec=None, db_column=None)
 
 
 ### DateField
 
 Extends Field
 
-#### DateField(default=None, alias=None, materialized=None, readonly=None, codec=None)
+#### DateField(default=None, alias=None, materialized=None, readonly=None, codec=None, db_column=None)
 
 
 ### DateTime64Field
 
 Extends DateTimeField
 
-#### DateTime64Field(default=None, alias=None, materialized=None, readonly=None, codec=None, timezone=None, precision=6)
+#### DateTime64Field(default=None, alias=None, materialized=None, readonly=None, codec=None, db_column=None, timezone=None, precision=6)
 
 
 ### DateTimeField
 
 Extends Field
 
-#### DateTimeField(default=None, alias=None, materialized=None, readonly=None, codec=None, timezone=None)
+#### DateTimeField(default=None, alias=None, materialized=None, readonly=None, codec=None, db_column=None, timezone=None)
 
 
 ### Decimal128Field
 
 Extends DecimalField
 
-#### Decimal128Field(scale, default=None, alias=None, materialized=None, readonly=None)
+#### Decimal128Field(scale, default=None, alias=None, materialized=None, readonly=None, db_column=None)
 
 
 ### Decimal32Field
 
 Extends DecimalField
 
-#### Decimal32Field(scale, default=None, alias=None, materialized=None, readonly=None)
+#### Decimal32Field(scale, default=None, alias=None, materialized=None, readonly=None, db_column=None)
 
 
 ### Decimal64Field
 
 Extends DecimalField
 
-#### Decimal64Field(scale, default=None, alias=None, materialized=None, readonly=None)
+#### Decimal64Field(scale, default=None, alias=None, materialized=None, readonly=None, db_column=None)
 
 
 ### DecimalField
@@ -900,21 +1085,21 @@ Extends Field
 
 Base class for all decimal fields. Can also be used directly.
 
-#### DecimalField(precision, scale, default=None, alias=None, materialized=None, readonly=None)
+#### DecimalField(precision, scale, default=None, alias=None, materialized=None, readonly=None, db_column=None)
 
 
 ### Enum16Field
 
 Extends BaseEnumField
 
-#### Enum16Field(enum_cls, default=None, alias=None, materialized=None, readonly=None, codec=None)
+#### Enum16Field(enum_cls, default=None, alias=None, materialized=None, readonly=None, codec=None, db_column=None)
 
 
 ### Enum8Field
 
 Extends BaseEnumField
 
-#### Enum8Field(enum_cls, default=None, alias=None, materialized=None, readonly=None, codec=None)
+#### Enum8Field(enum_cls, default=None, alias=None, materialized=None, readonly=None, codec=None, db_column=None)
 
 
 ### Field
@@ -924,130 +1109,137 @@ Extends FunctionOperatorsMixin
 
 Abstract base class for all field types.
 
-#### Field(default=None, alias=None, materialized=None, readonly=None, codec=None)
+#### Field(default=None, alias=None, materialized=None, readonly=None, codec=None, db_column=None)
 
 
 ### FixedStringField
 
 Extends StringField
 
-#### FixedStringField(length, default=None, alias=None, materialized=None, readonly=None)
+#### FixedStringField(length, default=None, alias=None, materialized=None, readonly=None, db_column=None)
 
 
 ### Float32Field
 
 Extends BaseFloatField
 
-#### Float32Field(default=None, alias=None, materialized=None, readonly=None, codec=None)
+#### Float32Field(default=None, alias=None, materialized=None, readonly=None, codec=None, db_column=None)
 
 
 ### Float64Field
 
 Extends BaseFloatField
 
-#### Float64Field(default=None, alias=None, materialized=None, readonly=None, codec=None)
+#### Float64Field(default=None, alias=None, materialized=None, readonly=None, codec=None, db_column=None)
 
 
 ### IPv4Field
 
 Extends Field
 
-#### IPv4Field(default=None, alias=None, materialized=None, readonly=None, codec=None)
+#### IPv4Field(default=None, alias=None, materialized=None, readonly=None, codec=None, db_column=None)
 
 
 ### IPv6Field
 
 Extends Field
 
-#### IPv6Field(default=None, alias=None, materialized=None, readonly=None, codec=None)
+#### IPv6Field(default=None, alias=None, materialized=None, readonly=None, codec=None, db_column=None)
 
 
 ### Int16Field
 
 Extends BaseIntField
 
-#### Int16Field(default=None, alias=None, materialized=None, readonly=None, codec=None)
+#### Int16Field(default=None, alias=None, materialized=None, readonly=None, codec=None, db_column=None)
 
 
 ### Int32Field
 
 Extends BaseIntField
 
-#### Int32Field(default=None, alias=None, materialized=None, readonly=None, codec=None)
+#### Int32Field(default=None, alias=None, materialized=None, readonly=None, codec=None, db_column=None)
 
 
 ### Int64Field
 
 Extends BaseIntField
 
-#### Int64Field(default=None, alias=None, materialized=None, readonly=None, codec=None)
+#### Int64Field(default=None, alias=None, materialized=None, readonly=None, codec=None, db_column=None)
 
 
 ### Int8Field
 
 Extends BaseIntField
 
-#### Int8Field(default=None, alias=None, materialized=None, readonly=None, codec=None)
+#### Int8Field(default=None, alias=None, materialized=None, readonly=None, codec=None, db_column=None)
 
 
 ### LowCardinalityField
 
 Extends Field
 
-#### LowCardinalityField(inner_field, default=None, alias=None, materialized=None, readonly=None, codec=None)
+#### LowCardinalityField(inner_field, default=None, alias=None, materialized=None, readonly=None, codec=None, db_column=None)
 
 
 ### NullableField
 
 Extends Field
 
-#### NullableField(inner_field, default=None, alias=None, materialized=None, extra_null_values=None, codec=None)
+#### NullableField(inner_field, default=None, alias=None, materialized=None, extra_null_values=None, codec=None, db_column=None)
 
 
 ### StringField
 
 Extends Field
 
-#### StringField(default=None, alias=None, materialized=None, readonly=None, codec=None)
+#### StringField(default=None, alias=None, materialized=None, readonly=None, codec=None, db_column=None)
+
+
+### TupleField
+
+Extends Field
+
+#### TupleField(name_fields, default=None, alias=None, materialized=None, readonly=None, codec=None, db_column=None)
 
 
 ### UInt16Field
 
 Extends BaseIntField
 
-#### UInt16Field(default=None, alias=None, materialized=None, readonly=None, codec=None)
+#### UInt16Field(default=None, alias=None, materialized=None, readonly=None, codec=None, db_column=None)
 
 
 ### UInt32Field
 
 Extends BaseIntField
 
-#### UInt32Field(default=None, alias=None, materialized=None, readonly=None, codec=None)
+#### UInt32Field(default=None, alias=None, materialized=None, readonly=None, codec=None, db_column=None)
 
 
 ### UInt64Field
 
 Extends BaseIntField
 
-#### UInt64Field(default=None, alias=None, materialized=None, readonly=None, codec=None)
+#### UInt64Field(default=None, alias=None, materialized=None, readonly=None, codec=None, db_column=None)
 
 
 ### UInt8Field
 
 Extends BaseIntField
 
-#### UInt8Field(default=None, alias=None, materialized=None, readonly=None, codec=None)
+#### UInt8Field(default=None, alias=None, materialized=None, readonly=None, codec=None, db_column=None)
 
 
 ### UUIDField
 
 Extends Field
 
-#### UUIDField(default=None, alias=None, materialized=None, readonly=None, codec=None)
+#### UUIDField(default=None, alias=None, materialized=None, readonly=None, codec=None, db_column=None)
 
 
-infi.clickhouse_orm.engines
----------------------------
+clickhouse_orm.engines
+----------------------
 
 ### Engine
 
@@ -1140,10 +1332,12 @@ Extends MergeTree
 #### ReplacingMergeTree(date_col=None, order_by=(), ver_col=None, sampling_expr=None, index_granularity=8192, replica_table_path=None, replica_name=None, partition_key=None, primary_key=None)
 
 
-infi.clickhouse_orm.query
--------------------------
+clickhouse_orm.query
+--------------------
 
 ### QuerySet
+
+Extends Generic
 
 
 A queryset is an object that represents a database query using a specific `Model`.
@@ -1290,7 +1484,7 @@ Extends QuerySet
 
 A queryset used for aggregation.
 
-#### AggregateQuerySet(base_qs, grouping_fields, calculated_fields)
+#### AggregateQuerySet(base_queryset, grouping_fields, calculated_fields)
 
 
 Initializer. Normally you should not call this but rather use `QuerySet.aggregate()`.
@@ -1299,7 +1493,9 @@ The grouping fields should be a list/tuple of field names from the model. For ex
 ```
     ('event_type', 'event_subtype')
 ```
-The calculated fields should be a mapping from name to a ClickHouse aggregation function. For example:
+The calculated fields should be a mapping from name to a ClickHouse aggregation function.
+
+For example:
 ```
     {'weekday': 'toDayOfWeek(event_date)', 'number_of_events': 'count()'}
 ```
@@ -1443,8 +1639,8 @@ https://clickhouse.tech/docs/en/query_language/select/#with-totals-modifier
 #### to_sql(model_cls)
 
 
-infi.clickhouse_orm.funcs
--------------------------
+clickhouse_orm.funcs
+--------------------
 
 ### F
 
@@ -2012,13 +2208,16 @@ Initializer.
 #### floor(n=None)
 
 
-#### formatDateTime(format, timezone="")
+#### formatDateTime(format, timezone=NO_VALUE)
 
 
 #### gcd(b)
 
 
 #### generateUUIDv4()
+
+
+#### geohashEncode(y, precision=12)
 
 
 #### greater(**kwargs)
@@ -2717,6 +2916,42 @@ Initializer.
 #### startsWith(prefix)
 
 
+#### stddevPop(**kwargs)
+
+
+#### stddevPopIf(cond)
+
+
+#### stddevPopOrDefault()
+
+
+#### stddevPopOrDefaultIf(cond)
+
+
+#### stddevPopOrNull()
+
+
+#### stddevPopOrNullIf(cond)
+
+
+#### stddevSamp(**kwargs)
+
+
+#### stddevSampIf(cond)
+
+
+#### stddevSampOrDefault()
+
+
+#### stddevSampOrDefaultIf(cond)
+
+
+#### stddevSampOrNull()
+
+
+#### stddevSampOrNullIf(cond)
+
+
 #### substring(**kwargs)
 
 
@@ -2870,10 +3105,10 @@ Initializer.
 #### toIPv6()
 
 
-#### toISOWeek(timezone="")
+#### toISOWeek(timezone=NO_VALUE)
 
 
-#### toISOYear(timezone="")
+#### toISOYear(timezone=NO_VALUE)
 
 
 #### toInt16(**kwargs)
@@ -2945,28 +3180,28 @@ Initializer.
 #### toMonth()
 
 
-#### toQuarter(timezone="")
+#### toQuarter(timezone=NO_VALUE)
 
 
-#### toRelativeDayNum(timezone="")
+#### toRelativeDayNum(timezone=NO_VALUE)
 
 
-#### toRelativeHourNum(timezone="")
+#### toRelativeHourNum(timezone=NO_VALUE)
 
 
-#### toRelativeMinuteNum(timezone="")
+#### toRelativeMinuteNum(timezone=NO_VALUE)
 
 
-#### toRelativeMonthNum(timezone="")
+#### toRelativeMonthNum(timezone=NO_VALUE)
 
 
-#### toRelativeSecondNum(timezone="")
+#### toRelativeSecondNum(timezone=NO_VALUE)
 
 
-#### toRelativeWeekNum(timezone="")
+#### toRelativeWeekNum(timezone=NO_VALUE)
 
 
-#### toRelativeYearNum(timezone="")
+#### toRelativeYearNum(timezone=NO_VALUE)
 
 
 #### toSecond()
@@ -3011,7 +3246,7 @@ Initializer.
 #### toStringCutToZero()
 
 
-#### toTime(timezone="")
+#### toTime(timezone=NO_VALUE)
 
 
 #### toTimeZone(timezone)
@@ -3056,19 +3291,19 @@ Initializer.
 #### toUUID()
 
 
-#### toUnixTimestamp(timezone="")
+#### toUnixTimestamp(timezone=NO_VALUE)
 
 
-#### toWeek(mode=0, timezone="")
+#### toWeek(mode=0, timezone=NO_VALUE)
 
 
-#### toYYYYMM(timezone="")
+#### toYYYYMM(timezone=NO_VALUE)
 
 
-#### toYYYYMMDD(timezone="")
+#### toYYYYMMDD(timezone=NO_VALUE)
 
 
-#### toYYYYMMDDhhmmss(timezone="")
+#### toYYYYMMDDhhmmss(timezone=NO_VALUE)
 
 
 #### toYear()
@@ -3135,6 +3370,9 @@ For other functions:
 #### tryBase64Decode()
 
 
+#### tupleElement(n)
+
+
 #### unhex()
 
 
@@ -3142,5 +3380,316 @@ For other functions:
 
 
 #### uniqExact(**kwargs)
+
+
+#### uniqExactIf()
+
+
+#### uniqExactOrDefault()
+
+
+#### uniqExactOrDefaultIf()
+
+
+#### uniqExactOrNull()
+
+
+#### uniqExactOrNullIf()
+
+
+#### uniqHLL12(**kwargs)
+
+
+#### uniqHLL12If()
+
+
+#### uniqHLL12OrDefault()
+
+
+#### uniqHLL12OrDefaultIf()
+
+
+#### uniqHLL12OrNull()
+
+
+#### uniqHLL12OrNullIf()
+
+
+#### uniqIf()
+
+
+#### uniqOrDefault()
+
+
+#### uniqOrDefaultIf()
+
+
+#### uniqOrNull()
+
+
+#### uniqOrNullIf()
+
+
+#### upper(**kwargs)
+
+
+#### upperUTF8()
+
+
+#### varPop(**kwargs)
+
+
+#### varPopIf(cond)
+
+
+#### varPopOrDefault()
+
+
+#### varPopOrDefaultIf(cond)
+
+
+#### varPopOrNull()
+
+
+#### varPopOrNullIf(cond)
+
+
+#### varSamp(**kwargs)
+
+
+#### varSampIf(cond)
+
+
+#### varSampOrDefault()
+
+
+#### varSampOrDefaultIf(cond)
+
+
+#### varSampOrNull()
+
+
+#### varSampOrNullIf(cond)
+
+
+#### xxHash32()
+
+
+#### xxHash64()
+
+
+#### yesterday()
+
+
+clickhouse_orm.system_models
+----------------------------
+
+### SystemPart
+
+Extends Model
+
+
+Contains information about parts of a table in the MergeTree family.
+This model operates only fields, described in the reference. Other fields are ignored.
+https://clickhouse.tech/docs/en/system_tables/system.parts/
+
+#### SystemPart(**kwargs)
+
+
+Creates a model instance, using keyword arguments as field values.
+Since values are immediately converted to their Pythonic type,
+invalid values will cause a `ValueError` to be raised.
+Unrecognized field names will cause an `AttributeError`.
+
+
+#### attach(settings=None)
+
+
+ Add a new part or partition from the 'detached' directory to the table.
+
+- `settings`: Settings for executing request to ClickHouse over db.raw() method
+
+Returns: SQL Query
+
+
+#### SystemPart.create_table_sql(db)
+
+
+Returns the SQL statement for creating a table for this model.
+
+
+#### detach(settings=None)
+
+
+Move a partition to the 'detached' directory and forget it.
+
+- `settings`: Settings for executing request to ClickHouse over db.raw() method
+
+Returns: SQL Query
+
+
+#### drop(settings=None)
+
+
+Delete a partition
+
+- `settings`: Settings for executing request to ClickHouse over db.raw() method
+
+Returns: SQL Query
+
+
+#### SystemPart.drop_table_sql(db)
+
+
+Returns the SQL command for deleting this model's table.
+
+
+#### fetch(zookeeper_path, settings=None)
+
+
+Download a partition from another server.
+
+- `zookeeper_path`: Path in zookeeper to fetch from
+- `settings`: Settings for executing request to ClickHouse over db.raw() method
+
+Returns: SQL Query
+
+
+#### SystemPart.fields(writable=False)
+
+
+Returns an `OrderedDict` of the model's fields (from name to `Field` instance).
+If `writable` is true, only writable fields are included.
+Callers should not modify the dictionary.
+
+
+#### freeze(settings=None)
+
+
+Create a backup of a partition.
+
+- `settings`: Settings for executing request to ClickHouse over db.raw() method
+
+Returns: SQL Query
+
+
+#### SystemPart.from_tsv(line, field_names, timezone_in_use=UTC, database=None)
+
+
+Create a model instance from a tab-separated line. The line may or may not include a newline.
+The `field_names` list must match the fields defined in the model, but does not have to include all of them.
+
+- `line`: the TSV-formatted data.
+- `field_names`: names of the model fields in the data.
+- `timezone_in_use`: the timezone to use when parsing dates and datetimes. Some fields use their own timezones.
+- `database`: if given, sets the database that this instance belongs to.
+
+
+#### SystemPart.get(database, conditions="")
+
+
+Get all data from system.parts table
+
+- `database`: A database object to fetch data from.
+- `conditions`: WHERE clause conditions. Database condition is added automatically
+
+Returns: A list of SystemPart objects
+
+
+#### SystemPart.get_active(database, conditions="")
+
+
+Gets active data from system.parts table
+
+- `database`: A database object to fetch data from.
+- `conditions`: WHERE clause conditions. Database and active conditions are added automatically
+
+Returns: A list of SystemPart objects
+
+
+#### get_database()
+
+
+Gets the `Database` that this model instance belongs to.
+Returns `None` unless the instance was read from the database or written to it.
+
+
+#### get_field(name)
+
+
+Gets a `Field` instance given its name, or `None` if not found.
+
+
+#### SystemPart.has_funcs_as_defaults()
+
+
+Return True if some of the model's fields use a function expression
+as a default value. This requires special handling when inserting instances.
+
+
+#### SystemPart.is_read_only()
+
+
+Returns true if the model is marked as read only.
+
+
+#### SystemPart.is_system_model()
+
+
+Returns true if the model represents a system table.
+
+
+#### SystemPart.is_temporary_model()
+
+
+Returns true if the model represents a temporary table.
+
+
+#### SystemPart.objects_in(database)
+
+
+Returns a `QuerySet` for selecting instances of this model class.
+
+
+#### set_database(db)
+
+
+Sets the `Database` that this model instance belongs to.
+This is done automatically when the instance is read from the database or written to it.
+
+
+#### SystemPart.table_name()
+
+
+#### to_db_string()
+
+
+Returns the instance as a bytestring ready to be inserted into the database.
+
+
+#### to_dict(include_readonly=True, field_names=None)
+
+
+Returns the instance's column values as a dict.
+
+- `include_readonly`: if false, returns only fields that can be inserted into database.
+- `field_names`: an iterable of field names to return (optional)
+
+
+#### to_tskv(include_readonly=True)
+
+
+Returns the instance's column keys and values as a tab-separated line. A newline is not included.
+Fields that were not assigned a value are omitted.
+
+- `include_readonly`: if false, returns only fields that can be inserted into database.
+
+
+#### to_tsv(include_readonly=True)
+
+
+Returns the instance's column values as a tab-separated line. A newline is not included.
+
+- `include_readonly`: if false, returns only fields that can be inserted into database.
 
 

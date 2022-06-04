@@ -96,4 +96,4 @@ Note that higher-order database functions (those that use lambda expressions) ar
 
 ---
 
-[<< Models and Databases](models_and_databases.md) | [Table of Contents](toc.md) | [Importing ORM Classes >>](importing_orm_classes.md)
+[<< Async Databases](async_databases.md) | [Table of Contents](toc.md) | [Importing ORM Classes >>](importing_orm_classes.md)

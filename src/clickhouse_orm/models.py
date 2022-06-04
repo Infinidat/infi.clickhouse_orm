@@ -49,7 +49,7 @@ class Index:
     name: Optional[str] = None  # this is set by the parent model
     parent: Optional[type["Model"]] = None  # this is set by the parent model
 
-    def __init__(self, expr: F, type: str, granularity: int):
+    def __init__(self, expr: Field | F | tuple, type: str, granularity: int):
         """
         Initializer.
 
@@ -238,10 +238,14 @@ class ModelBase(type):
             return orm_fields.ArrayField(inner_field)
         # Tuples
         if db_type.startswith('Tuple'):
-            types = [s.strip() for s in db_type[6:-1].split(',')]
-            return orm_fields.TupleField(name_fields=[
-                (str(i), cls.create_ad_hoc_field(type_name)) for i, type_name in enumerate(types)]
-            )
+            types = [s.strip().split(' ') for s in db_type[6:-1].split(',')]
+            name_fields = []
+            for i, tp in enumerate(types):
+                if len(tp) == 2:
+                    name_fields.append((tp[0], cls.create_ad_hoc_field(tp[1])))
+                else:
+                    name_fields.append((str(i), cls.create_ad_hoc_field(tp[0])))
+            return orm_fields.TupleField(name_fields=name_fields)
         # FixedString
         if db_type.startswith('FixedString'):
             length = int(db_type[12:-1])

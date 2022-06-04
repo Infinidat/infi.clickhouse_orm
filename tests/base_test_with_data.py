@@ -5,6 +5,7 @@ from clickhouse_orm.database import Database
 from clickhouse_orm.models import Model
 from clickhouse_orm.fields import *
 from clickhouse_orm.engines import *
+from clickhouse_orm.aio.database import AioDatabase
 
 import logging
 logging.getLogger("requests").setLevel(logging.WARNING)
@@ -34,6 +35,31 @@ class TestCaseWithData(unittest.TestCase):
         for entry in data:
             yield Person(**entry)
 
+
+class TestCaseWithAsyncData(unittest.IsolatedAsyncioTestCase):
+
+    async def asyncSetUp(self):
+        self.database = AioDatabase('test-db', log_statements=True)
+        await self.database.init()
+        await self.database.create_table(Person)
+
+    async def asyncTearDown(self):
+        await self.database.drop_table(Person)
+        await self.database.drop_database()
+
+    async def _insert_all(self):
+        await self.database.insert(self._sample_data())
+        self.assertTrue(await self.database.count(Person))
+
+    async def _insert_and_check(self, data, count, batch_size=1000):
+        await self.database.insert(data, batch_size=batch_size)
+        self.assertEqual(count, await self.database.count(Person))
+        for instance in data:
+            self.assertEqual(self.database, instance.get_database())
+
+    def _sample_data(self):
+        for entry in data:
+            yield Person(**entry)
 
 
 class Person(Model):

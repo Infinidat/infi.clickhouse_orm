@@ -8,6 +8,7 @@ All field types accept the following arguments:
  - materialized
  - readonly
  - codec
+ - db_column
 
 Note that `default`, `alias` and `materialized` are mutually exclusive - you cannot use more than one of them in a single field.
 
@@ -25,13 +26,27 @@ class Event(Model):
     engine = Memory()
     ...
 ```
-When creating a model instance, any fields you do not specify get their default value. Fields that use a default expression are assigned a sentinel value of `infi.clickhouse_orm.utils.NO_VALUE` instead. For example:
+When creating a model instance, any fields you do not specify get their default value. Fields that use a default expression are assigned a sentinel value of `clickhouse_orm.utils.NO_VALUE` instead. For example:
 ```python
 >>> event = Event()
 >>> print(event.to_dict())
 {'name': 'EVENT', 'repeated': 1, 'created': <NO_VALUE>}
 ```
 :warning: Due to a bug in ClickHouse versions prior to 20.1.2.4, insertion of records with expressions for default values may fail.
+
+## db_column
+
+db_column allows you to use the field names defined by the clickhouse backend, rather than Field instance names.
+
+```python
+class Style(Model):
+    create_time = DateTimeField(default=F.now(), db_column="createTime")
+
+    engine = Memory()
+```
+
+You can use the `create_time` field for all ORM operations, but the clickhouse will store the column named `createTime`.
+
 
 ## alias / materialized
 
@@ -63,7 +78,7 @@ db.select('SELECT created, created_date, username, name FROM $db.event', model_c
 # created_date and username will contain a default value
 db.select('SELECT * FROM $db.event', model_class=Event)
 ```
-When creating a model instance, any alias or materialized fields are assigned a sentinel value of `infi.clickhouse_orm.utils.NO_VALUE` since their real values can only be known after insertion to the database.
+When creating a model instance, any alias or materialized fields are assigned a sentinel value of `clickhouse_orm.utils.NO_VALUE` since their real values can only be known after insertion to the database.
 
 ## codec
 

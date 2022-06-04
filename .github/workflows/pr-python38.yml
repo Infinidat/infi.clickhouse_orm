@@ -1,0 +1,41 @@
+name: Python 3.8 Tests
+on:
+  push:
+    # Publish `master` as Docker `latest` image.
+    branches:
+      - master
+      - develop
+
+    # Publish `v1.2.3` tags as releases.
+    tags:
+      - v*
+
+  # Run tests for any PRs.
+  pull_request:
+    branches:
+      - master
+      - develop
+
+jobs:
+  testPy37:
+    runs-on: ubuntu-latest
+    services:
+      clickhouse:
+        image: clickhouse/clickhouse-server
+        ports:
+          - 8123:8123
+          - 9000:9000
+        options: --ulimit nofile=262144:262144
+    strategy:
+      matrix:
+        python-version: [ "3.8" ]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build and Install
+        run: |
+          pip install build
+          python -m build 
+          pip install dist/*
+      - name: Run Unit Tests
+        run: |
+          python -m unittest

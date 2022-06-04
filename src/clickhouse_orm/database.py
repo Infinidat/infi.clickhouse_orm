@@ -100,7 +100,7 @@ class Database:
         - `username`: optional connection credentials.
         - `password`: optional connection credentials.
         - `readonly`: use a read-only connection.
-        - `autocreate`: automatically create the database
+        - `auto_create`: automatically create the database
                         if it does not exist (unless in readonly mode).
         - `timeout`: the connection timeout in seconds.
         - `verify_ssl_cert`: whether to verify the server's certificate when connecting via HTTPS.

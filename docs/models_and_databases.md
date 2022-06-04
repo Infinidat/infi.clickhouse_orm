@@ -10,7 +10,7 @@ Defining Models
 
 Models are defined in a way reminiscent of Django's ORM, by subclassing `Model`:
 ```python
-from infi.clickhouse_orm import Model, StringField, DateField, Float32Field, MergeTree
+from clickhouse_orm import Model, StringField, DateField, Float32Field, MergeTree
 
 class Person(Model):
 
@@ -68,6 +68,8 @@ For additional details see [here](field_options.md).
 
 The table name used for the model is its class name, converted to lowercase. To override the default name, implement the `table_name` method:
 ```python
+from clickhouse_orm.models import Model
+
 class Person(Model):
 
     ...
@@ -81,10 +83,14 @@ class Person(Model):
 
 It is possible to define constraints which ClickHouse verifies when data is inserted. Trying to insert invalid records will raise a `ServerError`. Each constraint has a name and an expression to validate. For example:
 ```python
+from clickhouse_orm.models import Model, Constraint
+from clickhouse_orm.funcs import F
+from clickhouse_orm.fields import DateTimeField
+
 class Person(Model):
 
     ...
-
+    birthday = DateTimeField()
     # Ensure that the birthday is not a future date
     birthday_is_in_the_past = Constraint(birthday <= F.today())
 ```
@@ -95,10 +101,17 @@ Models that use an engine from the `MergeTree` family can define additional inde
 
 For example:
 ```python
+from clickhouse_orm.models import Model, Index
+from clickhouse_orm.funcs import F
+from clickhouse_orm.fields import StringField, Float32Field
+
 class Person(Model):
 
     ...
-
+    first_name = StringField()
+    last_name = StringField()
+    height = Float32Field()
+    
     # A minmax index that can help find people taller or shorter than some height
     height_index = Index(height, type=Index.minmax(), granularity=2)
 
@@ -116,7 +129,7 @@ Once you have a model, you can create model instances:
     >>> dan = Person(first_name='Dan', last_name='Schwartz')
     >>> suzy = Person(first_name='Suzy', last_name='Jones')
     >>> dan.first_name
-    u'Dan'
+    'Dan'
 
 When values are assigned to model fields, they are immediately converted to their Pythonic data type. In case the value is invalid, a `ValueError` is raised:
 
@@ -133,9 +146,11 @@ Inserting to the Database
 
 To write your instances to ClickHouse, you need a `Database` instance:
 
-    from infi.clickhouse_orm import Database
+```python
+from clickhouse_orm import Database
 
-    db = Database('my_test_db')
+db = Database('my_test_db')
+```
 
 This automatically connects to <http://localhost:8123> and creates a database called my_test_db, unless it already exists. If necessary, you can specify a different database URL and optional credentials:
 
@@ -247,4 +262,4 @@ Note that `order_by` must be chosen so that the ordering is unique, otherwise th
 
 ---
 
-[<< Overview](index.md) | [Table of Contents](toc.md) | [Expressions >>](expressions.md)
+[<< Overview](index.md) | [Table of Contents](toc.md) | [Async DataBase >>](async_databases.md)

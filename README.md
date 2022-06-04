@@ -2,6 +2,7 @@ A fork of [infi.clikchouse_orm](https://github.com/Infinidat/infi.clickhouse_orm
 
 This repository expects to use more type hints, and will drop support for Python 2.x.
 
+Supports both synchronous and asynchronous ways to interact with the clickhouse server. Means you can use asyncio to perform asynchronous queries, although the asynchronous mode is not well tested.
 
 | Build   | [![Coverage Status](https://github.com/sswest/ch-orm/workflows/ci/badge.svg)](https://github.com/sswest/ch-orm/actions?query=workflow:ci)[![Coverage Status](https://coveralls.io/repos/github/sswest/ch-orm/badge.svg?branch=develop)](https://coveralls.io/github/sswest/ch-orm?branch=develop) |
 | ------- | ------------------------------------------------------------ |

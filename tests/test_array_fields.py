@@ -3,8 +3,8 @@ from datetime import date
 
 from clickhouse_orm.database import Database
 from clickhouse_orm.models import Model
-from clickhouse_orm.fields import *
-from clickhouse_orm.engines import *
+from clickhouse_orm.fields import ArrayField, DateField, StringField, Int32Field
+from clickhouse_orm.engines import MergeTree
 
 
 class ArrayFieldsTest(unittest.TestCase):

@@ -29,6 +29,7 @@ def _get_default_arg(args, defaults, arg_index):
             value = '"%s"' % value
         return DefaultArgSpec(True, value)
 
+
 def get_method_sig(method):
     """ Given a function, it returns a string that pretty much looks how the
     function signature would be written in python.
@@ -42,8 +43,8 @@ def get_method_sig(method):
     # list of defaults are returned in separate array.
     # eg: ArgSpec(args=['first_arg', 'second_arg', 'third_arg'],
     # varargs=None, keywords=None, defaults=(42, 'something'))
-    argspec = inspect.getargspec(method)
-    arg_index=0
+    argspec = inspect.getfullargspec(method)
+    arg_index = 0
     args = []
 
     # Use the args and defaults array returned by argspec and find out
@@ -58,8 +59,8 @@ def get_method_sig(method):
         arg_index += 1
     if argspec.varargs:
         args.append('*' + argspec.varargs)
-    if argspec.keywords:
-        args.append('**' + argspec.keywords)
+    if argspec.varkw:
+        args.append('**' + argspec.varkw)
     return "%s(%s)" % (method.__name__, ", ".join(args[1:]))
 
 
@@ -120,18 +121,20 @@ def all_subclasses(cls):
 
 if __name__ == '__main__':
 
-    from infi.clickhouse_orm import database
-    from infi.clickhouse_orm import fields
-    from infi.clickhouse_orm import engines
-    from infi.clickhouse_orm import models
-    from infi.clickhouse_orm import query
-    from infi.clickhouse_orm import funcs
-    from infi.clickhouse_orm import system_models
+    from clickhouse_orm import database
+    from clickhouse_orm import fields
+    from clickhouse_orm import engines
+    from clickhouse_orm import models
+    from clickhouse_orm import query
+    from clickhouse_orm import funcs
+    from clickhouse_orm import system_models
+    from clickhouse_orm.aio import database as aio_database
 
     print('Class Reference')
     print('===============')
     print()
     module_doc([database.Database, database.DatabaseException])
+    module_doc([aio_database.AioDatabase])
     module_doc([models.Model, models.BufferModel, models.MergeModel, models.DistributedModel, models.Constraint, models.Index])
     module_doc(sorted([fields.Field] + all_subclasses(fields.Field), key=lambda x: x.__name__), False)
     module_doc([engines.Engine] + all_subclasses(engines.Engine), False)

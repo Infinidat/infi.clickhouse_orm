@@ -5,34 +5,37 @@ See: [ClickHouse Documentation](https://clickhouse.tech/docs/en/sql-reference/da
 
 The following field types are supported:
 
-| Class              | DB Type    | Pythonic Type         | Comments
-| ------------------ | ---------- | --------------------- | -----------------------------------------------------
-| StringField        | String     | str                   | Encoded as UTF-8 when written to ClickHouse
-| FixedStringField   | FixedString| str                   | Encoded as UTF-8 when written to ClickHouse
-| DateField          | Date       | datetime.date         | Range 1970-01-01 to 2105-12-31
-| DateTimeField      | DateTime   | datetime.datetime     | Minimal value is 1970-01-01 00:00:00; Timezone aware
-| DateTime64Field    | DateTime64 | datetime.datetime     | Minimal value is 1970-01-01 00:00:00; Timezone aware
-| Int8Field          | Int8       | int                   | Range -128 to 127
-| Int16Field         | Int16      | int                   | Range -32768 to 32767
-| Int32Field         | Int32      | int                   | Range -2147483648 to 2147483647
-| Int64Field         | Int64      | int                   | Range -9223372036854775808 to 9223372036854775807
-| UInt8Field         | UInt8      | int                   | Range 0 to 255
-| UInt16Field        | UInt16     | int                   | Range 0 to 65535
-| UInt32Field        | UInt32     | int                   | Range 0 to 4294967295
-| UInt64Field        | UInt64     | int                   | Range 0 to 18446744073709551615
-| Float32Field       | Float32    | float                 |
-| Float64Field       | Float64    | float                 |
-| DecimalField       | Decimal    | Decimal               | Pythonic values are rounded to fit the scale of the database field
-| Decimal32Field     | Decimal32  | Decimal               | Ditto
-| Decimal64Field     | Decimal64  | Decimal               | Ditto
-| Decimal128Field    | Decimal128 | Decimal               | Ditto
-| UUIDField          | UUID       | uuid.UUID             |
-| IPv4Field          | IPv4       | ipaddress.IPv4Address |
-| IPv6Field          | IPv6       | ipaddress.IPv6Address |
-| Enum8Field         | Enum8      | Enum                  | See below
-| Enum16Field        | Enum16     | Enum                  | See below
-| ArrayField         | Array      | list                  | See below
-| NullableField      | Nullable   | See below             | See below
+| Class            | DB Type     | Pythonic Type          | Comments
+|------------------|-------------|------------------------| -----------------------------------------------------
+| StringField      | String      | str                    | Encoded as UTF-8 when written to ClickHouse
+| FixedStringField | FixedString | str                    | Encoded as UTF-8 when written to ClickHouse
+| DateField        | Date        | datetime.date          | Range 1970-01-01 to 2105-12-31
+| DateTimeField    | DateTime    | datetime.datetime      | Minimal value is 1970-01-01 00:00:00; Timezone aware
+| DateTime64Field  | DateTime64  | datetime.datetime      | Minimal value is 1970-01-01 00:00:00; Timezone aware
+| Int8Field        | Int8        | int                    | Range -128 to 127
+| Int16Field       | Int16       | int                    | Range -32768 to 32767
+| Int32Field       | Int32       | int                    | Range -2147483648 to 2147483647
+| Int64Field       | Int64       | int                    | Range -9223372036854775808 to 9223372036854775807
+| UInt8Field       | UInt8       | int                    | Range 0 to 255
+| UInt16Field      | UInt16      | int                    | Range 0 to 65535
+| UInt32Field      | UInt32      | int                    | Range 0 to 4294967295
+| UInt64Field      | UInt64      | int                    | Range 0 to 18446744073709551615
+| Float32Field     | Float32     | float                  |
+| Float64Field     | Float64     | float                  |
+| DecimalField     | Decimal     | Decimal                | Pythonic values are rounded to fit the scale of the database field
+| Decimal32Field   | Decimal32   | Decimal                | Ditto
+| Decimal64Field   | Decimal64   | Decimal                | Ditto
+| Decimal128Field  | Decimal128  | Decimal                | Ditto
+| UUIDField        | UUID        | uuid.UUID              |
+| IPv4Field        | IPv4        | ipaddress.IPv4Address  |
+| IPv6Field        | IPv6        | ipaddress.IPv6Address  |
+| Enum8Field       | Enum8       | Enum                   | See below
+| Enum16Field      | Enum16      | Enum                   | See below
+| ArrayField       | Array       | list                   | See below
+| TupleField       | Tuple       | tuple                  | See below
+| PointField       | Point       | contrib.geo.fields.Point | Experimental feature
+| RingField        | Ring        | contrib.geo.fields.Ring | Experimental feature
+| NullableField    | Nullable    | See below              | See below
 
 
 DateTimeField and Time Zones
@@ -95,6 +98,28 @@ data = SensorData(date=date.today(), temperatures=[25.5, 31.2, 28.7], humidity_l
 ```
 
 Note that multidimensional arrays are not supported yet by the ORM.
+
+Working with tuple fields
+-------------------------
+
+You can create tuple fields containing multiple data type, for example:
+
+```python
+from datetime import date
+
+from clickhouse_orm.models import Model
+from clickhouse_orm.engines import MergeTree
+from clickhouse_orm.fields import DateField, Float32Field, UInt8Field, TupleField
+
+class SensorData(Model):
+
+    date = DateField()
+    info = TupleField([('t', Float32Field()), ('h', UInt8Field())])
+
+    engine = MergeTree('date', ('date',))
+
+data = SensorData(date=date.today(), info=(25.5, 41))
+```
 
 Working with nullable fields
 ----------------------------
