@@ -7,28 +7,29 @@ on:
     branches:
       - master
 jobs:
+  # Run tests.
+  # See also https://docs.docker.com/docker-hub/builds/automated-testing/
   test:
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
+    services:
+      clickhouse:
+        image: clickhouse/clickhouse-server
+        ports:
+          - 8123:8123
+          - 9000:9000
+        options: --ulimit nofile=262144:262144
     strategy:
       matrix:
-        python-version: [3.9]
-        os: [ubuntu-latest]
-      fail-fast: false
-
+        python-version: [ "3.9" ]
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/setup-python@v1
-        with:
-          python-version: ${{ matrix.python-version }}
-
-      - name: Install dependencies 🔨
+      - name: Build and Install
         run: |
-          python -m pip install --upgrade pip
           pip install build
           python -m build 
           pip install dist/*
           pip install coveralls
-      - name: Run coverage
+      - name: UnitTest
         run: |
           coverage run --source=clickhouse_orm -m unittest
       - name: Upload Coverage
@@ -37,8 +38,16 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           COVERALLS_FLAG_NAME: ${{ matrix.python-version }}
           COVERALLS_PARALLEL: true
+
+  coveralls:
+    name: Finish Coveralls
+    needs: test
+    runs-on: ubuntu-latest
+    container: python:3-slim
+    steps:
       - name: Finished
         run: |
+          pip3 install --upgrade coveralls
           coveralls --finish
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
