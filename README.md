@@ -4,69 +4,18 @@ This repository expects to use more type hints, and will drop support for Python
 
 Supports both synchronous and asynchronous ways to interact with the clickhouse server. Means you can use asyncio to perform asynchronous queries, although the asynchronous mode is not well tested.
 
-| Build   | [![Coverage Status](https://github.com/sswest/ch-orm/workflows/ci/badge.svg)](https://github.com/sswest/ch-orm/actions?query=workflow:ci)[![Coverage Status](https://coveralls.io/repos/github/sswest/ch-orm/badge.svg?branch=develop)](https://coveralls.io/github/sswest/ch-orm?branch=develop) |
-| ------- | ------------------------------------------------------------ |
-| Package | [![PyPI](https://img.shields.io/pypi/v/ch-orm.svg)](https://pypi.python.org/pypi/ch-orm)[![PyPI version](https://img.shields.io/pypi/pyversions/ch-orm.svg)](https://pypi.python.org/pypi/ch-orm)[![PyPI Wheel](https://img.shields.io/pypi/wheel/ch-orm.svg)](https://pypi.python.org/pypi/ch-orm) |
+
+| Build       | [![Python 3.7 Tests](https://github.com/sswest/ch-orm/workflows/Python%203.7%20Tests/badge.svg)](https://github.com/sswest/ch-orm/actions?query=Python+3.7+Tests)[![Python 3.8 Tests](https://github.com/sswest/ch-orm/workflows/Python%203.8%20Tests/badge.svg)](https://github.com/sswest/ch-orm/actions?query=Python+3.8+Tests)[![Python 3.9 Tests](https://github.com/sswest/ch-orm/workflows/Python%203.9%20Tests/badge.svg)](https://github.com/sswest/ch-orm/actions?query=Python+3.9+Tests)[![Python 3.10 Tests](https://github.com/sswest/ch-orm/workflows/Python%203.10%20Tests/badge.svg)](https://github.com/sswest/ch-orm/actions?query=Python+3.10+Tests) |
+| ----------- | ------------------------------------------------------------ |
+| **Package** | [![PyPI](https://img.shields.io/pypi/v/ch-orm.svg)](https://pypi.python.org/pypi/ch-orm)[![PyPI version](https://img.shields.io/pypi/pyversions/ch-orm.svg)](https://pypi.python.org/pypi/ch-orm)[![PyPI Wheel](https://img.shields.io/pypi/wheel/ch-orm.svg)](https://pypi.python.org/pypi/ch-orm)[![Coverage Status](https://coveralls.io/repos/github/sswest/ch-orm/badge.svg?branch=master)](https://coveralls.io/github/sswest/ch-orm?branch=master) |
+| **Docs**    | [![Documentation](https://camo.githubusercontent.com/bbb44987324f9324879ccae8ff5ad5c30b7e8b37ccee7235841a9628772595fe/68747470733a2f2f72656164746865646f63732e6f72672f70726f6a656374732f73616e69632f62616467652f3f76657273696f6e3d6c6174657374)](http://sswest.github.io/ch-orm) |
 
 Introduction
 ============
 
 This project is simple ORM for working with the [ClickHouse database](https://clickhouse.yandex/).
+
 It allows you to define model classes whose instances can be written to the database and read from it.
-
-First you have to install like this:
-
-```
-pip install ch-orm
-```
-
-Let's jump right in with a simple example of monitoring CPU usage. First we need to define the model class,
-connect to the database and create a table for the model:
-
-```python
-from clickhouse_orm import Database, Model, DateTimeField, UInt16Field, Float32Field, Memory, F
-
-class CPUStats(Model):
-
-    timestamp = DateTimeField()
-    cpu_id = UInt16Field()
-    cpu_percent = Float32Field()
-
-    engine = Memory()
-
-db = Database('demo')
-db.create_table(CPUStats)
-```
-
-Now we can collect usage statistics per CPU, and write them to the database:
-
-```python
-import psutil, time, datetime
-
-psutil.cpu_percent(percpu=True) # first sample should be discarded
-while True:
-    time.sleep(1)
-    stats = psutil.cpu_percent(percpu=True)
-    timestamp = datetime.datetime.now()
-    db.insert([
-        CPUStats(timestamp=timestamp, cpu_id=cpu_id, cpu_percent=cpu_percent)
-        for cpu_id, cpu_percent in enumerate(stats)
-    ])
-```
-
-Querying the table is easy, using either the query builder or raw SQL:
-
-```python
-# Calculate what percentage of the time CPU 1 was over 95% busy
-queryset = CPUStats.objects_in(db)
-total = queryset.filter(CPUStats.cpu_id == 1).count()
-busy = queryset.filter(CPUStats.cpu_id == 1, CPUStats.cpu_percent > 95).count()
-print('CPU 1 was busy {:.2f}% of the time'.format(busy * 100.0 / total))
-
-# Calculate the average usage per CPU
-for row in queryset.aggregate(CPUStats.cpu_id, average=F.avg(CPUStats.cpu_percent)):
-    print('CPU {row.cpu_id}: {row.average:.2f}%'.format(row=row))
-```
 
 This and other examples can be found in the `examples` folder.
 
