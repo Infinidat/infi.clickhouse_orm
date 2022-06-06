@@ -1,9 +1,12 @@
+import re
+import logging
+
 from .models import Model, BufferModel
 from .fields import DateField, StringField
 from .engines import MergeTree
 from .utils import get_subclass_names
 
-import logging
+# pylint: disable=R0903
 
 logger = logging.getLogger("migrations")
 
@@ -93,13 +96,15 @@ class AlterTable(ModelOperation):
                 self._alter_table(database, cmd)
 
             if is_regular_field:
-                # ALIAS and MATERIALIZED fields are not stored in the database, and raise DatabaseError
+                # ALIAS and MATERIALIZED fields are not stored in the database
+                # and raise DatabaseError
                 # (no AFTER column). So we will skip them
                 prev_name = name
 
         # Identify fields whose type was changed
         # The order of class attributes can be changed any time, so we can't count on it
-        # Secondly, MATERIALIZED and ALIAS fields are always at the end of the DESC, so we can't expect them to save
+        # Secondly, MATERIALIZED and ALIAS fields are always at the end of the DESC
+        # so we can't expect them to save
         # attribute position. Watch https://github.com/Infinidat/infi.clickhouse_orm/issues/47
         model_fields = {
             name: field.get_sql(with_default_expression=False, db=database)
@@ -159,7 +164,7 @@ class AlterConstraints(ModelOperation):
         logger.info("    Alter constraints for %s", self.table_name)
         existing = self._get_constraint_names(database)
         # Go over constraints in the model
-        for constraint in self.model_class._constraints.values():
+        for constraint in self.model_class._constraints.values():  # pylint: disable=W0212
             # Check if it's a new constraint
             if constraint.name not in existing:
                 logger.info("        Add constraint %s", constraint.name)
@@ -175,8 +180,6 @@ class AlterConstraints(ModelOperation):
         """
         Returns a set containing the names of existing constraints in the table.
         """
-        import re
-
         table_def = database.raw("SHOW CREATE TABLE $db.`%s`" % self.table_name)
         matches = re.findall(r"\sCONSTRAINT\s+`?(.+?)`?\s+CHECK\s", table_def)
         return set(matches)
@@ -204,7 +207,7 @@ class AlterIndexes(ModelOperation):
         existing = self._get_index_names(database)
         logger.info(existing)
         # Go over indexes in the model
-        for index in self.model_class._indexes.values():
+        for index in self.model_class._indexes.values():  # pylint: disable=W0212
             # Check if it's a new index
             if index.name not in existing:
                 logger.info("        Add index %s", index.name)
@@ -224,8 +227,6 @@ class AlterIndexes(ModelOperation):
         """
         Returns a set containing the names of existing indexes in the table.
         """
-        import re
-
         table_def = database.raw("SHOW CREATE TABLE $db.`%s`" % self.table_name)
         matches = re.findall(r"\sINDEX\s+`?(.+?)`?\s+", table_def)
         return set(matches)

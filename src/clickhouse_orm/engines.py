@@ -14,27 +14,153 @@ if TYPE_CHECKING:
 logger = logging.getLogger("clickhouse_orm")
 
 
-class Engine:
+class TableEngine:
     def create_table_sql(self, db: Database) -> str:
         raise NotImplementedError()  # pragma: no cover
 
 
-class TinyLog(Engine):
+class DatabaseEngine:
+    def create_database_sql(self) -> str:
+        raise NotImplementedError()  # pragma: no cover
+
+
+class Atomic(DatabaseEngine):
+    """
+    It supports non-blocking DROP TABLE and RENAME TABLE queries and atomic EXCHANGE TABLES queries.
+    Atomic database engine is used by default.
+    """
+
+    def create_database_sql(self) -> str:
+        return "Atomic"
+
+
+class Lazy(DatabaseEngine):
+    """
+    Keeps tables in RAM only expiration_time_in_seconds seconds after last access.
+    Can be used only with *Log tables.
+
+    It’s optimized for storing many small *Log tables,
+    for which there is a long time interval between accesses.
+    """
+
+    def __int__(self, expiration_time_in_seconds: int):
+        self.expiration_time_in_seconds = expiration_time_in_seconds
+
+    def create_database_sql(self) -> str:
+        return f"Lazy({self.expiration_time_in_seconds})"
+
+
+class MySQL(DatabaseEngine):
+    """
+    Allows to connect to databases on a remote MySQL server and perform INSERT and
+    SELECT queries to exchange data between ClickHouse and MySQL.
+
+    The MySQL database engine translate queries to the MySQL server so you can perform operations
+    such as SHOW TABLES or SHOW CREATE TABLE.
+    """
+
+    def __int__(self, host: str, port: int, database: str, user: str, password: str):
+        """
+        - `host`: MySQL server address.
+        - `port`: MySQL server port.
+        - `database`: Remote database name.
+        - `user`: MySQL user.
+        - `password`: User password.
+        """
+        self.host_port = f"{host}:{port}"
+        self.database = database
+        self.user = user
+        self.password = password
+
+    def create_database_sql(self) -> str:
+        return f"MySQL('{self.host_port}', '{self.database}', '{self.user}', '{self.password}')"
+
+
+class PostgreSQL(DatabaseEngine):
+    """
+    Allows to connect to databases on a remote PostgreSQL server. Supports read and write operations
+     (SELECT and INSERT queries) to exchange data between ClickHouse and PostgreSQL.
+
+    Gives the real-time access to table list and table structure from
+    remote PostgreSQL with the help of SHOW TABLES and DESCRIBE TABLE queries.
+
+    Supports table structure modifications (ALTER TABLE ... ADD|DROP COLUMN).
+    If use_table_cache parameter (see the Engine Parameters below) it set to 1,
+    the table structure is cached and not checked for being modified,
+    but can be updated with DETACH and ATTACH queries.
+    """
+
+    def __int__(
+        self,
+        host: str,
+        port: int,
+        database: str,
+        user: str,
+        password: str,
+        schema: str = None,
+        use_table_cache: int = None,
+    ):
+        """
+        - `host`: PostgreSQL server address.
+        - `port`: PostgreSQL server port.
+        - `database`: Remote database name.
+        - `user`: PostgreSQL user.
+        - `password`: User password.
+        - `schema`: PostgreSQL schema.
+        - `use_table_cache`: Defines if the database table structure is cached or not.
+        """
+        self.host_port = f"{host}:{port}"
+        self.database = database
+        self.user = user
+        self.password = password
+        self.schema = schema
+        self.use_table_cache = use_table_cache
+        self._params = [
+            f"'{self.password}'",
+            f"'{self.database}'",
+            f"'{self.user}'",
+            f"'{self.password}'",
+        ]
+        if self.schema is not None:
+            self._params.append(f"'{self.schema}'")
+        if self.use_table_cache is not None:
+            self._params.append(str(self.use_table_cache))
+
+    def create_database_sql(self) -> str:
+        return f"PostgreSQL({','.join(self._params)})"
+
+
+class SQLite(DatabaseEngine):
+    """
+    Allows to connect to SQLite database and perform INSERT and SELECT queries to
+    exchange data between ClickHouse and SQLite.
+    """
+    def __init__(self, db_path: str):
+        """
+        - `db_path`: Path to a file with SQLite database.
+        """
+        self.db_path = db_path
+
+    def create_database_sql(self) -> str:
+        return f"SQLite('{self.db_path}')"
+
+
+class TinyLog(TableEngine):
     def create_table_sql(self, db):
         return "TinyLog"
 
 
-class Log(Engine):
+class Log(TableEngine):
     def create_table_sql(self, db):
         return "Log"
 
 
-class Memory(Engine):
+class Memory(TableEngine):
     def create_table_sql(self, db):
         return "Memory"
 
 
-class MergeTree(Engine):
+class MergeTree(TableEngine):
     def __init__(
         self,
         date_col: Optional[str] = None,
@@ -245,7 +371,7 @@ class ReplacingMergeTree(MergeTree):
         return params
 
 
-class Buffer(Engine):
+class Buffer(TableEngine):
     """
     Buffers the data to write in RAM, periodically flushing it to another table.
     Must be used in conjuction with a `BufferModel`.
@@ -289,7 +415,7 @@ class Buffer(Engine):
         return sql
 
 
-class Merge(Engine):
+class Merge(TableEngine):
     """
     The Merge engine (not to be confused with MergeTree) does not store data itself,
     but allows reading from any number of other tables simultaneously.
@@ -305,7 +431,7 @@ class Merge(Engine):
         return "Merge(`%s`, '%s')" % (db.db_name, self.table_regex)
 
 
-class Distributed(Engine):
+class Distributed(TableEngine):
     """
     The Distributed engine by itself does not store data,
     but allows distributed query processing on multiple servers.
@@ -360,4 +486,4 @@ class Distributed(Engine):
 
 
 # Expose only relevant classes in import *
-__all__ = get_subclass_names(locals(), Engine)
+__all__ = get_subclass_names(locals(), TableEngine)

@@ -10,7 +10,7 @@ clickhouse_orm.database
 Database instances connect to a specific ClickHouse database for running queries,
 inserting data and other operations.
 
-#### Database(db_name, db_url="http://localhost:8123/", username=None, password=None, readonly=False, auto_create=True, timeout=60, verify_ssl_cert=True, log_statements=False)
+#### Database(db_name, db_url="http://localhost:8123/", username=None, password=None, readonly=False, auto_create=True, timeout=60, verify_ssl_cert=True, log_statements=False, engine=Atomic())
 
 
 Initializes a database instance. Unless it's readonly, the database will be
@@ -26,6 +26,7 @@ created on the ClickHouse server if it does not already exist.
 - `timeout`: the connection timeout in seconds.
 - `verify_ssl_cert`: whether to verify the server's certificate when connecting via HTTPS.
 - `log_statements`: when True, all database statements are logged.
+- `engine`: By default, ClickHouse uses the Atomic database engine.
 
 
 #### add_setting(name, value)
@@ -180,6 +181,7 @@ created on the ClickHouse server if it does not already exist.
 - `timeout`: the connection timeout in seconds.
 - `verify_ssl_cert`: whether to verify the server's certificate when connecting via HTTPS.
 - `log_statements`: when True, all database statements are logged.
+- `engine`: By default, ClickHouse uses the Atomic database engine.
 
 
 #### add_setting(name, value)
@@ -1241,30 +1243,95 @@ Extends Field
 clickhouse_orm.engines
 ----------------------
 
-### Engine
+### DatabaseEngine
+
+### Atomic
+
+Extends DatabaseEngine
+
+
+It supports non-blocking DROP TABLE and RENAME TABLE queries and atomic EXCHANGE TABLES queries.
+Atomic database engine is used by default.
+
+### Lazy
+
+Extends DatabaseEngine
+
+
+Keeps tables in RAM only expiration_time_in_seconds seconds after last access.
+Can be used only with *Log tables.
+
+It’s optimized for storing many small *Log tables,
+for which there is a long time interval between accesses.
+
+### MySQL
+
+Extends DatabaseEngine
+
+
+Allows to connect to databases on a remote MySQL server and perform INSERT and
+SELECT queries to exchange data between ClickHouse and MySQL.
+
+The MySQL database engine translate queries to the MySQL server so you can perform operations
+such as SHOW TABLES or SHOW CREATE TABLE.
+
+### PostgreSQL
+
+Extends DatabaseEngine
+
+
+Allows to connect to databases on a remote PostgreSQL server. Supports read and write operations
+ (SELECT and INSERT queries) to exchange data between ClickHouse and PostgreSQL.
+
+Gives the real-time access to table list and table structure from
+remote PostgreSQL with the help of SHOW TABLES and DESCRIBE TABLE queries.
+
+Supports table structure modifications (ALTER TABLE ... ADD|DROP COLUMN).
+If use_table_cache parameter (see the Engine Parameters below) it set to 1,
+the table structure is cached and not checked for being modified,
+but can be updated with DETACH and ATTACH queries.
+
+### SQLite
+
+Extends DatabaseEngine
+
+
+Allows to connect to SQLite database and perform INSERT and SELECT queries to
+exchange data between ClickHouse and SQLite.
+
+#### SQLite(db_path)
+
+
+- `db_path`: Path to a file with SQLite database.
+
+
+clickhouse_orm.engines
+----------------------
+
+### TableEngine
 
 ### TinyLog
 
-Extends Engine
+Extends TableEngine
 
 ### Log
 
-Extends Engine
+Extends TableEngine
 
 ### Memory
 
-Extends Engine
+Extends TableEngine
 
 ### MergeTree
 
-Extends Engine
+Extends TableEngine
 
 #### MergeTree(date_col=None, order_by=(), sampling_expr=None, index_granularity=8192, replica_table_path=None, replica_name=None, partition_key=None, primary_key=None)
 
 
 ### Buffer
 
-Extends Engine
+Extends TableEngine
 
 
 Buffers the data to write in RAM, periodically flushing it to another table.
@@ -1276,7 +1343,7 @@ Read more [here](https://clickhouse.tech/docs/en/engines/table-engines/special/b
 
 ### Merge
 
-Extends Engine
+Extends TableEngine
 
 
 The Merge engine (not to be confused with MergeTree) does not store data itself,
@@ -1289,7 +1356,7 @@ https://clickhouse.tech/docs/en/engines/table-engines/special/merge/
 
 ### Distributed
 
-Extends Engine
+Extends TableEngine
 
 
 The Distributed engine by itself does not store data,
@@ -2208,7 +2275,7 @@ Initializer.
 #### floor(n=None)
 
 
-#### formatDateTime(format, timezone=NO_VALUE)
+#### formatDateTime(fmt, timezone=NO_VALUE)
 
 
 #### gcd(b)
@@ -3234,7 +3301,7 @@ Initializer.
 #### toStartOfTenMinutes()
 
 
-#### toStartOfWeek(mode=0)
+#### toStartOfWeek()
 
 
 #### toStartOfYear()
@@ -3602,7 +3669,8 @@ Returns: A list of SystemPart objects
 Gets active data from system.parts table
 
 - `database`: A database object to fetch data from.
-- `conditions`: WHERE clause conditions. Database and active conditions are added automatically
+- `conditions`: WHERE clause conditions.
+    Database and active conditions are added automatically
 
 Returns: A list of SystemPart objects
 

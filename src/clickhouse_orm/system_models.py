@@ -30,7 +30,8 @@ class SystemPart(Model):
     partition = StringField()  # Name of the partition, in the format YYYYMM.
     name = StringField()  # Name of the part.
 
-    # This field is present in the docs (https://clickhouse.tech/docs/en/single/index.html#system-parts),
+    # This field is present in the docs
+    # https://clickhouse.tech/docs/en/single/index.html#system-parts
     # but is absent in ClickHouse (in version 1.1.54245)
     # replicated = UInt8Field()  # Whether the part belongs to replicated data.
 
@@ -44,7 +45,8 @@ class SystemPart(Model):
 
     bytes = UInt64Field()  # Number of bytes when compressed.
 
-    # Time the directory with the part was modified. Usually corresponds to the part's creation time.
+    # Time the directory with the part was modified.
+    # Usually corresponds to the part's creation time.
     modification_time = DateTimeField()
     remove_time = (
         DateTimeField()
@@ -166,7 +168,8 @@ class SystemPart(Model):
         Gets active data from system.parts table
 
         - `database`: A database object to fetch data from.
-        - `conditions`: WHERE clause conditions. Database and active conditions are added automatically
+        - `conditions`: WHERE clause conditions.
+            Database and active conditions are added automatically
 
         Returns: A list of SystemPart objects
         """

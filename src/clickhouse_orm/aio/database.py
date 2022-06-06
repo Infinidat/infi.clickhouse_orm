@@ -80,7 +80,10 @@ class AioDatabase(Database):
         """
         Creates the database on the ClickHouse server if it does not already exist.
         """
-        await self._send("CREATE DATABASE IF NOT EXISTS `%s`" % self.db_name)
+        await self._send(
+            "CREATE DATABASE IF NOT EXISTS `%s` ENGINE = %s"
+            % (self.db_name, self.engine.create_database_sql())
+        )
         self.db_exists = True
 
     async def drop_database(self):

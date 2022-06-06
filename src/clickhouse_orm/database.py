@@ -11,6 +11,7 @@ from typing import Optional, Generator, Union, Any
 import pytz
 import httpx
 
+from .engines import DatabaseEngine, Atomic
 from .models import ModelBase, MODEL
 from .utils import parse_tsv, import_submodules
 from .session import ctx_session_id, ctx_session_timeout
@@ -110,6 +111,7 @@ class Database:
         timeout=60,
         verify_ssl_cert=True,
         log_statements=False,
+        engine: DatabaseEngine = Atomic(),
     ):
         """
         Initializes a database instance. Unless it's readonly, the database will be
@@ -125,6 +127,7 @@ class Database:
         - `timeout`: the connection timeout in seconds.
         - `verify_ssl_cert`: whether to verify the server's certificate when connecting via HTTPS.
         - `log_statements`: when True, all database statements are logged.
+        - `engine`: By default, ClickHouse uses the Atomic database engine.
         """
         self.db_name = db_name
         self.db_url = db_url
@@ -132,6 +135,7 @@ class Database:
         self._readonly = readonly
         self.auto_create = auto_create
         self.timeout = timeout
+        self.engine = engine
         self.request_session = self._client_class(verify=verify_ssl_cert, timeout=timeout)
         if username:
             self.request_session.auth = (username, password or "")
@@ -175,7 +179,10 @@ class Database:
         """
         Creates the database on the ClickHouse server if it does not already exist.
         """
-        self._send("CREATE DATABASE IF NOT EXISTS `%s`" % self.db_name)
+        self._send(
+            "CREATE DATABASE IF NOT EXISTS `%s` ENGINE = %s"
+            % (self.db_name, self.engine.create_database_sql())
+        )
         self.db_exists = True
 
     def drop_database(self):

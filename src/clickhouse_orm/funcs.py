@@ -5,6 +5,8 @@ from types import FunctionType
 from .utils import is_iterable, comma_join, NO_VALUE, arg_to_sql
 from .query import Cond, QuerySet
 
+# pylint: disable=C0103,C0116
+
 
 def binary_operator(func):
     """
@@ -179,10 +181,10 @@ class FunctionOperatorsMixin:
         return F._not(self)
 
     def isIn(self, others):
-        return F._in(self, others)
+        return F._in(self, others)  # pylint: disable=W0212
 
     def isNotIn(self, others):
-        return F._notIn(self, others)
+        return F._notIn(self, others)  # pylint: disable=W0212
 
 
 class FMeta(type):
@@ -215,7 +217,8 @@ class FMeta(type):
     @staticmethod
     def _add_func(cls, base_func, new_name, extra_args):
         """
-        Adds a new func to the cls, based on the signature of the given base_func but with a new name.
+        Adds a new func to the cls, based on the signature of the given
+        base_func but with a new name.
         """
         # Get the function's signature
         sig = signature(base_func)
@@ -247,7 +250,7 @@ class FMeta(type):
         setattr(cls, new_name, new_func)
 
 
-class F(Cond, FunctionOperatorsMixin, metaclass=FMeta):
+class F(Cond, FunctionOperatorsMixin, metaclass=FMeta):  # pylint: disable=R0904
     """
     Represents a database function call and its arguments.
     It doubles as a query condition when the function returns a boolean result.
@@ -476,7 +479,7 @@ class F(Cond, FunctionOperatorsMixin, metaclass=FMeta):
         return F("toStartOfTenMinutes", d)
 
     @staticmethod
-    def toStartOfWeek(d, mode=0):
+    def toStartOfWeek(d):
         return F("toStartOfWeek", d)
 
     @staticmethod
@@ -572,8 +575,8 @@ class F(Cond, FunctionOperatorsMixin, metaclass=FMeta):
         return F("timeSlots", start_time, F.toUInt32(duration))
 
     @staticmethod
-    def formatDateTime(d, format, timezone=NO_VALUE):
-        return F("formatDateTime", d, format, timezone)
+    def formatDateTime(d, fmt, timezone=NO_VALUE):
+        return F("formatDateTime", d, fmt, timezone)
 
     @staticmethod
     def addDays(d, n, timezone=NO_VALUE):
