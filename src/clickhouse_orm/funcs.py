@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from functools import wraps
 from inspect import signature, Parameter
 from types import FunctionType
@@ -1159,8 +1161,159 @@ class F(Cond, FunctionOperatorsMixin, metaclass=FMeta):  # pylint: disable=R0904
         return F("hasAny", arr, x)
 
     @staticmethod
+    def greatCircleDistance(lon1, lat1, lon2, lat2):
+        """
+        Calculates the distance between two points on the Earth’s surface
+        using the great-circle formula.
+        """
+        return F("greatCircleDistance", lon1, lat1, lon2, lat2)
+
+    @staticmethod
+    def geoDistance(lon1, lat1, lon2, lat2):
+        """
+        Similar to greatCircleDistance but calculates the distance on WGS-84 ellipsoid
+        instead of sphere.
+        This is more precise approximation of the Earth Geoid.
+        The performance is the same as for greatCircleDistance (no performance drawback).
+        It is recommended to use geoDistance to calculate the distances on Earth.
+        """
+        return F("geoDistance", lon1, lat1, lon2, lat2)
+
+    @staticmethod
+    def greatCircleAngle(lon1, lat1, lon2, lat2):
+        """
+        Calculates the central angle between two points on the Earth’s surface
+        using the great-circle formula.
+        """
+        return F("greatCircleAngle", lon1, lat1, lon2, lat2)
+
+    @staticmethod
+    def pointInPolygon(x, y, polygon):
+        """
+        Checks whether the point belongs to the polygon on the plane.
+        """
+        return F("pointInPolygon", (x, y), list(polygon))
+
+    @staticmethod
     def geohashEncode(x, y, precision=12):
+        """
+        Encodes latitude and longitude as a geohash-string.
+        """
         return F("geohashEncode", x, y, precision)
+
+    @staticmethod
+    def geohashDecode(encoded):
+        """
+        Decodes any geohash-encoded string into longitude and latitude.
+        """
+        return F("geohashDecode", encoded)
+
+    @staticmethod
+    def geohashesInBox(
+        longitude_min,
+        latitude_min,
+        longitude_max,
+        latitude_max,
+        precision,
+    ):
+        """
+        Returns an array of geohash-encoded strings of given precision that fall inside
+        and intersect boundaries of given box, basically a 2D grid flattened into array.
+        """
+        return F("geohashesInBox", longitude_min, latitude_min,
+                 longitude_max, latitude_max, precision)
+
+    @staticmethod
+    def h3IsValid(h3index):
+        """
+        Verifies whether the number is a valid H3 index.
+        """
+        return F("h3IsValid", h3index)
+
+    @staticmethod
+    def h3GetResolution(h3index):
+        """
+        Defines the resolution of the given H3 index.
+        """
+        return F("h3GetResolution", h3index)
+
+    @staticmethod
+    def h3EdgeAngle(resolution):
+        """
+        Calculates the average length of the H3 hexagon edge in grades.
+        """
+        return F("h3EdgeAngle", resolution)
+
+    @staticmethod
+    def h3EdgeLengthM(resolution):
+        """
+        Calculates the average length of the H3 hexagon edge in meters.
+        """
+        return F("h3EdgeLengthM", resolution)
+
+    @staticmethod
+    def h3EdgeLengthKm(resolution):
+        """
+        Calculates the average length of the H3 hexagon edge in kilometers.
+        """
+        return F("h3EdgeLengthKm", resolution)
+
+    @staticmethod
+    def geoToH3(lon, lat, resolution):
+        """
+        Returns H3 point index (lon, lat) with specified resolution.
+        """
+        return F("geoToH3", lon, lat, resolution)
+
+    @staticmethod
+    def h3ToGeo(h3index):
+        """
+        Returns the centroid longitude and latitude corresponding to the provided H3 index.
+        """
+        return F("h3ToGeo", h3index)
+
+    @staticmethod
+    def h3ToGeoBoundary(h3index):
+        """
+        Returns array of pairs (lon, lat), which corresponds to the boundary
+        of the provided H3 index.
+        """
+        return F("h3ToGeoBoundary", h3index)
+
+    @staticmethod
+    def h3GetBaseCell(index):
+        """
+        Returns the base cell number of the H3 index.
+        """
+        return F("h3GetBaseCell", index)
+
+    @staticmethod
+    def h3HexAreaM2(resolution):
+        """
+        Returns average hexagon area in square meters at the given resolution.
+        """
+        return F("h3HexAreaM2", resolution)
+
+    @staticmethod
+    def h3HexAreaKm2(resolution):
+        """
+        Returns average hexagon area in square kilometers at the given resolution.
+        """
+        return F("h3HexAreaKm2", resolution)
+
+    @staticmethod
+    def h3IndexesAreNeighbors(index1, index2):
+        """
+        Returns whether or not the provided H3 indexes are neighbors.
+        """
+        return F("h3IndexesAreNeighbors", index1, index2)
+
+    @staticmethod
+    def h3ToChildren(index, resolution):
+        """
+        Returns an array of child indexes for the given H3 index.
+        """
+        return F("h3ToChildren", index, resolution)
 
     @staticmethod
     def indexOf(arr, x):
