@@ -518,6 +518,45 @@ class FuncsTestCase(TestCaseWithData):
         self._test_func(F.arrayReduce('min', arr), 1)
         self._test_func(F.arrayReverse(arr), [3, 2, 1])
 
+    def test_geo_functions(self):
+        self._test_func(
+            F.greatCircleDistance(55.755831, 37.617673, -55.755831, -37.617673), 14128353
+        )
+        self._test_func(
+            F.geoDistance(55.755831, 37.617673, -55.755831, -37.617673), 14128353
+        )
+        self._test_func(F.greatCircleAngle(0, 0, 1, 0), 1.0)
+        self._test_func(F.pointInPolygon(3, 3, [(6, 0), (8, 4), (5, 8), (0, 2)]), 1)
+        self._test_func(F.geohashDecode("ezs42"), (-5.60302734375, 42.60498046875))
+        self._test_func(F.geohashEncode(-5.60302734375, 42.593994140625, 0), "ezs42d000000")
+        self._test_func(
+            F.geohashesInBox(24.48, 40.56, 24.785, 40.81, 4),
+            ["sx1q", "sx1r", "sx32", "sx1w", "sx1x", "sx38"],
+        )
+        self._test_func(F.h3IsValid(630814730351855103), 1)
+        self._test_func(F.h3GetResolution(639821929606596015), 14)
+        self._test_func(F.h3EdgeAngle(10), 0.0005927224846720883)
+        self._test_func(F.h3EdgeLengthM(15), 0.509713273)
+        self._test_func(F.h3EdgeLengthKm(15), 0.000509713)
+        self._test_func(F.geoToH3(37.79506683, 55.71290588, 15), 644325524701193974)
+        self._test_func(F.h3ToGeo(644325524701193974), (37.79506616830252, 55.71290243145668))
+        self._test_func(F.h3GetBaseCell(612916788725809151), 12)
+        self._test_func(F.h3HexAreaM2(13), 43.9)
+        self._test_func(F.h3HexAreaKm2(13), 0.0000439)
+        self._test_func(F.h3IndexesAreNeighbors(617420388351344639, 617420388352655359), 1)
+        self._test_func(
+            F.h3ToChildren(599405990164561919, 6),
+            [
+                603909588852408319,
+                603909588986626047,
+                603909589120843775,
+                603909589255061503,
+                603909589389279231,
+                603909589523496959,
+                603909589657714687,
+            ],
+        )
+
     def test_split_and_merge_functions(self):
         self._test_func(F.splitByChar('_', 'a_b_c'), ['a', 'b', 'c'])
         self._test_func(F.splitByString('__', 'a__b__c'), ['a', 'b', 'c'])
