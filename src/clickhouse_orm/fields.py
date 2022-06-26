@@ -1,5 +1,6 @@
 from __future__ import unicode_literals, annotations
 
+import json
 import re
 from enum import Enum
 from uuid import UUID
@@ -14,7 +15,7 @@ import iso8601
 import pytz
 from pytz import BaseTzInfo
 
-from .utils import escape, parse_array, comma_join, string_or_func, get_subclass_names
+from .utils import escape, parse_array, comma_join, string_or_func, get_subclass_names, parse_map
 from .funcs import F, FunctionOperatorsMixin
 
 if TYPE_CHECKING:
@@ -869,6 +870,76 @@ class LowCardinalityField(Field):
             sql += self._extra_params(db)
         return sql
 
+
+MapKey = Union[
+    StringField,
+    BaseIntField,
+    LowCardinalityField,
+    UUIDField,
+    DateField,
+    DateTimeField,
+    BaseEnumField,
+]
+
+
+class MapField(Field):
+    """MapField is only experimental and is expected to be available in the next few releases"""
+    class_default = None  # incorrect value
+
+    def __init__(
+        self,
+        key: MapKey,
+        value: Field,
+        default: dict = None,
+        alias: Optional[Union[F, str]] = None,
+        materialized: Optional[Union[F, str]] = None,
+        readonly: bool = None,
+        codec: Optional[str] = None,
+        db_column: Optional[str] = None,
+    ):
+        assert isinstance(key, Field)
+        assert isinstance(value, Field)
+        self.key = key
+        self.value = value
+        if not default:
+            default = {}
+        super().__init__(default, alias, materialized, readonly, codec, db_column)
+
+    def to_python(self, value, timezone_in_use) -> dict:
+        if isinstance(value, bytes):
+            value = value.decode('utf-8')
+        if isinstance(value, str):
+            value = parse_map(value)
+        if not isinstance(value, dict):
+            raise ValueError("MapField expects dict, not %s" % type(value))
+        value = {
+            self.key.to_python(k, timezone_in_use): self.value.to_python(v, timezone_in_use)
+            for k, v in value.items()
+        }
+        return value
+
+    def validate(self, value):
+        for k, v in value.items():
+            self.key.validate(k)
+            self.value.validate(v)
+
+    def to_db_string(self, value, quote=True) -> str:
+        value2 = {}
+        int_key = isinstance(self.key, (BaseIntField, BaseFloatField))
+        int_value = isinstance(self.value, (BaseIntField, BaseFloatField))
+        for k, v in value.items():
+            if not int_key:
+                k = self.key.to_db_string(k, quote=False)
+            if not int_value:
+                v = self.value.to_db_string(v, quote=False)
+            value2[k] = v
+        return json.dumps(value2).replace("\"", "'")
+
+    def get_sql(self, with_default_expression=True, db=None) -> str:
+        sql = "Map(%s, %s)" % (self.key.get_sql(False), self.value.get_sql(False))
+        if with_default_expression and self.codec and db and db.has_codec_support:
+            sql += " CODEC(%s)" % self.codec
+        return sql
 
 # Expose only relevant classes in import *
 __all__ = get_subclass_names(locals(), Field)

@@ -1,12 +1,11 @@
-
 import inspect
 from collections import namedtuple
 
-DefaultArgSpec = namedtuple('DefaultArgSpec', 'has_default default_value')
+DefaultArgSpec = namedtuple("DefaultArgSpec", "has_default default_value")
 
 
 def _get_default_arg(args, defaults, arg_index):
-    """ Method that determines if an argument has default value or not,
+    """Method that determines if an argument has default value or not,
     and if yes what is the default value for the argument
 
     :param args: array of arguments, eg: ['first_arg', 'second_arg', 'third_arg']
@@ -26,13 +25,13 @@ def _get_default_arg(args, defaults, arg_index):
         return DefaultArgSpec(False, None)
     else:
         value = defaults[arg_index - args_with_no_defaults]
-        if (type(value) is str):
+        if type(value) is str:
             value = '"%s"' % value
         return DefaultArgSpec(True, value)
 
 
 def get_method_sig(method):
-    """ Given a function, it returns a string that pretty much looks how the
+    """Given a function, it returns a string that pretty much looks how the
     function signature would be written in python.
 
     :param method: a python method
@@ -59,16 +58,16 @@ def get_method_sig(method):
             args.append(arg)
         arg_index += 1
     if argspec.varargs:
-        args.append('*' + argspec.varargs)
+        args.append("*" + argspec.varargs)
     if argspec.varkw:
-        args.append('**' + argspec.varkw)
+        args.append("**" + argspec.varkw)
     return "%s(%s)" % (method.__name__, ", ".join(args[1:]))
 
 
 def docstring(obj):
-    doc = (obj.__doc__ or '').rstrip()
+    doc = (obj.__doc__ or "").rstrip()
     if doc:
-        lines = doc.split('\n')
+        lines = doc.split("\n")
         # Find the length of the whitespace prefix common to all non-empty lines
         indentation = min(len(line) - len(line.lstrip()) for line in lines if line.strip())
         # Output the lines without the indentation
@@ -78,30 +77,32 @@ def docstring(obj):
 
 
 def class_doc(cls, list_methods=True):
-    bases = ', '.join([b.__name__ for b in cls.__bases__])
-    print('###', cls.__name__)
+    bases = ", ".join([b.__name__ for b in cls.__bases__])
+    print("###", cls.__name__)
     print()
-    if bases != 'object':
-        print('Extends', bases)
+    if bases != "object":
+        print("Extends", bases)
         print()
     docstring(cls)
-    for name, method in inspect.getmembers(cls, lambda m: inspect.ismethod(m) or inspect.isfunction(m)):
-        if name == '__init__':
+    for name, method in inspect.getmembers(
+        cls, lambda m: inspect.ismethod(m) or inspect.isfunction(m)
+    ):
+        if name == "__init__":
             # Initializer
-            print('####', get_method_sig(method).replace(name, cls.__name__))
-        elif name[0] == '_':
+            print("####", get_method_sig(method).replace(name, cls.__name__))
+        elif name[0] == "_":
             # Private method
             continue
-        elif hasattr(method, '__self__') and method.__self__ == cls:
+        elif hasattr(method, "__self__") and method.__self__ == cls:
             # Class method
             if not list_methods:
                 continue
-            print('#### %s.%s' % (cls.__name__, get_method_sig(method)))
+            print("#### %s.%s" % (cls.__name__, get_method_sig(method)))
         else:
             # Regular method
             if not list_methods:
                 continue
-            print('####', get_method_sig(method))
+            print("####", get_method_sig(method))
         print()
         docstring(method)
         print()
@@ -110,7 +111,7 @@ def class_doc(cls, list_methods=True):
 def module_doc(classes, list_methods=True):
     mdl = classes[0].__module__
     print(mdl)
-    print('-' * len(mdl))
+    print("-" * len(mdl))
     print()
     for cls in classes:
         class_doc(cls, list_methods)
@@ -120,7 +121,7 @@ def all_subclasses(cls):
     return cls.__subclasses__() + [g for s in cls.__subclasses__() for g in all_subclasses(s)]
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
     from clickhouse_orm import database
     from clickhouse_orm import fields
@@ -131,13 +132,24 @@ if __name__ == '__main__':
     from clickhouse_orm import system_models
     from clickhouse_orm.aio import database as aio_database
 
-    print('Class Reference')
-    print('===============')
+    print("Class Reference")
+    print("===============")
     print()
     module_doc([database.Database, database.DatabaseException])
     module_doc([aio_database.AioDatabase])
-    module_doc([models.Model, models.BufferModel, models.MergeModel, models.DistributedModel, models.Constraint, models.Index])
-    module_doc(sorted([fields.Field] + all_subclasses(fields.Field), key=lambda x: x.__name__), False)
+    module_doc(
+        [
+            models.Model,
+            models.BufferModel,
+            models.MergeModel,
+            models.DistributedModel,
+            models.Constraint,
+            models.Index,
+        ]
+    )
+    module_doc(
+        sorted([fields.Field] + all_subclasses(fields.Field), key=lambda x: x.__name__), False
+    )
     module_doc([engines.DatabaseEngine] + all_subclasses(engines.DatabaseEngine), False)
     module_doc([engines.TableEngine] + all_subclasses(engines.TableEngine), False)
     module_doc([query.QuerySet, query.AggregateQuerySet, query.Q])

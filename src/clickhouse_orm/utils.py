@@ -1,4 +1,5 @@
 import codecs
+import json
 import re
 from datetime import date, datetime, tzinfo, timedelta
 
@@ -16,6 +17,7 @@ SPECIAL_CHARS = {
 SPECIAL_CHARS_REGEX = re.compile("[" + "".join(SPECIAL_CHARS.values()) + "]")
 POINT_REGEX = re.compile(r"\((?P<x>\d+(\.\d+)?),(?P<y>\d+(\.\d+)?)\)")
 RING_VALID_REGEX = re.compile(r"\[((\(\d+(\.\d+)?,\d+(\.\d+)?\)),)*\(\d+(\.\d+)?,\d+(\.\d+)?\)\]")
+MAP_REGEX = re.compile(r"(.+?)=(.+?),?")
 
 
 def escape(value, quote=True):
@@ -118,6 +120,22 @@ def parse_array(array_string):
             match = re.search(r",|\]|\)", array_string)
             values.append(array_string[0 : match.start()])
             array_string = array_string[match.end() - 1 :]
+
+
+def parse_map(map_string: str) -> dict:
+    """
+    Parse an map string as returned by clickhouse. For example:
+    "{key1=1, key2=2, key3=3}" ==> {"key1": 1, "key2": 2, "key3: 3}
+    """
+    if any([map_string[0] != "{", map_string[-1] != "}"]):
+        raise ValueError('Invalid map string: "%s"' % map_string)
+    ret = {}
+    try:
+        ret = json.loads(map_string.replace("'", "\""))
+    except json.JSONDecodeError:
+        for (key, value) in MAP_REGEX.findall(map_string[1:-1]):
+            ret[key] = value
+    return ret
 
 
 def import_submodules(package_name):

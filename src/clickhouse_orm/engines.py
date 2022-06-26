@@ -43,7 +43,7 @@ class Lazy(DatabaseEngine):
     for which there is a long time interval between accesses.
     """
 
-    def __int__(self, expiration_time_in_seconds: int):
+    def __init__(self, expiration_time_in_seconds: int):
         self.expiration_time_in_seconds = expiration_time_in_seconds
 
     def create_database_sql(self) -> str:
@@ -59,7 +59,7 @@ class MySQL(DatabaseEngine):
     such as SHOW TABLES or SHOW CREATE TABLE.
     """
 
-    def __int__(self, host: str, port: int, database: str, user: str, password: str):
+    def __init__(self, host: str, port: int, database: str, user: str, password: str):
         """
         - `host`: MySQL server address.
         - `port`: MySQL server port.
@@ -90,7 +90,7 @@ class PostgreSQL(DatabaseEngine):
     but can be updated with DETACH and ATTACH queries.
     """
 
-    def __int__(
+    def __init__(
         self,
         host: str,
         port: int,

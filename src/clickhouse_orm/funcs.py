@@ -186,6 +186,12 @@ class FunctionOperatorsMixin:
     def isNotIn(self, others):
         return F._notIn(self, others)  # pylint: disable=W0212
 
+    def isGlobalIn(self, others):
+        return F._gin(self, others)  # pylint: disable=W0212
+
+    def isNotGlobalIn(self, others):
+        return F._notGIn(self, others)  # pylint: disable=W0212
+
 
 class FMeta(type):
 
@@ -403,6 +409,20 @@ class F(Cond, FunctionOperatorsMixin, metaclass=FMeta):  # pylint: disable=R0904
         if is_iterable(b) and not isinstance(b, (tuple, QuerySet)):
             b = tuple(b)
         return F("NOT IN", a, b)
+
+    @staticmethod
+    @binary_operator
+    def _gin(a, b):
+        if is_iterable(b) and not isinstance(b, (tuple, QuerySet)):
+            b = tuple(b)
+        return F("GLOBAL IN", a, b)
+
+    @staticmethod
+    @binary_operator
+    def _notGIn(a, b):
+        if is_iterable(b) and not isinstance(b, (tuple, QuerySet)):
+            b = tuple(b)
+        return F("NOT GLOBAL IN", a, b)
 
     # Functions for working with dates and times
 

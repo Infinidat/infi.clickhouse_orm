@@ -253,6 +253,12 @@ class ModelBase(type):
                 else:
                     name_fields.append((str(i), cls.create_ad_hoc_field(tp[0])))
             return orm_fields.TupleField(name_fields=name_fields)
+        # Map
+        if db_type.startswith("Map"):
+            types = [s.strip() for s in db_type[4:-1].split(",")]
+            key_filed = cls.create_ad_hoc_field(types[0])
+            value_filed = cls.create_ad_hoc_field(types[1])
+            return orm_fields.MapField(key_filed, value_filed)
         # FixedString
         if db_type.startswith("FixedString"):
             length = int(db_type[12:-1])
