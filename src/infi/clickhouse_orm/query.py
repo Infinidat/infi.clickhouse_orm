@@ -297,6 +297,7 @@ class QuerySet(object):
         self._order_by = []
         self._where_q = Q()
         self._prewhere_q = Q()
+        self._having_q = Q()
         self._grouping_fields = []
         self._grouping_with_totals = False
         self._fields = model_cls.fields().keys()
@@ -391,6 +392,9 @@ class QuerySet(object):
 
             if self._grouping_with_totals:
                 sql += ' WITH TOTALS'
+
+        if self._having_q and not self._having_q.is_empty:
+            sql += '\nHAVING ' + self._having_q.to_sql(self._model_cls)
 
         if self._order_by:
             sql += '\nORDER BY ' + self.order_by_as_sql()
@@ -581,6 +585,15 @@ class QuerySet(object):
         assert not self._distinct, 'Mutations are not allowed after calling distinct()'
         assert not self._final, 'Mutations are not allowed after calling final()'
 
+    def _having_or_exclude(self, *q, **kwargs):
+        raise NotImplementedError('Cannot use `HAVING` with QuerySet, use AggregateQuerySet instead')
+
+    def having(self, *args, **kwargs):
+        return self._having_or_exclude(*args, **kwargs)
+
+    def having_exclude(self, *args, **kwargs):
+        return self._having_or_exclude(*args, _inverse=True, **kwargs)
+
     def aggregate(self, *args, **kwargs):
         """
         Returns an `AggregateQuerySet` over this query, with `args` serving as
@@ -683,6 +696,34 @@ class AggregateQuerySet(QuerySet):
 
     def _verify_mutation_allowed(self):
         raise AssertionError('Cannot mutate an AggregateQuerySet')
+
+    def _having_or_exclude(self, *q, **kwargs):
+        from .funcs import F
+
+        inverse = kwargs.pop('_inverse', False)
+
+        qs = copy(self)
+
+        condition = Q()
+        for arg in q:
+            if isinstance(arg, Q):
+                condition &= arg
+            elif isinstance(arg, F):
+                condition &= Q(arg)
+            else:
+                raise TypeError('Invalid argument "%r" to queryset filter' % arg)
+
+        if kwargs:
+            condition &= Q(**kwargs)
+
+        if inverse:
+            condition = ~condition
+        if self._having_q:
+            condition = copy(self._having_q) & condition
+
+        qs._having_q = condition
+
+        return qs
 
 
 # Expose only relevant classes in import *
