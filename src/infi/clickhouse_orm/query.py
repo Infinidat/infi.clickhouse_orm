@@ -292,6 +292,7 @@ class QuerySet(object):
         Initializer. It is possible to create a queryset like this, but the standard
         way is to use `MyModel.objects_in(database)`.
         """
+        self.model = model_cls
         self._model_cls = model_cls
         self._database = database
         self._order_by = []
