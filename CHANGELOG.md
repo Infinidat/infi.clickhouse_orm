@@ -1,6 +1,10 @@
 Change Log
 ==========
 
+v2.1.2
+------
+- Add `QuerySet.model` to support django-rest-framework 3
+
 v2.1.1
 ------
 - Improve support of ClickHouse v21.9 (mangototango)
