@@ -3,7 +3,7 @@ Change Log
 
 v2.1.2
 ------
-- Add model attribute to  QuerySet to support django-rest-framework 3
+- Add `QuerySet.model` to support django-rest-framework 3
 
 v2.1.1
 ------
