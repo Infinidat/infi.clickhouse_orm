@@ -540,8 +540,20 @@ class QuerySet(object):
         Adds a FINAL modifier to table, meaning data will be collapsed to final version.
         Can be used with the `CollapsingMergeTree` and `ReplacingMergeTree` engines only.
         """
-        from .engines import CollapsingMergeTree, ReplacingMergeTree
-        if not isinstance(self._model_cls.engine, (CollapsingMergeTree, ReplacingMergeTree)):
+        from .engines import CollapsingMergeTree, ReplacingMergeTree, Distributed
+
+        _engine = self._model_cls.engine
+
+        if isinstance(_engine, (Distributed)):
+            # find the "real" engine for the Distributed table
+            children = self._model_cls.mro()
+            for child in children:
+                # we asume the first that is not Distributed is the child.
+                if isinstance(child.engine, (Distributed)): continue
+                _engine = child.engine
+                break
+
+        if not isinstance(_engine, (CollapsingMergeTree, ReplacingMergeTree)):
             raise TypeError('final() method can be used only with the CollapsingMergeTree and ReplacingMergeTree engines')
 
         qs = copy(self)
