@@ -319,7 +319,8 @@ class Database(object):
         elif page_num < 1:
             raise ValueError('Invalid page number: %d' % page_num)
         offset = (page_num - 1) * page_size
-        query = 'SELECT * FROM $table'
+        query = 'SELECT {} FROM $table'.format(", ".join(model_class.fields().keys()))
+        
         if conditions:
             if isinstance(conditions, Q):
                 conditions = conditions.to_sql(model_class)
