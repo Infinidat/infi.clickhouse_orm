@@ -1,6 +1,10 @@
 Change Log
 ==========
 
+v2.1.3
+------
+- Fix pagination for models with alias columns
+
 v2.1.2
 ------
 - Add `QuerySet.model` to support django-rest-framework 3
