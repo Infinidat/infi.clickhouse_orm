@@ -81,8 +81,9 @@ def parse_tsv(line):
         line = line.decode()
     if line and line[-1] == '\n':
         line = line[:-1]
-    return [unescape(value) for value in line.split(str('\t'))]
-
+    # Repetitive unescape using undocumented function
+    # return [unescape(value) for value in line.split(str('\t'))]
+    return line.split(str('\t'))
 
 def parse_array(array_string):
     """
