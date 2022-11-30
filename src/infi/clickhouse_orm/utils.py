@@ -106,7 +106,7 @@ def parse_array(array_string):
             array_string = array_string[1:]
         elif array_string[0] == "'":
             # Start of quoted value, find its end
-            match = re.search(r"[^\\]'", array_string)
+            match = re.search(r"[^\\]'(?:,|])", array_string)
             if match is None:
                 raise ValueError('Missing closing quote: "%s"' % array_string)
             values.append(array_string[1 : match.start() + 1])
