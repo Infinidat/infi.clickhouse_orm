@@ -63,3 +63,6 @@ cover/
 
 # tox
 .tox/
+venv/
+*.xml
+.idea/
