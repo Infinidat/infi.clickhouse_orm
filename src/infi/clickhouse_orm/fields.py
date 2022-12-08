@@ -498,7 +498,6 @@ class BaseEnumField(Field):
         '''
         import re
         from enum import Enum
-        db_type = db_type.replace("\\", "")
         members = {}
         for match in re.finditer(r"'([\w ]+)' = (-?\d+)", db_type):
             members[match.group(1)] = int(match.group(2))
