@@ -88,35 +88,18 @@ def parse_tsv(line):
 def parse_array(array_string):
     """
     Parse an array or tuple string as returned by clickhouse. For example:
-        "['hello', 'world']" ==> ["hello", "world"]
+        "['hello','world']" ==> ["hello", "world"]
         "(1,2,3)"            ==> [1, 2, 3]
     """
-    # Sanity check
-    if len(array_string) < 2 or array_string[0] not in '[(' or array_string[-1] not in '])':
-        raise ValueError('Invalid array string: "%s"' % array_string)
-    # Drop opening brace
-    array_string = array_string[1:]
-    # Go over the string, lopping off each value at the beginning until nothing is left
-    values = []
-    while True:
-        if array_string in '])':
-            # End of array
-            return values
-        elif array_string[0] in ', ':
-            # In between values
-            array_string = array_string[1:]
-        elif array_string[0] == "'":
-            # Start of quoted value, find its end
-            match = re.search(r"[^\\]'", array_string)
-            if match is None:
-                raise ValueError('Missing closing quote: "%s"' % array_string)
-            values.append(array_string[1 : match.start() + 1])
-            array_string = array_string[match.end():]
-        else:
-            # Start of non-quoted value, find its end
-            match = re.search(r",|\]", array_string)
-            values.append(array_string[0 : match.start()])
-            array_string = array_string[match.end() - 1:]
+        
+    if len(array_string) == 2:
+        return []
+
+    if array_string[1] == '\'':
+        values = array_string[2:-2].split('\',\'')
+    else:
+        values = array_string[1:-1].split(',')
+    return values
 
 
 def import_submodules(package_name):
