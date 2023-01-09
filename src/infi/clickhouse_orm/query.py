@@ -306,6 +306,8 @@ class QuerySet(object):
         self._limit_by_fields = None
         self._distinct = False
         self._final = False
+        self._array_join = None
+        self._left_array_join = False
 
     def __iter__(self):
         """
@@ -380,6 +382,12 @@ class QuerySet(object):
             table_name = '`system`.' + table_name
         params = (distinct, self.select_fields_as_sql(), table_name, final)
         sql = u'SELECT %s%s\nFROM %s%s' % params
+
+        if self._array_join:
+            sql += "\n"
+            if self._left_array_join:
+                sql += "LEFT "
+            sql += "ARRAY JOIN %s" % string_or_func(self._array_join)
 
         if self._prewhere_q and not self._prewhere_q.is_empty:
             sql += '\nPREWHERE ' + self.conditions_as_sql(prewhere=True)
@@ -535,6 +543,15 @@ class QuerySet(object):
         qs._distinct = True
         return qs
 
+    def array_join(self, field, left=False):
+        """
+        Adds a ARRAY JOIN clause to the query
+        """
+        qs = copy(self)
+        qs._array_join = field
+        qs._left_array_join = left
+        return qs
+
     def final(self):
         """
         Adds a FINAL modifier to table, meaning data will be collapsed to final version.
@@ -629,6 +646,8 @@ class AggregateQuerySet(QuerySet):
         self._prewhere_q = base_qs._prewhere_q
         self._limits = base_qs._limits
         self._distinct = base_qs._distinct
+        self._array_join = base_qs._array_join
+        self._left_array_join = base_qs._left_array_join
 
     def group_by(self, *args):
         """
