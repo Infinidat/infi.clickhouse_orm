@@ -145,6 +145,9 @@ Using the `Database` instance you can create a table for your model, and insert 
 
     db.create_table(Person)
     db.insert([dan, suzy])
+    
+Including the `cluster` parameter in `create_table` uses a [Distributed DDL](https://clickhouse.tech/docs/en/sql-reference/distributed-ddl/) to create the table on
+ the cluster.
 
 The `insert` method can take any iterable of model instances, but they all must belong to the same model class.
 

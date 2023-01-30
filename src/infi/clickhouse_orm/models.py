@@ -348,11 +348,12 @@ class Model(metaclass=ModelBase):
         return cls._has_funcs_as_defaults
 
     @classmethod
-    def create_table_sql(cls, db):
+    def create_table_sql(cls, db, cluster):
         '''
         Returns the SQL statement for creating a table for this model.
         '''
-        parts = ['CREATE TABLE IF NOT EXISTS `%s`.`%s` (' % (db.db_name, cls.table_name())]
+        parts = ['CREATE TABLE IF NOT EXISTS `%s`.`%s` %s (' % (
+            db.db_name, cls.table_name(), 'ON CLUSTER `%s`' % (cluster) if cluster else '')]
         # Fields
         items = []
         for name, field in cls.fields().items():
@@ -483,12 +484,13 @@ class Model(metaclass=ModelBase):
 class BufferModel(Model):
 
     @classmethod
-    def create_table_sql(cls, db):
+    def create_table_sql(cls, db, cluster):
         '''
         Returns the SQL statement for creating a table for this model.
         '''
-        parts = ['CREATE TABLE IF NOT EXISTS `%s`.`%s` AS `%s`.`%s`' % (db.db_name, cls.table_name(), db.db_name,
-                                                                        cls.engine.main_model.table_name())]
+        parts = ['CREATE TABLE IF NOT EXISTS `{0}`.`{1}` {2} AS `{0}`.`{3}`'.format(
+            db.db_name, cls.table_name(), 'ON CLUSTER `%s`' % (cluster) if cluster else '',
+            cls.engine.main_model.table_name())]
         engine_str = cls.engine.create_table_sql(db)
         parts.append(engine_str)
         return ' '.join(parts)
@@ -506,12 +508,13 @@ class MergeModel(Model):
     _table = StringField(readonly=True)
 
     @classmethod
-    def create_table_sql(cls, db):
+    def create_table_sql(cls, db, cluster):
         '''
         Returns the SQL statement for creating a table for this model.
         '''
         assert isinstance(cls.engine, Merge), "engine must be an instance of engines.Merge"
-        parts = ['CREATE TABLE IF NOT EXISTS `%s`.`%s` (' % (db.db_name, cls.table_name())]
+        parts = ['CREATE TABLE IF NOT EXISTS `%s`.`%s` %s (' % (
+            db.db_name, cls.table_name(), 'ON CLUSTER `%s`' % (cluster) if cluster else '')]
         cols = []
         for name, field in cls.fields().items():
             if name != '_table':
@@ -590,7 +593,7 @@ class DistributedModel(Model):
         cls.engine.table = storage_models[0]
 
     @classmethod
-    def create_table_sql(cls, db):
+    def create_table_sql(cls, db, cluster):
         '''
         Returns the SQL statement for creating a table for this model.
         '''
@@ -599,8 +602,8 @@ class DistributedModel(Model):
         cls.fix_engine_table()
 
         parts = [
-            'CREATE TABLE IF NOT EXISTS `{0}`.`{1}` AS `{0}`.`{2}`'.format(
-                db.db_name, cls.table_name(), cls.engine.table_name),
+            'CREATE TABLE IF NOT EXISTS `{0}`.`{1}` {3} AS `{0}`.`{2}`'.format(
+                db.db_name, cls.table_name(), cls.engine.table_name, 'ON CLUSTER `%s`' % (cluster) if cluster else ''),
             'ENGINE = ' + cls.engine.create_table_sql(db)]
         return '\n'.join(parts)
 
