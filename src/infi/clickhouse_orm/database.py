@@ -410,7 +410,13 @@ class Database(object):
     def _get_server_version(self, as_tuple=True):
         try:
             r = self._send('SELECT version();')
-            ver = r.text
+            # ver = r.text
+            # The version# of clickhouse new release via Altinity is something like this: 21.8.15.15.altinitystable, a string at the end
+            # this broke this piece of script if it is called from sqlalchemy or any other python library.
+            # below is a kind of workaroud to only take the digits and dot, believe some more solid way might needed.
+            ver = re.sub("[^(0-9|.)]", "", r.text)
+            while ver[-1] == '.': ver = ver[:-1]
+            while ver[1] == '.': ver = ver[1:]
         except ServerError as e:
             logger.exception('Cannot determine server version (%s), assuming 1.1.0', e)
             ver = '1.1.0'
