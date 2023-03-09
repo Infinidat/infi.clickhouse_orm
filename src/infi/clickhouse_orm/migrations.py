@@ -1,7 +1,7 @@
 from .models import Model, BufferModel
 from .fields import DateField, StringField
 from .engines import MergeTree
-from .utils import escape, get_subclass_names
+from .utils import escape, get_subclass_names, comma_join
 
 import logging
 logger = logging.getLogger('migrations')
@@ -218,6 +218,29 @@ class AlterIndexes(ModelOperation):
         table_def = database.raw('SHOW CREATE TABLE $db.`%s`' % self.table_name)
         matches = re.findall(r'\sINDEX\s+`?(.+?)`?\s+', table_def)
         return set(matches)
+
+
+class ModifyTTL(ModelOperation):
+    '''
+    A migration operation that modifies row-level TTLs with ALTER TABLE [...] MODIFY TTL
+    '''
+
+    def __init__(self, model_class, ttl_exprs):
+        '''
+        Initializer. The a single TTL expression (or a list of them), argument must be a valid SQL statement or
+        list of statements.
+        '''
+        super().__init__(model_class)
+
+        if isinstance(ttl_exprs, str):
+            ttl_exprs = [ttl_exprs]
+        assert isinstance(ttl_exprs, list), "'ttl_exprs' argument must be string or list of strings"
+        self._ttl_expr = "MODIFY TTL %s" % comma_join(ttl_exprs, stringify=True)
+
+    def apply(self, database):
+        logger.info('    Executing ALTER TABLE [...] MODIFY TTL operation')
+
+        self._alter_table(database, self._ttl_expr)
 
 
 class RunPython(Operation):

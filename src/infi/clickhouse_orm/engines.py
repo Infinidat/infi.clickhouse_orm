@@ -35,7 +35,7 @@ class MergeTree(Engine):
 
     def __init__(self, date_col=None, order_by=(), sampling_expr=None,
                  index_granularity=8192, replica_table_path=None, replica_name=None, partition_key=None,
-                 primary_key=None):
+                 primary_key=None, storage_policy=None, merge_with_ttl_timeout=None, ttls=None):
         assert type(order_by) in (list, tuple), 'order_by must be a list or tuple'
         assert date_col is None or isinstance(date_col, str), 'date_col must be string if present'
         assert primary_key is None or type(primary_key) in (list, tuple), 'primary_key must be a list or tuple'
@@ -56,6 +56,9 @@ class MergeTree(Engine):
         self.index_granularity = index_granularity
         self.replica_table_path = replica_table_path
         self.replica_name = replica_name
+        self.storage_policy = storage_policy
+        self.merge_with_ttl_timeout = merge_with_ttl_timeout
+        self.ttls = ttls
 
     # I changed field name for new reality and syntax
     @property
@@ -87,7 +90,17 @@ class MergeTree(Engine):
             if self.sampling_expr:
                 partition_sql += " SAMPLE BY %s" % self.sampling_expr
 
+            if db.server_version >= (19, 6, 0) and self.ttls and len(self.ttls) > 0:
+                partition_sql += " TTL %s" % comma_join(self.ttls, stringify=True)
+
             partition_sql += " SETTINGS index_granularity=%d" % self.index_granularity
+
+            ## We always have the SETTINGS clause above
+            if self.storage_policy:
+                partition_sql += ", storage_policy='%s'" % self.storage_policy
+
+            if db.server_version >= (19, 6, 0) and self.merge_with_ttl_timeout:
+                partition_sql += ", merge_with_ttl_timeout=%d" % self.merge_with_ttl_timeout
 
         elif not self.date_col:
             # Can't import it globally due to circular import
