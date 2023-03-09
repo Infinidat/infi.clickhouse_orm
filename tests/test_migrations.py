@@ -138,6 +138,16 @@ class MigrationsTestCase(unittest.TestCase):
             self.assertIn('INDEX index2 ', self.get_table_def(ModelWithIndex))
             self.assertIn('INDEX another_index ', self.get_table_def(ModelWithIndex))
 
+        if self.database.server_version >= (19, 6, 0):
+            # Modifying TTLs:
+            self.database.migrate('tests.sample_migrations', 20)
+            self.assertTrue(self.table_exists(ModelWithTTLs))
+            self.assertIn(r"TTL date + toIntervalDay(7) TO VOLUME \'default\'", self.get_table_def(ModelWithTTLs))
+            self.assertIn(", date + toIntervalDay(14)", self.get_table_def(ModelWithTTLs))
+            self.database.migrate('tests.sample_migrations', 21)
+            self.assertIn("TTL date_two + toIntervalMonth(24),", self.get_table_def(ModelWithTTLs))
+            self.assertIn(r", date_two + toIntervalYear(1) TO DISK \'default\'", self.get_table_def(ModelWithTTLs))
+
 
 # Several different models with the same table name, to simulate a table that changes over time
 
@@ -391,3 +401,19 @@ class ModelWithIndex2(Model):
     def table_name(cls):
         return 'modelwithindex'
 
+
+class ModelWithTTLs(Model):
+
+    date = DateField()
+    date_two = DateField()
+    f1 = Int32Field()
+    f2 = StringField()
+
+    engine = MergeTree('date', ('date',), ttls=[
+        "date + INTERVAL 7 DAY TO VOLUME 'default'",
+        "date + INTERVAL 14 DAY DELETE"
+    ])
+
+    @classmethod
+    def table_name(cls):
+        return 'modelwithttls'

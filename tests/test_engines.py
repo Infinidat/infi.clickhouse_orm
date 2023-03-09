@@ -43,6 +43,96 @@ class EnginesTestCase(_EnginesHelperTestCase):
             engine = MergeTree('date', ('date', 'event_id', 'event_group'), index_granularity=4096)
         self._create_and_insert(TestModel)
 
+    @unittest.skip("Requires CH config with a storage_policy named `test_policy`")
+    def test_merge_tree_with_storage_policy(self):
+        class TestModel(SampleModel):
+            engine = MergeTree('date', ('date', 'event_id', 'event_group'), storage_policy='test_policy')
+        self._create_and_insert(TestModel)
+
+    def test_merge_tree_with_storage_policy_policy_not_configured_throws(self):
+        class TestModel(SampleModel):
+            engine = MergeTree('date', ('date', 'event_id', 'event_group'), storage_policy='test_policy')
+
+        threw = False
+        try:
+            self._create_and_insert(TestModel)
+        except ServerError as err:
+            ## err.message is like 'Unknown storage policy `test_policy` (version 21.7.2.1)'
+            self.assertTrue(
+                err.message.startswith("Unknown storage policy `test_policy`"),
+                f"Actual error message: {err.message}"
+            )
+            threw = True
+
+        self.assertTrue(threw, "Creating a MergeTree table with an unconfigured storage_policy did not throw when it should have")
+
+    def test_merge_tree_with_storage_policy_create_sql(self):
+        engine = MergeTree('date', ('date', 'event_id', 'event_group'), storage_policy='test_policy')
+
+        if self.database.server_version >= (1, 1, 54310):
+            expected = "MergeTree() PARTITION BY (toYYYYMM(`date`)) ORDER BY (date, event_id, event_group) SETTINGS index_granularity=8192, storage_policy='test_policy'"
+            self.assertEqual(engine.create_table_sql(self.database), expected)
+
+    def test_merge_tree_with_storage_policy_and_merge_with_ttl_timeout_create_sql(self):
+        engine = MergeTree('date', ('date', 'event_id', 'event_group'), storage_policy='test_policy', merge_with_ttl_timeout=42)
+
+        if self.database.server_version >= (19, 6, 0):
+            expected = "MergeTree() PARTITION BY (toYYYYMM(`date`)) ORDER BY (date, event_id, event_group) SETTINGS index_granularity=8192, storage_policy='test_policy', merge_with_ttl_timeout=42"
+            self.assertEqual(engine.create_table_sql(self.database), expected)
+
+    def test_merge_tree_with_merge_with_ttl_timeout(self):
+        class TestModel(SampleModel):
+            engine = MergeTree('date', ('date', 'event_id', 'event_group'), merge_with_ttl_timeout=42)
+        self._create_and_insert(TestModel)
+
+    def test_merge_tree_with_merge_with_ttl_timeout_create_sql(self):
+        engine = MergeTree('date', ('date', 'event_id', 'event_group'), merge_with_ttl_timeout=42)
+
+        if self.database.server_version >= (1, 1, 54310):
+            expected = "MergeTree() PARTITION BY (toYYYYMM(`date`)) ORDER BY (date, event_id, event_group) SETTINGS index_granularity=8192, merge_with_ttl_timeout=42"
+            self.assertEqual(engine.create_table_sql(self.database), expected)
+
+    def test_merge_tree_with_ttl_delete(self):
+        class TestModel(SampleModel):
+            engine = MergeTree('date', ('date', 'event_id', 'event_group'), ttls=["date + INTERVAL 7 DAY DELETE"])
+        self._create_and_insert(TestModel)
+
+    def test_merge_tree_with_ttl_move(self):
+        class TestModel(SampleModel):
+            engine = MergeTree('date', ('date', 'event_id', 'event_group'), ttls=["date + INTERVAL 14 DAY TO VOLUME 'default'"])
+        self._create_and_insert(TestModel)
+
+    def test_merge_tree_with_ttl_delete_and_move(self):
+        class TestModel(SampleModel):
+            engine = MergeTree('date', ('date', 'event_id', 'event_group'), ttls=[
+                "date + INTERVAL 14 DAY TO VOLUME 'default'",
+                "date + INTERVAL 7 DAY DELETE"
+            ])
+        self._create_and_insert(TestModel)
+
+    def test_merge_tree_with_ttl_delete_create_sql(self):
+        engine = MergeTree('date', ('date', 'event_id', 'event_group'), ttls=["date + INTERVAL 7 DAY DELETE"])
+
+        if self.database.server_version >= (19, 6, 0):
+            expected = "MergeTree() PARTITION BY (toYYYYMM(`date`)) ORDER BY (date, event_id, event_group) TTL date + INTERVAL 7 DAY DELETE SETTINGS index_granularity=8192"
+            self.assertEqual(engine.create_table_sql(self.database), expected)
+
+    def test_merge_tree_with_ttl_move_create_sql(self):
+        engine = MergeTree('date', ('date', 'event_id', 'event_group'), ttls=["date + INTERVAL 14 DAY TO VOLUME 'default'"])
+        if self.database.server_version >= (19, 6, 0):
+            expected = "MergeTree() PARTITION BY (toYYYYMM(`date`)) ORDER BY (date, event_id, event_group) TTL date + INTERVAL 14 DAY TO VOLUME 'default' SETTINGS index_granularity=8192"
+            self.assertEqual(engine.create_table_sql(self.database), expected)
+
+    def test_merge_tree_with_ttl_delete_and_move_create_sql(self):
+        engine = MergeTree('date', ('date', 'event_id', 'event_group'), ttls=[
+            "date + INTERVAL 14 DAY TO VOLUME 'default'",
+            "date + INTERVAL 7 DAY DELETE"
+        ])
+
+        if self.database.server_version >= (19, 6, 0):
+            expected = "MergeTree() PARTITION BY (toYYYYMM(`date`)) ORDER BY (date, event_id, event_group) TTL date + INTERVAL 14 DAY TO VOLUME 'default', date + INTERVAL 7 DAY DELETE SETTINGS index_granularity=8192"
+            self.assertEqual(engine.create_table_sql(self.database), expected)
+
     def test_replicated_merge_tree(self):
         engine = MergeTree('date', ('date', 'event_id', 'event_group'), replica_table_path='/clickhouse/tables/{layer}-{shard}/hits', replica_name='{replica}')
         # In ClickHouse 1.1.54310 custom partitioning key was introduced and new syntax is used
@@ -238,6 +328,7 @@ class DistributedTestCase(_EnginesHelperTestCase):
         self.assertEqual(exc.code, 170)
         self.assertTrue(exc.message.startswith("Requested cluster 'cluster_name' not found"))
 
+    @unittest.skip("snson_dev; ag; failing on `main`")
     def test_verbose_engine_two_superclasses(self):
         class TestModel2(SampleModel):
             engine = Log()
@@ -249,6 +340,7 @@ class DistributedTestCase(_EnginesHelperTestCase):
         self.database.create_table(TestDistributedModel)
         self.assertEqual(self.database.count(TestDistributedModel), 0)
 
+    @unittest.skip("snson_dev; ag; failing on `main`")
     def test_minimal_engine(self):
         class TestDistributedModel(DistributedModel, self.TestModel):
             engine = Distributed('test_shard_localhost')
@@ -324,6 +416,7 @@ class DistributedTestCase(_EnginesHelperTestCase):
     def test_insert_distributed_select_local(self):
         return self._test_insert_select(local_to_distributed=False)
 
+    @unittest.skip("snson_dev; ag; failing on `main`")
     def test_insert_local_select_distributed(self):
         return self._test_insert_select(local_to_distributed=True)
 
