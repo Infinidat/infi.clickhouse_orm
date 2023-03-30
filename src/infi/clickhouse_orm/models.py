@@ -224,7 +224,10 @@ class ModelBase(type):
         # Tuples (poor man's version - convert to array)
         if db_type.startswith('Tuple'):
             types = [s.strip() for s in db_type[6 : -1].split(',')]
-            assert len(set(types)) == 1, 'No support for mixed types in tuples - ' + db_type
+            if len(types[0].split()) != 1:
+                raise NotImplementedError('No support for named tuples - %s' % db_type)
+            if len(set(types)) != 1:
+                raise NotImplementedError('No support for mixed types in tuples - %s' % db_type)
             inner_field = cls.create_ad_hoc_field(types[0])
             return orm_fields.ArrayField(inner_field)
         # FixedString
