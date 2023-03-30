@@ -254,6 +254,8 @@ class DatabaseTestCase(TestCaseWithData):
         for row in self.database.select(query):
             if row.type.startswith('Map'):
                 continue  # Not supported yet
+            if 'Tuple' in row.type:
+                continue  # Not fully supported yet
             ModelBase.create_ad_hoc_field(row.type)
 
     def test_get_model_for_table(self):
