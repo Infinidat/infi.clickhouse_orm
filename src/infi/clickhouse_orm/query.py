@@ -296,6 +296,7 @@ class QuerySet(object):
         self._model_cls = model_cls
         self._database = database
         self._order_by = []
+        self._having = ''
         self._where_q = Q()
         self._prewhere_q = Q()
         self._grouping_fields = []
@@ -393,6 +394,9 @@ class QuerySet(object):
             if self._grouping_with_totals:
                 sql += ' WITH TOTALS'
 
+        if self._having:
+            sql += '\nHAVING ' + self.having_as_sql()
+
         if self._order_by:
             sql += '\nORDER BY ' + self.order_by_as_sql()
 
@@ -413,6 +417,12 @@ class QuerySet(object):
             '%s DESC' % field[1:] if isinstance(field, str) and field[0] == '-' else str(field)
             for field in self._order_by
         ])
+
+    def having_as_sql(self):
+        """
+        Returns the contents of the query's `Having` clause as a string.
+        """
+        return self._having
 
     def conditions_as_sql(self, prewhere=False):
         """
@@ -441,6 +451,26 @@ class QuerySet(object):
         """
         qs = copy(self)
         qs._order_by = field_names
+        return qs
+
+    def having(self, *q, **kwargs):
+        """
+        Returns a copy of this queryset that includes only rows matching the having conditions.
+        """
+
+        qs = copy(self)
+
+        condition = Q()
+        for arg in q:
+            if isinstance(arg, Q):
+                condition &= arg
+            else:
+                raise TypeError('Invalid argument "%r" to queryset filter' % arg)
+
+        if kwargs:
+            condition &= Q(**kwargs)
+
+        qs._having = condition.to_sql(self._model_cls)
         return qs
 
     def only(self, *field_names):
