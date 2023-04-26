@@ -630,7 +630,7 @@ class NullableField(Field):
 
     def to_db_string(self, value, quote=True):
         if value in self._null_values:
-            return '\\N'
+            return 'null'
         return self.inner_field.to_db_string(value, quote=quote)
 
     def get_sql(self, with_default_expression=True, db=None):
