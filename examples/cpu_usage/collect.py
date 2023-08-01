@@ -15,6 +15,6 @@ while True:
     timestamp = datetime.datetime.now()
     print(timestamp)
     db.insert([
-        CPUStats(timestamp=timestamp, cpu_id=cpu_id, cpu_percent=cpu_percent)
+        CPUStats(timestamp=timestamp, cpu_id=cpu_id, cpu_percent=cpu_percent, working_status=True)
         for cpu_id, cpu_percent in enumerate(stats)
     ])

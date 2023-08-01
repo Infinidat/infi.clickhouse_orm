@@ -162,7 +162,25 @@ class FixedStringField(StringField):
         if len(value) > self._length:
             raise ValueError('Value of %d bytes is too long for FixedStringField(%d)' % (len(value), self._length))
 
+class BooleanField(Field):
+    # The ClickHouse column type to use
+    db_type = 'UInt8'
+    # The default value
+    class_default = False
 
+    def to_python(self, value, timezone_in_use):
+        # Convert valid values to bool
+        if value in (1, '1', True):
+            return True
+        elif value in (0, '0', False):
+            return False
+        else:
+            raise ValueError('Invalid value for BooleanField: %r' % value)
+
+    def to_db_string(self, value, quote=True):
+        # The value was already converted by to_python, so it's a bool
+        return '1' if value else '0'
+    
 class DateField(Field):
 
     min_value = datetime.date(1970, 1, 1)
