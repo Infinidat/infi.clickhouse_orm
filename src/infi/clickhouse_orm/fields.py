@@ -164,7 +164,7 @@ class FixedStringField(StringField):
 
 class BooleanField(Field):
     # The ClickHouse column type to use
-    db_type = 'UInt8'
+    db_type = 'Bool'
     # The default value
     class_default = False
 
