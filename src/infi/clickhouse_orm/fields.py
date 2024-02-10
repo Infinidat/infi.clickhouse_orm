@@ -142,6 +142,8 @@ class StringField(Field):
             return value
         if isinstance(value, bytes):
             return value.decode('UTF-8')
+        if value is None and self.default is not None:
+            return self.default
         raise ValueError('Invalid value for %s: %r' % (self.__class__.__name__, value))
 
 
@@ -295,6 +297,8 @@ class BaseIntField(Field):
     '''
     def to_python(self, value, timezone_in_use):
         try:
+            if value is None and self.default is not None:
+                return int(self.default)
             return int(value)
         except:
             raise ValueError('Invalid value for %s - %r' % (self.__class__.__name__, value))
@@ -371,6 +375,8 @@ class BaseFloatField(Field):
 
     def to_python(self, value, timezone_in_use):
         try:
+            if value is None and self.default is not None:
+                return float(self.default)
             return float(value)
         except:
             raise ValueError('Invalid value for %s - %r' % (self.__class__.__name__, value))
