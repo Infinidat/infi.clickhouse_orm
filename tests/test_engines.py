@@ -73,6 +73,11 @@ class EnginesTestCase(_EnginesHelperTestCase):
             engine = ReplacingMergeTree('date', ('date', 'event_id', 'event_group'), 'event_uversion')
         self._create_and_insert(TestModel)
 
+    def test_aggregating_merge_tree(self):
+        class TestModel(SampleModel):
+            engine = AggregatingMergeTree('date', ('date', 'event_group'))
+        self._create_and_insert(TestModel)
+
     def test_tiny_log(self):
         class TestModel(SampleModel):
             engine = TinyLog()

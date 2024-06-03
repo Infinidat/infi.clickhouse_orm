@@ -135,6 +135,19 @@ class CollapsingMergeTree(MergeTree):
         return params
 
 
+class AggregatingMergeTree(MergeTree):
+
+    def __init__(self, date_col=None, order_by=(), sampling_expr=None,
+                 index_granularity=8192, replica_table_path=None, replica_name=None, partition_key=None,
+                 primary_key=None):
+        super(AggregatingMergeTree, self).__init__(date_col, order_by, sampling_expr, index_granularity,
+                                                  replica_table_path, replica_name, partition_key, primary_key)
+
+    def _build_sql_params(self, db):
+        params = super(AggregatingMergeTree, self)._build_sql_params(db)
+        return params
+
+
 class SummingMergeTree(MergeTree):
 
     def __init__(self, date_col=None, order_by=(), summing_cols=None, sampling_expr=None,

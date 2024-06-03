@@ -538,10 +538,10 @@ class QuerySet(object):
     def final(self):
         """
         Adds a FINAL modifier to table, meaning data will be collapsed to final version.
-        Can be used with the `CollapsingMergeTree` and `ReplacingMergeTree` engines only.
+        Can be used with the `CollapsingMergeTree`,  `ReplacingMergeTree` and `AggregatingMergeTree` engines only.
         """
-        from .engines import CollapsingMergeTree, ReplacingMergeTree
-        if not isinstance(self._model_cls.engine, (CollapsingMergeTree, ReplacingMergeTree)):
+        from .engines import CollapsingMergeTree, ReplacingMergeTree, AggregatingMergeTree
+        if not isinstance(self._model_cls.engine, (CollapsingMergeTree, ReplacingMergeTree, AggregatingMergeTree)):
             raise TypeError('final() method can be used only with the CollapsingMergeTree and ReplacingMergeTree engines')
 
         qs = copy(self)
