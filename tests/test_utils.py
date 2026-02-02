@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from clickhouse_orm.utils import escape, unescape
 
 SPECIAL_CHARS = {

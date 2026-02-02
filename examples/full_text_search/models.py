@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from clickhouse_orm.engines import MergeTree
 from clickhouse_orm.fields import LowCardinalityField, StringField, UInt64Field
 from clickhouse_orm.models import Index, Model

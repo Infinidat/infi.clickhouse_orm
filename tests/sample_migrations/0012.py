@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from clickhouse_orm import migrations
 
 operations = [

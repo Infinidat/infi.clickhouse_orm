@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import pygal
 from jinja2.filters import do_filesizeformat
 from pygal.style import RotateStyle

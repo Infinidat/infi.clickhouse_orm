@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from inspect import isclass
 
 from .database import *  # noqa: F401, F403

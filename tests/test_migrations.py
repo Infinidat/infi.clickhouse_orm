@@ -1,4 +1,6 @@
 # Add tests to path so that migrations will be importable
+from __future__ import annotations
+
 import logging
 import os
 import sys

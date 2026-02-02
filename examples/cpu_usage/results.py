@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from models import CPUStats
 
 from clickhouse_orm import Database, F

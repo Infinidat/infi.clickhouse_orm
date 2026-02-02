@@ -1,11 +1,14 @@
-import unittest
+from __future__ import annotations
+
 import datetime
+import unittest
+
 import pytz
 
 from clickhouse_orm.database import Database
-from clickhouse_orm.models import Model, NO_VALUE
-from clickhouse_orm.fields import *
 from clickhouse_orm.engines import *
+from clickhouse_orm.fields import *
+from clickhouse_orm.models import NO_VALUE, Model
 from clickhouse_orm.utils import parse_tsv
 
 

@@ -2,6 +2,7 @@
 This file contains system readonly models that can be got from the database
 https://clickhouse.tech/docs/en/system_tables/
 """
+from __future__ import annotations
 
 from .database import Database
 from .fields import DateTimeField, StringField, UInt8Field, UInt32Field, UInt64Field

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from clickhouse_orm.engines import Buffer
 from clickhouse_orm.models import BufferModel
 

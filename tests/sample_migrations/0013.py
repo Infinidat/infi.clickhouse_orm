@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import datetime
 
 from test_migrations import Model3

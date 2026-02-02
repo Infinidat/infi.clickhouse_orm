@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 
 from .utils import comma_join, get_subclass_names

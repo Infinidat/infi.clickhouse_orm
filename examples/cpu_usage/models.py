@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from clickhouse_orm import DateTimeField, Float32Field, Memory, Model, UInt16Field
 
 

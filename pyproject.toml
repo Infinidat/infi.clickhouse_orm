@@ -53,6 +53,7 @@ select = [
   "W",       # pycodestyle: E, W
   "F",       # pyflakes: F
   "B",       # flake8-bugbear: B
+  "I",       # isort: I
   "ISC",     # flake8-implicit-str-concat: ISC
   "N",       # pep8-naming: N
   "PYI",     # flake8-pyi: PYI

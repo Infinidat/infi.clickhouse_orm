@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import sys
 
 from charts import bytes_formatter, columns_piechart, number_formatter, tables_piechart

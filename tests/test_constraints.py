@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import unittest
 
 from clickhouse_orm import Constraint, Database, F, ServerError

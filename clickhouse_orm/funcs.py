@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from functools import wraps
 from inspect import Parameter, signature
 from types import FunctionType
