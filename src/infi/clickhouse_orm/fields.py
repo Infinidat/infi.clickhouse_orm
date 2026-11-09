@@ -215,14 +215,14 @@ class DateTimeField(Field):
         if isinstance(value, datetime.date):
             return datetime.datetime(value.year, value.month, value.day, tzinfo=pytz.utc)
         if isinstance(value, int):
-            return datetime.datetime.utcfromtimestamp(value).replace(tzinfo=pytz.utc)
+            return datetime.datetime.fromtimestamp(value, tz=pytz.utc)
         if isinstance(value, str):
             if value == '0000-00-00 00:00:00':
                 return self.class_default
             if len(value) == 10:
                 try:
                     value = int(value)
-                    return datetime.datetime.utcfromtimestamp(value).replace(tzinfo=pytz.utc)
+                    return datetime.datetime.fromtimestamp(value, tz=pytz.utc)
                 except ValueError:
                     pass
             try:
@@ -275,7 +275,7 @@ class DateTime64Field(DateTimeField):
             return super().to_python(value, timezone_in_use)
         except ValueError:
             if isinstance(value, (int, float)):
-                return datetime.datetime.utcfromtimestamp(value).replace(tzinfo=pytz.utc)
+                return datetime.datetime.fromtimestamp(value, tz=pytz.utc)
             if isinstance(value, str):
                 left_part = value.split('.')[0]
                 if left_part == '0000-00-00 00:00:00':
@@ -283,7 +283,7 @@ class DateTime64Field(DateTimeField):
                 if len(left_part) == 10:
                     try:
                         value = float(value)
-                        return datetime.datetime.utcfromtimestamp(value).replace(tzinfo=pytz.utc)
+                        return datetime.datetime.fromtimestamp(value, tz=pytz.utc)
                     except ValueError:
                         pass
             raise
